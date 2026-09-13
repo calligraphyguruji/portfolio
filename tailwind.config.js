@@ -29,6 +29,11 @@ export default {
           emerald: '#10B981',
           amber: '#F59E0B',
         },
+        cream: '#FAF9F6',
+        charcoal: '#121212',
+        taupe: '#7D7871',
+        champagne: '#F7E7CE',
+        'warm-glow': '#FFECCC',
       },
       fontFamily: {
         sans: [
@@ -39,6 +44,8 @@ export default {
           'Roboto',
           'sans-serif',
         ],
+        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+        display: ['"Syne"', 'Plus Jakarta Sans', 'sans-serif'],
         mono: [
           'JetBrains Mono',
           'Fira Code',
@@ -52,6 +59,7 @@ export default {
       boxShadow: {
         'glow-cyan': '0 0 20px -5px rgba(56, 189, 248, 0.25)',
         'glow-indigo': '0 0 20px -5px rgba(99, 102, 241, 0.25)',
+        'glow-amber': '0 0 25px -5px rgba(245, 158, 11, 0.25)',
         'subtle-dark': '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
       },
     },

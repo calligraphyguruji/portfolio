@@ -1,19 +1,42 @@
-import { personalInfo } from './data/portfolioData';
+import { useState, useEffect } from 'react';
+import { Navbar } from './components/layout/Navbar';
+import { Footer } from './components/layout/Footer';
+import { Hero } from './components/sections/Hero';
+import { About } from './components/sections/About';
+import { Skills } from './components/sections/Skills';
+import { Experience } from './components/sections/Experience';
+import { Projects } from './components/sections/Projects';
+import { ProblemSolving } from './components/sections/ProblemSolving';
+import { Learning } from './components/sections/Learning';
+import { Contact } from './components/sections/Contact';
 
 export default function App() {
+  const [darkMode, setDarkMode] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  }, [darkMode]);
+
   return (
-    <div className="min-h-screen bg-canvas-dark text-slate-100 flex flex-col items-center justify-center p-6">
-      <div className="max-w-xl text-center space-y-4">
-        <span className="text-xs uppercase tracking-widest text-cyan-400 font-mono">
-          Phase 1 Build Setup Complete
-        </span>
-        <h1 className="text-4xl font-bold tracking-tight text-white">
-          {personalInfo.name}
-        </h1>
-        <p className="text-slate-400 text-sm">
-          {personalInfo.role} • {personalInfo.college}
-        </p>
-      </div>
+    <div className="min-h-screen bg-canvas-dark text-slate-100 flex flex-col font-sans transition-colors duration-300">
+      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+      <main className="flex-grow space-y-10">
+        <Hero />
+        <About />
+        <Skills />
+        <Experience />
+        <Projects />
+        <ProblemSolving />
+        <Learning />
+        <Contact />
+      </main>
+      <Footer />
     </div>
   );
 }

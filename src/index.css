@@ -59,3 +59,30 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
+
+/* Google Stitch Editorial Radiance & Text Masks */
+.glow-aura {
+  background: radial-gradient(circle at 50% 45%, rgba(56, 189, 248, 0.20) 0%, rgba(99, 102, 241, 0.12) 40%, rgba(11, 15, 23, 0) 70%);
+}
+
+.dark .glow-aura {
+  background: radial-gradient(circle at 50% 45%, rgba(56, 189, 248, 0.22) 0%, rgba(99, 102, 241, 0.14) 45%, rgba(11, 15, 23, 0) 70%);
+}
+
+.light .glow-aura {
+  background: radial-gradient(circle at 50% 45%, rgba(253, 230, 138, 0.45) 0%, rgba(245, 213, 163, 0.25) 45%, rgba(250, 249, 246, 0) 70%);
+}
+
+.text-condensed-hero {
+  letter-spacing: -0.04em;
+  line-height: 0.90;
+}
+
+.subtle-line {
+  height: 1px;
+  background: linear-gradient(to right, rgba(255,255,255,0.02), rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+}
+
+.light .subtle-line {
+  background: linear-gradient(to right, rgba(0,0,0,0.04), rgba(0,0,0,0.14), rgba(0,0,0,0.04));
+}
