@@ -13,6 +13,8 @@ import {
   Github,
 } from 'lucide-react';
 
+import { sendEmail } from '../../services/emailService';
+
 interface FormData {
   name: string;
   email: string;
@@ -50,56 +52,22 @@ export const Contact: React.FC = () => {
     setStatus('loading');
 
     try {
-      // Free Web3Forms endpoint for direct delivery to Gmail with fallback
-      const response = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          access_key: '02fa0a58-e4d6-444f-9556-9b6d859fa4f5', // Web3Forms public access token
-          name: formData.name,
-          email: formData.email,
-          subject: formData.subject || `Portfolio Inquiry from ${formData.name}`,
-          message: formData.message,
-          to_email: personalInfo.socials.email,
-          from_name: `${formData.name} (Portfolio Contact)`,
-        }),
-      });
+      const response = await sendEmail(formData);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.success) {
         setStatus('success');
-        setStatusMessage(
-          `Thank you, ${formData.name}! Your message has been sent directly to ${personalInfo.socials.email}. I will get back to you shortly.`
-        );
+        setStatusMessage(response.message);
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        // Fallback: Open mailto client directly so communication is never blocked
-        triggerMailtoFallback();
+        setStatus('error');
+        setStatusMessage('Unable to deliver message right now. Please try again or reach out via email directly.');
       }
     } catch {
-      // Network or API blocked: Fallback to mailto
-      triggerMailtoFallback();
+      setStatus('error');
+      setStatusMessage('An unexpected error occurred. Please contact via amanmishra7774@gmail.com.');
     }
   };
 
-  const triggerMailtoFallback = () => {
-    const subject = encodeURIComponent(
-      formData.subject || `Portfolio Inquiry from ${formData.name}`
-    );
-    const body = encodeURIComponent(
-      `Hi Aman,\n\nName: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
-    );
-    window.open(`mailto:${personalInfo.socials.email}?subject=${subject}&body=${body}`);
-
-    setStatus('success');
-    setStatusMessage(
-      `Your email client has been prepared to send your message to ${personalInfo.socials.email}. Thank you for reaching out!`
-    );
-  };
 
   return (
     <section id="contact" className="py-14 sm:py-20 px-5 sm:px-8 max-w-6xl mx-auto">
