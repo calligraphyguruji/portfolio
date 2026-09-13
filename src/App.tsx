@@ -11,22 +11,26 @@ import { Learning } from './components/sections/Learning';
 import { Contact } from './components/sections/Contact';
 
 export default function App() {
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('theme');
+    // Default to Light mode matching Compound ink-on-paper style reference
+    return saved ? saved === 'dark' : false;
+  });
 
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
+      localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
 
   return (
-    <div className="min-h-screen bg-slate-950 dark:bg-canvas-dark light:bg-[#FAF9F6] text-slate-100 dark:text-slate-100 light:text-stone-900 flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-[#0B0F17] text-[#171717] dark:text-[#F8FAFC] flex flex-col font-sans transition-colors duration-200">
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-      <main className="flex-grow space-y-12">
+      <main className="flex-grow space-y-6 sm:space-y-10">
         <Hero />
         <About />
         <Skills />

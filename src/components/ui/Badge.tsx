@@ -17,13 +17,13 @@ export const Badge: React.FC<BadgeProps> = ({
 
   const variantClasses = {
     neutral:
-      'bg-slate-800/80 text-slate-300 border border-slate-700/60 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700/60 light:bg-stone-100 light:text-stone-700 light:border-stone-300',
+      'bg-[#F3F3F3] text-[#5E5E5E] border border-[#E5E7EB] dark:bg-[#161B22] dark:text-slate-300 dark:border-[#262626]',
     accent:
-      'bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-500/30 light:bg-sky-50 light:text-sky-800 light:border-sky-200',
+      'bg-[#171717] text-white border border-[#171717] dark:bg-white dark:text-[#171717] dark:border-white',
     success:
-      'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/30 light:bg-emerald-50 light:text-emerald-800 light:border-emerald-200',
+      'bg-[#F3F3F3] text-emerald-700 border border-[#E5E7EB] dark:bg-[#161B22] dark:text-emerald-400 dark:border-[#262626]',
     amber:
-      'bg-amber-950/60 text-amber-300 border border-amber-500/30 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/30 light:bg-amber-50 light:text-amber-800 light:border-amber-200',
+      'bg-[#FFE9BF]/50 text-[#855307] border border-[#FFE9BF] dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/30',
   }[variant];
 
   return (
