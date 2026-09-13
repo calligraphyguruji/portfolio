@@ -8,14 +8,14 @@ export const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="border-t border-slate-800/80 bg-canvas-dark px-5 sm:px-8 pt-12 pb-16">
+    <footer className="border-t border-slate-800/80 dark:border-slate-800/80 light:border-stone-300/80 bg-slate-950 dark:bg-canvas-dark light:bg-[#FAF9F6] px-5 sm:px-8 pt-12 pb-16 transition-colors">
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
-            <span className="font-serif text-2xl font-medium italic text-white">
+            <span className="font-serif text-2xl font-medium italic text-white dark:text-white light:text-stone-900">
               Aman Mishra
             </span>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 dark:text-slate-400 light:text-stone-600 mt-1">
               Computer Science Engineering Student • NIET, Greater Noida
             </p>
           </div>

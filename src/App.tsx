@@ -24,9 +24,9 @@ export default function App() {
   }, [darkMode]);
 
   return (
-    <div className="min-h-screen bg-canvas-dark text-slate-100 flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-slate-950 dark:bg-canvas-dark light:bg-[#FAF9F6] text-slate-100 dark:text-slate-100 light:text-stone-900 flex flex-col font-sans transition-colors duration-300">
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-      <main className="flex-grow space-y-10">
+      <main className="flex-grow space-y-12">
         <Hero />
         <About />
         <Skills />
