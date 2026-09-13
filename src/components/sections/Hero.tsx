@@ -3,7 +3,7 @@ import { personalInfo } from '../../data/portfolioData';
 import { ArrowRight, Mail, MapPin } from 'lucide-react';
 
 export const Hero: React.FC = () => {
-  const [imgSrc, setImgSrc] = useState('/images/aria-portrait.png');
+  const [imgSrc, setImgSrc] = useState('/images/potrait.png');
 
   return (
     <section className="relative pt-8 pb-16 px-5 sm:px-8 max-w-5xl mx-auto overflow-hidden">
