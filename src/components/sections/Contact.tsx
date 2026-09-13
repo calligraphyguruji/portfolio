@@ -60,7 +60,7 @@ export const Contact: React.FC = () => {
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
         setStatus('error');
-        setStatusMessage('Unable to deliver message right now. Please try again or reach out via email directly.');
+        setStatusMessage(response.message || 'Unable to deliver message right now. Please try again.');
       }
     } catch {
       setStatus('error');
