@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Aria Chen — Creative Technologist &amp; Interactive Developer</title>
+<!-- Google Fonts: Editorial Serif + Modern Grotesk -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Syne:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#FAF9F6',
+            charcoal: '#121212',
+            taupe: '#7D7871',
+            champagne: '#F7E7CE',
+            'warm-glow': '#FFECCC'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Instrument Serif"', 'serif'],
+            display: ['"Syne"', '"Plus Jakarta Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Styles for Editorial Radiance & Text Masks -->
+<style data-purpose="editorial-glow">
+    .glow-aura {
+      background: radial-gradient(circle at 50% 45%, rgba(253, 230, 138, 0.45) 0%, rgba(245, 213, 163, 0.25) 45%, rgba(250, 249, 246, 0) 70%);
+    }
+    .text-condensed-hero {
+      letter-spacing: -0.04em;
+      line-height: 0.88;
+    }
+    .subtle-line {
+      height: 1px;
+      background: linear-gradient(to right, rgba(0,0,0,0.06), rgba(0,0,0,0.18), rgba(0,0,0,0.06));
+    }
+  </style>
+</head>
+<body class="bg-cream text-charcoal font-sans antialiased selection:bg-black selection:text-white pb-14 min-h-screen overflow-x-hidden">
+<!-- BEGIN: NavigationBar -->
+<header class="sticky top-0 z-50 bg-[#FAF9F6]/90 backdrop-blur-md px-5 py-4 flex items-center justify-between border-b border-stone-200/50 transition-all duration-300">
+<!-- Brand / Monogram -->
+<a aria-label="Aria Home" class="group inline-flex items-center gap-1.5 focus:outline-none" href="#">
+<span class="font-serif text-2xl tracking-tight font-medium italic group-hover:opacity-75 transition-opacity">Aria.</span>
+<span class="w-1.5 h-1.5 rounded-full bg-stone-900 inline-block mb-1"></span>
+</a>
+<!-- Navigation Actions -->
+<div class="flex items-center gap-2.5">
+<!-- Quick Status Badge (Desktop/Tablet subtle indicator) -->
+<span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase bg-stone-100 text-stone-700 border border-stone-200/80">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+        Avail. Q2
+      </span>
+<!-- Contact Pill Button -->
+<a class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-wider bg-charcoal text-white hover:bg-stone-800 active:scale-95 transition-all shadow-sm" href="#contact">
+        Contact
+      </a>
+</div>
+</header>
+<!-- END: NavigationBar -->
+<!-- BEGIN: HeroSection -->
+<section class="relative pt-6 pb-12 px-5 max-w-md mx-auto overflow-hidden">
+<!-- Top Micro Bar: Availability & Specialty -->
+<div class="flex items-center justify-between gap-3 mb-6">
+<!-- Live pulse indicator badge -->
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 shadow-xs">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+</span>
+<span class="text-[10px] uppercase font-bold tracking-widest text-amber-900">Available for Q2 Collaborations</span>
+</div>
+<span class="text-[10px] tracking-widest font-semibold uppercase text-stone-400">NYC &amp; Remote</span>
+</div>
+<!-- Script Editorial Lead In -->
+<div class="relative z-10 text-center -mb-6">
+<h2 class="font-serif italic text-4xl sm:text-5xl text-stone-800 tracking-tight font-normal">
+        Hey, <span class="font-light">there</span>
+</h2>
+</div>
+<!-- Centerpiece Portrait with Warm Ambient Glow Halo -->
+<div class="relative mx-auto w-full max-w-[340px] aspect-[4/5] flex items-center justify-center my-1">
+<!-- Warm Champagne Radial Halo matching reference aesthetic -->
+<div class="glow-aura absolute inset-0 -m-8 pointer-events-none z-0 rounded-full scale-110"></div>
+<!-- Portrait Image Frame -->
+<div class="relative z-10 w-full h-full rounded-[2.5rem] overflow-hidden shadow-2xl shadow-stone-300/40 border border-white/60 bg-white">
+<img alt="High-end editorial studio portrait of a creative technologist, warm soft backlight, off-white studio background, minimalist aesthetic, natural lighting, looking into camera, stylish clean aesthetic" class="w-full h-full object-cover object-center grayscale-[12%] contrast-[1.03] transform hover:scale-105 transition-transform duration-700 ease-out" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFvW6lbRzzsI-PCHjKJurvHaRVhSVO40_Eai9Cn7vnFvYJZE0GM_IYEXQx0nCcHKMDStTGKmYxwZuVg_jRfqnpGKkfHG4tOBe5MF_Qz9CSLXW-fz0kaXSammZzMMBx0WZJlGoxY4dC4u6lPuFlcu5n8W5u97Rb57W86Jp0HzzatTviHfNTbVGncsGFtvUENEgifn-nzXi1jHGr4Hsora5m7ODIzwllEBs_Z3OWlwWu_wacvi27lFy6pw"/>
+<!-- Editorial Bottom Gradient Blend -->
+<div class="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+<div class="absolute bottom-4 inset-x-4 flex justify-between items-end text-white/95">
+<span class="text-[9px] uppercase tracking-widest font-medium opacity-80">Aria Chen · Portfolio 2026</span>
+<span class="text-[9px] uppercase tracking-widest font-medium opacity-80">Code &amp; Craft</span>
+</div>
+</div>
+</div>
+<!-- Dramatic Typographic Layering (Hero Name and Identity) -->
+<div class="relative z-20 -mt-8 text-left space-y-4">
+<div>
+<span class="block text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500 mb-1">
+          Identity &amp; Direction
+        </span>
+<h1 class="font-display font-extrabold text-[44px] leading-[0.88] text-charcoal tracking-tighter uppercase">
+          I AM <br/>
+<span class="text-stone-900">ARIA CHEN</span>
+</h1>
+</div>
+<!-- Specialized Badge & Bio snippet -->
+<div class="flex items-start justify-between gap-4 pt-2">
+<p class="text-xs font-medium leading-relaxed text-stone-600 max-w-[210px]">
+          Specialized in WebGL, Creative Engineering, High-Interaction Interfaces &amp; Design Systems.
+        </p>
+<div class="text-right">
+<span class="block font-display font-bold text-xs uppercase tracking-tight text-charcoal">
+            Digital<br/>Product<br/>Engineer
+          </span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="pt-3 flex items-center gap-3">
+<a class="flex-1 py-3 px-6 rounded-full bg-charcoal text-white text-center font-semibold text-xs tracking-wider uppercase hover:bg-stone-800 active:scale-[0.98] transition-all shadow-md" href="#work">
+          Explore Works
+        </a>
+<a class="py-3 px-5 rounded-full border border-stone-300 text-charcoal text-center font-semibold text-xs tracking-wider uppercase bg-white/70 hover:bg-white active:scale-[0.98] transition-all" href="#contact">
+          Get in Touch
+        </a>
+</div>
+</div>
+</section>
+<!-- END: HeroSection -->
+<!-- BEGIN: MetricHighlights -->
+<section class="px-5 py-8 max-w-md mx-auto">
+<div class="grid grid-cols-3 gap-3 p-4 rounded-3xl bg-stone-100/70 border border-stone-200/80">
+<div class="text-center py-1">
+<div class="font-display font-bold text-2xl text-stone-900 tracking-tight">40+</div>
+<div class="text-[9px] uppercase tracking-wider font-semibold text-stone-500 mt-0.5">Shipped Exp.</div>
+</div>
+<div class="text-center py-1 border-x border-stone-200">
+<div class="font-display font-bold text-2xl text-stone-900 tracking-tight">12</div>
+<div class="text-[9px] uppercase tracking-wider font-semibold text-stone-500 mt-0.5">Awwwards / FWA</div>
+</div>
+<div class="text-center py-1">
+<div class="font-display font-bold text-2xl text-stone-900 tracking-tight">98%</div>
+<div class="text-[9px] uppercase tracking-wider font-semibold text-stone-500 mt-0.5">Satisfaction</div>
+</div>
+</div>
+</section>
+<!-- END: MetricHighlights -->
+<!-- BEGIN: FeaturedProjects -->
+<section class="px-5 py-10 max-w-md mx-auto" id="work">
+<!-- Section Header -->
+<div class="flex items-end justify-between mb-8 pb-3 border-b border-stone-200/80">
+<div>
+<span class="text-[10px] tracking-[0.25em] font-bold uppercase text-stone-400 block mb-1">Index / Curated</span>
+<h3 class="font-display font-extrabold text-2xl uppercase tracking-tight text-charcoal">Recent Projects</h3>
+</div>
+<span class="font-serif italic text-base text-stone-500">01 — 04</span>
+</div>
+<div class="space-y-10">
+<!-- Project 1: Kinetic Archive -->
+<article class="group">
+<!-- Visual Mockup Canvas -->
+<div class="relative w-full aspect-[4/3] rounded-3xl bg-stone-900 overflow-hidden shadow-lg mb-4">
+<!-- Graphic representation of spatial installation -->
+<div class="absolute inset-0 bg-gradient-to-tr from-stone-950 via-stone-800 to-amber-950/40 p-6 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="px-2.5 py-1 rounded-full bg-white/10 text-[9px] tracking-wider uppercase font-semibold text-amber-200 border border-white/10 backdrop-blur-sm">
+                WebGL · Three.js
+              </span>
+<span class="text-white/60 font-serif italic text-sm">2025</span>
+</div>
+<div class="relative">
+<div class="w-16 h-16 rounded-full border border-amber-300/30 flex items-center justify-center mb-3 animate-pulse">
+<div class="w-8 h-8 rounded-full bg-amber-400/20 blur-[2px]"></div>
+</div>
+<p class="text-white/80 font-mono text-[10px] tracking-wider uppercase">Spatial Soundscape &amp; Compute Shaders</p>
+</div>
+</div>
+</div>
+<!-- Project Meta & Title -->
+<div class="space-y-2">
+<div class="flex items-baseline justify-between">
+<h4 class="font-display font-bold text-xl uppercase tracking-tight text-stone-900 group-hover:text-amber-700 transition-colors">
+              Kinetic Archive
+            </h4>
+<span class="text-[10px] uppercase font-bold tracking-widest text-stone-400">Audio-Visual</span>
+</div>
+<p class="text-xs text-stone-600 leading-relaxed">
+            Interactive 3D sound installation and spatial WebGL experience created for sound designers in Paris. Real-time fast Fourier transform audio reactivity.
+          </p>
+<div class="pt-2 flex items-center justify-between">
+<div class="flex gap-2">
+<span class="text-[10px] font-medium text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded">GLSL</span>
+<span class="text-[10px] font-medium text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded">Web Audio API</span>
+<span class="text-[10px] font-medium text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded">Vite</span>
+</div>
+<a class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-charcoal hover:underline" href="#">
+              View Case
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</a>
+</div>
+</div>
+</article>
+<div class="subtle-line"></div>
+<!-- Project 2: Monolith OS -->
+<article class="group">
+<!-- Visual Mockup Canvas -->
+<div class="relative w-full aspect-[4/3] rounded-3xl bg-stone-200 overflow-hidden shadow-lg mb-4 border border-stone-300/60">
+<!-- Stylized OS Preview -->
+<div class="absolute inset-0 bg-gradient-to-br from-stone-100 via-stone-200 to-stone-300 p-6 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="px-2.5 py-1 rounded-full bg-black text-[9px] tracking-wider uppercase font-semibold text-white">
+                Design System
+              </span>
+<span class="text-stone-500 font-serif italic text-sm">2024</span>
+</div>
+<div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-stone-200/50">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-2.5 h-2.5 rounded-full bg-stone-400"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-stone-300"></div>
+<span class="text-[9px] font-mono text-stone-500">pipeline.glsl</span>
+</div>
+<p class="text-stone-700 font-mono text-[10px] truncate">&gt; generating 128 dynamic token nodes</p>
+</div>
+</div>
+</div>
+<!-- Project Meta & Title -->
+<div class="space-y-2">
+<div class="flex items-baseline justify-between">
+<h4 class="font-display font-bold text-xl uppercase tracking-tight text-stone-900 group-hover:text-amber-700 transition-colors">
+              Monolith OS
+            </h4>
+<span class="text-[10px] uppercase font-bold tracking-widest text-stone-400">Architecture</span>
+</div>
+<p class="text-xs text-stone-600 leading-relaxed">
+            High-performance generative design system, token compilation engine, and custom WebGPU shader framework deployed across enterprise products.
+          </p>
+<div class="pt-2 flex items-center justify-between">
+<div class="flex gap-2">
+<span class="text-[10px] font-medium text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded">WebGPU</span>
+<span class="text-[10px] font-medium text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded">TypeScript</span>
+<span class="text-[10px] font-medium text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded">Tailwind</span>
+</div>
+<a class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-charcoal hover:underline" href="#">
+              View Case
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</a>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- END: FeaturedProjects -->
+<!-- BEGIN: CapabilitiesAndIndex -->
+<section class="px-5 py-10 max-w-md mx-auto">
+<!-- Section Header -->
+<div class="mb-6">
+<span class="text-[10px] tracking-[0.25em] font-bold uppercase text-stone-400 block mb-1">Index &amp; Pedigree</span>
+<h3 class="font-display font-extrabold text-2xl uppercase tracking-tight text-charcoal">Experience &amp; Skills</h3>
+</div>
+<!-- Editorial Table / Timeline -->
+<div class="divide-y divide-stone-200/80 border-t border-b border-stone-200/80">
+<!-- Row 1 -->
+<div class="py-4 space-y-1.5">
+<div class="flex items-baseline justify-between">
+<h5 class="font-display font-bold text-sm uppercase text-stone-900 tracking-wide">Creative Engineering</h5>
+<span class="text-[11px] font-mono text-stone-400">2024 — Present</span>
+</div>
+<p class="text-xs text-stone-600">Spatial canvas, WebGL 2.0, WebGPU transitions, physical simulation.</p>
+<div class="text-[10px] font-mono uppercase tracking-wider text-stone-500 pt-0.5">
+          Stack: Three.js · GLSL · WebGPU · React Three Fiber
+        </div>
+</div>
+<!-- Row 2 -->
+<div class="py-4 space-y-1.5">
+<div class="flex items-baseline justify-between">
+<h5 class="font-display font-bold text-sm uppercase text-stone-900 tracking-wide">High-Performance Front End</h5>
+<span class="text-[11px] font-mono text-stone-400">2022 — 2024</span>
+</div>
+<p class="text-xs text-stone-600">Micro-animations, low-latency render loops, state hydration &amp; SSR.</p>
+<div class="text-[10px] font-mono uppercase tracking-wider text-stone-500 pt-0.5">
+          Stack: Next.js · TypeScript · Tailwind CSS · GSAP
+        </div>
+</div>
+<!-- Row 3 -->
+<div class="py-4 space-y-1.5">
+<div class="flex items-baseline justify-between">
+<h5 class="font-display font-bold text-sm uppercase text-stone-900 tracking-wide">Design Systems &amp; Art Direction</h5>
+<span class="text-[11px] font-mono text-stone-400">2020 — 2022</span>
+</div>
+<p class="text-xs text-stone-600">Editorial typography, layout foundations, accessibility, generative brand toolkits.</p>
+<div class="text-[10px] font-mono uppercase tracking-wider text-stone-500 pt-0.5">
+          Stack: Figma · Tokens Studio · Radix · Storybook
+        </div>
+</div>
+</div>
+</section>
+<!-- END: CapabilitiesAndIndex -->
+<!-- BEGIN: EditorialQuote -->
+<section class="px-5 py-10 max-w-md mx-auto text-center">
+<div class="p-8 rounded-3xl bg-gradient-to-b from-amber-100/30 to-amber-50/10 border border-amber-200/40">
+<span class="font-serif italic text-3xl sm:text-4xl text-stone-800 leading-snug block mb-4">
+        “Bridging computational rigor with tactile, emotional digital craft.”
+      </span>
+<p class="text-[10px] tracking-widest font-bold uppercase text-stone-400">
+        Aria Chen — Studio Manifesto
+      </p>
+</div>
+</section>
+<!-- END: EditorialQuote -->
+<!-- BEGIN: ContactFooter -->
+<footer class="px-5 pt-8 pb-12 max-w-md mx-auto text-center" id="contact">
+<div class="space-y-6">
+<div>
+<span class="text-[10px] tracking-[0.25em] font-bold uppercase text-stone-400 block mb-2">Initiate Contact</span>
+<h2 class="font-display font-extrabold text-3xl uppercase tracking-tight text-charcoal">
+          Let’s Build Something Unforgettable
+        </h2>
+</div>
+<p class="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
+        Now booking select creative developer contracts, spatial web experiences, and architecture advisory for late 2026.
+      </p>
+<div class="pt-2">
+<a class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-charcoal text-white font-bold text-xs uppercase tracking-widest shadow-xl hover:bg-stone-800 active:scale-95 transition-all" href="mailto:hello@aria-chen.design">
+<span>hello@aria-chen.design</span>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</a>
+</div>
+<!-- Footer Micro Nav -->
+<div class="pt-10 flex items-center justify-between text-[11px] text-stone-500 border-t border-stone-200/80">
+<span>© 2026 Aria Chen</span>
+<div class="flex gap-4 font-semibold uppercase tracking-wider text-[10px]">
+<a class="hover:text-charcoal transition-colors" href="#">Twitter / X</a>
+<a class="hover:text-charcoal transition-colors" href="#">GitHub</a>
+<a class="hover:text-charcoal transition-colors" href="#">LinkedIn</a>
+</div>
+</div>
+</div>
+</footer>
+<!-- END: ContactFooter -->
+</body></html>
