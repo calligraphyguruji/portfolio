@@ -1,8 +1,15 @@
 import React from 'react';
-import { personalInfo, educationInfo, dsaRepo } from '../../data/portfolioData';
-import { GraduationCap, MapPin, Terminal, Award } from 'lucide-react';
+import { personalInfo, educationInfo } from '../../data/portfolioData';
+import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
+import {
+  GraduationCap,
+  Award,
+  Terminal,
+  MapPin,
+} from 'lucide-react';
 
 export const About: React.FC = () => {
+  const leetcodeStats = useLeetCodeStats();
   return (
     <section id="about" className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
       <div className="editorial-panel p-6 sm:p-10 lg:p-14 relative overflow-hidden">
@@ -103,7 +110,7 @@ export const About: React.FC = () => {
                     DSA Problem Solving
                   </span>
                   <span className="text-sm font-semibold text-[#171717] dark:text-white block">
-                    {dsaRepo.problemsSolved} Problems Solved
+                    {leetcodeStats.totalSolved} Problems Solved
                   </span>
                   <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
                     Modern C++, STL, Complexity Analysis

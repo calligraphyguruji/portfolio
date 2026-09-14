@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Project } from '../../types';
 import { projects } from '../../data/portfolioData';
+import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -25,6 +26,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   onBack,
   onSelectProject,
 }) => {
+  const leetcodeStats = useLeetCodeStats();
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [project.id]);
@@ -135,19 +137,26 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
         {/* Stats Matrix */}
         {project.stats && project.stats.length > 0 && (
           <div className="relative z-10 py-8 border-b border-black/[0.06] dark:border-white/[0.08] grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-            {project.stats.map((st) => (
-              <div
-                key={st.label}
-                className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.06]"
-              >
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-1">
-                  {st.label}
-                </span>
-                <span className="text-sm sm:text-base font-bold text-[#171717] dark:text-white">
-                  {st.value}
-                </span>
-              </div>
-            ))}
+            {project.stats.map((st) => {
+              const displayVal =
+                project.id === 'leetcode-solutions' && st.label === 'Problems Solved'
+                  ? `${leetcodeStats.totalSolved}`
+                  : st.value;
+
+              return (
+                <div
+                  key={st.label}
+                  className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.06]"
+                >
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-1">
+                    {st.label}
+                  </span>
+                  <span className="text-sm sm:text-base font-bold text-[#171717] dark:text-white">
+                    {displayVal}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { educationInfo, dsaRepo } from '../../data/portfolioData';
+import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
 import { Briefcase, GraduationCap, Code2, ArrowUpRight, ShieldCheck } from 'lucide-react';
 
 export const Experience: React.FC = () => {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const leetcodeStats = useLeetCodeStats();
 
   const experienceRows = [
     {
@@ -32,11 +34,11 @@ export const Experience: React.FC = () => {
       id: 'leetcode',
       title: 'LeetCode Problem Solving',
       role: 'C++ Systems & Algorithmic Practice',
-      period: `${dsaRepo.problemsSolved} Solved`,
+      period: `${leetcodeStats.totalSolved} Solved`,
       type: 'Algorithmic Track',
       description:
         'Consistent problem solving across arrays, two pointers, trees, binary search, graphs (BFS/DFS), and dynamic programming in C++.',
-      tag: 'Continuous Practice',
+      tag: 'Live Synced',
       icon: Code2,
     },
   ];

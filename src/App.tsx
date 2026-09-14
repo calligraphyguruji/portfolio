@@ -6,6 +6,7 @@ import { Hero } from './components/sections/Hero';
 import { Projects } from './components/sections/Projects';
 import { WhatIBuild } from './components/sections/WhatIBuild';
 import { Skills } from './components/sections/Skills';
+import { ProblemSolving } from './components/sections/ProblemSolving';
 import { Experience } from './components/sections/Experience';
 import { About } from './components/sections/About';
 import { Contact } from './components/sections/Contact';
@@ -88,6 +89,7 @@ export default function App() {
             <Projects onSelectProject={handleSelectProject} />
             <WhatIBuild />
             <Skills />
+            <ProblemSolving />
             <Experience />
             <About />
             <Contact />

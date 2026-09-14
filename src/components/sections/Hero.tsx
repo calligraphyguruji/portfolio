@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { personalInfo, educationInfo, dsaRepo } from '../../data/portfolioData';
+import { personalInfo, educationInfo } from '../../data/portfolioData';
+import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
 import { ArrowUpRight, Github, Linkedin, Code, Mail } from 'lucide-react';
 
 export const Hero: React.FC = () => {
@@ -7,6 +8,7 @@ export const Hero: React.FC = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const leetcodeStats = useLeetCodeStats();
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -144,7 +146,7 @@ export const Hero: React.FC = () => {
               className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Code className="w-4 h-4 text-amber-500" />
-              <span>LeetCode [150+]</span>
+              <span>LeetCode [{leetcodeStats.totalSolved}]</span>
             </a>
 
             <a
@@ -180,7 +182,7 @@ export const Hero: React.FC = () => {
               Algorithmic Problem Solving
             </span>
             <span className="text-xs sm:text-sm font-semibold text-[#171717] dark:text-white">
-              {dsaRepo.problemsSolved} LeetCode Problems Solved in C++
+              {leetcodeStats.totalSolved} LeetCode Problems Solved in C++
             </span>
           </div>
         </div>
