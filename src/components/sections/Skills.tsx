@@ -2,13 +2,13 @@ import React from 'react';
 import { groupedSkills } from '../../data/portfolioData';
 
 export const Skills: React.FC = () => {
-  const skillGroups = [
+  const skillGroups: { title: string; items: string[] }[] = [
     { title: 'LANGUAGES', items: groupedSkills.LANGUAGES },
     { title: 'FRONTEND', items: groupedSkills.FRONTEND },
-    { title: 'BACKEND', items: groupedSkills.BACKEND },
-    { title: 'DATABASE', items: groupedSkills.DATABASE },
-    { title: 'ENGINEERING', items: groupedSkills.ENGINEERING },
-    { title: 'AI / ML', items: groupedSkills['AI / ML'] },
+    { title: 'BACKEND & APIS', items: groupedSkills.BACKEND },
+    { title: 'DATABASES', items: groupedSkills.DATABASE },
+    { title: 'AI / ML & DATA', items: groupedSkills['AI / ML & DATA'] },
+    { title: 'TOOLS & PLATFORMS', items: groupedSkills['TOOLS & PLATFORMS'] },
   ];
 
   return (
@@ -41,7 +41,7 @@ export const Skills: React.FC = () => {
               </span>
 
               <div className="text-base sm:text-lg font-sans font-medium text-[#171717] dark:text-white leading-relaxed">
-                {group.items.map((skill, index) => (
+                {group.items.map((skill: string, index: number) => (
                   <React.Fragment key={skill}>
                     <span className="inline-block hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors">
                       {skill}

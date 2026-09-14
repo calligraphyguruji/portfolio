@@ -35,11 +35,18 @@ export interface Project {
   title: string;
   tagline: string;
   description: string;
+  longDescription?: string;
+  problemStatement?: string;
+  solution?: string;
+  category?: string;
   tier: 'flagship' | 'core';
   technologies: string[];
   features?: string[];
+  architecture?: string[];
+  stats?: { label: string; value: string }[];
   liveUrl?: string;
   githubUrl: string;
+  badge?: string;
 }
 
 export interface DsaTopic {
