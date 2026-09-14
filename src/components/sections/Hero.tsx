@@ -1,69 +1,25 @@
 import React, { useState } from 'react';
-import { personalInfo } from '../../data/portfolioData';
-import { ArrowRight, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { personalInfo, educationInfo, dsaRepo } from '../../data/portfolioData';
+import { ArrowUpRight, Github, Linkedin, Code, Mail } from 'lucide-react';
 
 export const Hero: React.FC = () => {
   const [imgSrc, setImgSrc] = useState('/images/potrait.png');
 
   return (
-    <section className="relative pt-8 sm:pt-14 pb-16 px-5 sm:px-8 max-w-5xl mx-auto">
-      {/* Editorial Identity & Typography */}
-      <div className="text-center space-y-5 max-w-3xl mx-auto">
-        {/* Availability Micro Tag */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F3F3F3] dark:bg-[#161B22] border border-[#E5E7EB] dark:border-[#262626] text-xs text-[#5E5E5E] dark:text-slate-300 font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-          <span>NIET Computer Science &bull; Class of 2029</span>
+    <section id="hero" className="max-w-6xl mx-auto px-4 sm:px-8 pt-4 pb-12">
+      {/* Grand Editorial Frame matching Screenshot 1 */}
+      <div className="editorial-panel p-6 sm:p-10 lg:p-14 relative overflow-hidden">
+        {/* Layer 1: Giant Editorial Headline (Outlined First Name + Filled Last Name) */}
+        <div className="w-full text-center select-none pt-2 sm:pt-4">
+          <h1 className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-8 text-5xl sm:text-7xl md:text-8xl lg:text-[9.5rem] xl:text-[10.5rem] font-extrabold uppercase tracking-tight leading-[0.88]">
+            <span className="text-stroke-outline">AMAN</span>
+            <span className="text-[#171717] dark:text-white">MISHRA</span>
+          </h1>
         </div>
 
-        {/* Dramatic Size Jump Headline */}
-        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-sans font-normal tracking-[-0.03em] leading-[0.98] text-[#171717] dark:text-white uppercase">
-          Aman Mishra
-        </h1>
-
-        {/* Quiet Editorial Subtitle */}
-        <p className="text-sm sm:text-base md:text-lg text-[#5E5E5E] dark:text-slate-300 font-normal leading-[1.60] max-w-2xl mx-auto">
-          Computer Science Engineering student at{' '}
-          <strong className="font-medium text-[#171717] dark:text-white">
-            {personalInfo.college}
-          </strong>
-          . Building high-performance systems in C++, scalable full-stack web applications, and AI/ML architectures.
-        </p>
-
-        {/* Restrained Interactive Controls */}
-        <div className="pt-2 flex items-center justify-center gap-6">
-          <a
-            href="#projects"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#171717] text-white hover:bg-[#222222] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs font-semibold uppercase tracking-wider transition-all shadow-xs active:scale-95"
-          >
-            <span>Explore Works</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </a>
-          <a
-            href="#contact"
-            className="text-xs font-medium uppercase tracking-wider text-[#171717] dark:text-slate-300 underline underline-offset-4 decoration-1 hover:opacity-75 transition-opacity"
-          >
-            Get in touch
-          </a>
-        </div>
-      </div>
-
-      {/* The Centerpiece: Compound Product Preview Card with 4-layer atmospheric shadow */}
-      <div className="mt-12 sm:mt-16 max-w-3xl mx-auto">
-        <div className="rounded-[20px] bg-white dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626] compound-shadow p-3 sm:p-5 transition-all duration-300">
-          {/* Subtle Card Header */}
-          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#E5E7EB] dark:border-[#262626] px-1 text-xs text-[#6F6F6F] dark:text-slate-400 font-mono">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#171717] dark:bg-slate-300" />
-              <span>profile_preview.sys</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Verified Candidate</span>
-            </div>
-          </div>
-
-          {/* Framed Visual Portrait & Details */}
-          <div className="relative rounded-[16px] overflow-hidden bg-[#F3F3F3] dark:bg-[#161B22] border border-[#E5E7EB] dark:border-[#262626] mt-3 sm:mt-4 aspect-[16/10] sm:aspect-[16/9] flex items-center justify-center group">
+        {/* Layer 2: Centerpiece Portrait overlapping typography */}
+        <div className="relative -mt-6 sm:-mt-12 md:-mt-16 lg:-mt-24 flex justify-center z-10">
+          <div className="relative w-[280px] sm:w-[360px] md:w-[420px] lg:w-[460px] aspect-[4/5] rounded-[28px] sm:rounded-[36px] overflow-hidden bg-gradient-to-b from-stone-100 to-stone-200 dark:from-slate-800 dark:to-slate-900 border border-black/[0.08] dark:border-white/[0.15] shadow-2xl shadow-black/10 dark:shadow-black/70 group">
             <img
               src={imgSrc}
               onError={() => {
@@ -72,85 +28,117 @@ export const Hero: React.FC = () => {
                 );
               }}
               alt="Aman Mishra"
-              className="w-full h-full object-cover object-top filter grayscale contrast-[1.05] group-hover:grayscale-0 transition-all duration-700 ease-out"
+              className="w-full h-full object-cover object-top filter grayscale contrast-[1.08] brightness-[0.98] group-hover:scale-102 transition-transform duration-700 ease-out"
             />
+            {/* Subtle atmospheric vignette gradient */}
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+          </div>
+        </div>
 
-            {/* Bottom Overlay Label */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end justify-between text-white">
-              <div>
-                <span className="text-[11px] font-mono tracking-wider uppercase text-slate-300 block">
-                  Candidate Dossier
-                </span>
-                <span className="text-base sm:text-lg font-medium tracking-tight block">
-                  Aman Mishra &bull; Software Developer
-                </span>
-              </div>
+        {/* Layer 3: Lower Left Identity & Lower Right Vertical Social Pills */}
+        <div className="w-full relative z-20 mt-8 sm:mt-10 lg:-mt-28 flex flex-col lg:flex-row items-center lg:items-end justify-between gap-8 pt-4">
+          {/* Left Column: Role & Mission */}
+          <div className="space-y-4 text-center lg:text-left max-w-md">
+            <div>
+              <span className="text-[11px] font-mono font-semibold uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-1">
+                Engineering &amp; Systems
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-sans font-bold tracking-tight text-[#171717] dark:text-white">
+                Software Developer
+              </h2>
+              <p className="text-xs sm:text-sm font-medium text-[#5E5E5E] dark:text-slate-300 mt-1">
+                CSE Student @ {personalInfo.college}
+              </p>
+            </div>
+
+            <p className="text-xs sm:text-sm text-[#5E5E5E] dark:text-slate-400 leading-relaxed">
+              &ldquo;{personalInfo.summary}&rdquo;
+            </p>
+
+            <div className="pt-2 flex items-center justify-center lg:justify-start gap-4">
               <a
-                href={personalInfo.socials.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-mono tracking-wide text-white border border-white/20 transition-colors"
+                href="#work"
+                className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95"
               >
-                <span>github/calligraphyguruji</span>
-                <ArrowUpRight className="w-3 h-3" />
+                <span>View My Work</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="#contact"
+                className="text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white underline underline-offset-4 decoration-1 hover:opacity-75 transition-opacity"
+              >
+                Let&apos;s Connect &rarr;
               </a>
             </div>
           </div>
 
-          {/* Footer Metadata Grid inside Preview Card */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 sm:pt-5">
-            <div className="p-3 rounded-[12px] bg-[#F3F3F3] dark:bg-[#161B22] border border-[#E5E7EB] dark:border-[#262626]">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#A0A0A0] dark:text-slate-400 block mb-0.5">
-                Institution
-              </span>
-              <span className="text-xs font-medium text-[#171717] dark:text-white block truncate">
-                NIET Greater Noida
-              </span>
-            </div>
-            <div className="p-3 rounded-[12px] bg-[#F3F3F3] dark:bg-[#161B22] border border-[#E5E7EB] dark:border-[#262626]">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#A0A0A0] dark:text-slate-400 block mb-0.5">
-                Core Specialization
-              </span>
-              <span className="text-xs font-medium text-[#171717] dark:text-white block truncate">
-                C++ Systems &bull; Full-Stack
-              </span>
-            </div>
-            <div className="p-3 rounded-[12px] bg-[#F3F3F3] dark:bg-[#161B22] border border-[#E5E7EB] dark:border-[#262626]">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#A0A0A0] dark:text-slate-400 block mb-0.5">
-                Status
-              </span>
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 block truncate">
-                Open to Internships
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+          {/* Right Column: Vertical Stack of Compact Rounded-Full Social Pills matching Screenshot 1 */}
+          <div className="flex flex-row lg:flex-col flex-wrap items-center justify-center lg:items-end gap-2.5 w-full lg:w-auto">
+            <a
+              href={personalInfo.socials.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Github className="w-4 h-4 text-[#171717] dark:text-white" />
+              <span>GitHub</span>
+            </a>
 
-      {/* Metrics Highlights Bar */}
-      <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 rounded-[20px] bg-[#F3F3F3] dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626]">
-        <div className="text-center py-1">
-          <div className="text-3xl sm:text-4xl font-sans font-normal text-[#171717] dark:text-white tracking-tight">
-            2029
-          </div>
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 mt-1">
-            B.Tech CSE Class (NIET)
+            <a
+              href={personalInfo.socials.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Linkedin className="w-4 h-4 text-[#0A66C2]" />
+              <span>LinkedIn</span>
+            </a>
+
+            <a
+              href={personalInfo.socials.leetcode}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Code className="w-4 h-4 text-amber-500" />
+              <span>LeetCode [150+]</span>
+            </a>
+
+            <a
+              href={`mailto:${personalInfo.socials.email}`}
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Mail className="w-4 h-4 text-[#171717] dark:text-white" />
+              <span>Email</span>
+            </a>
           </div>
         </div>
-        <div className="text-center py-1 sm:border-x border-[#E5E7EB] dark:border-[#262626]">
-          <div className="text-3xl sm:text-4xl font-sans font-normal text-[#171717] dark:text-white tracking-tight">
-            4+
+
+        {/* Bottom Metadata Ribbon inside Hero Panel */}
+        <div className="mt-12 pt-6 border-t border-black/[0.06] dark:border-white/[0.08] grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+              Academic Standing
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-[#171717] dark:text-white">
+              {educationInfo.degree} &bull; CGPA: {educationInfo.cgpa}
+            </span>
           </div>
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 mt-1">
-            Engineered Projects
+          <div className="sm:border-x border-black/[0.06] dark:border-white/[0.08]">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+              Institution
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-[#171717] dark:text-white">
+              {educationInfo.institution} (Class of {educationInfo.timeline})
+            </span>
           </div>
-        </div>
-        <div className="text-center py-1">
-          <div className="text-3xl sm:text-4xl font-sans font-normal text-[#171717] dark:text-white tracking-tight">
-            11+
-          </div>
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 mt-1">
-            Algorithmic DSA Topics
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+              Algorithmic Problem Solving
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-[#171717] dark:text-white">
+              {dsaRepo.problemsSolved} LeetCode Problems Solved in C++
+            </span>
           </div>
         </div>
       </div>

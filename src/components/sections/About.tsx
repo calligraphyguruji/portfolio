@@ -1,89 +1,133 @@
 import React from 'react';
-import { personalInfo } from '../../data/portfolioData';
-import { SectionHeading } from '../ui/SectionHeading';
-import { GraduationCap, MapPin, Code2 } from 'lucide-react';
+import { personalInfo, educationInfo, dsaRepo } from '../../data/portfolioData';
+import { GraduationCap, MapPin, Terminal, Award } from 'lucide-react';
 
 export const About: React.FC = () => {
   return (
-    <section id="about" className="py-14 sm:py-16 px-5 sm:px-8 max-w-5xl mx-auto">
-      <SectionHeading
-        eyebrow="01 // Background & Profile"
-        title="About Me"
-        number="01"
-        description="A student of computer science, driven by algorithmic logic, backend efficiency, and practical engineering."
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Summary & Journal Note */}
-        <div className="lg:col-span-7 space-y-6">
-          <p className="text-sm sm:text-base text-[#5E5E5E] dark:text-slate-300 leading-[1.65] font-normal">
-            {personalInfo.summary}
-          </p>
-
-          {/* Compound Editorial Journal Quote */}
-          <div className="p-6 rounded-[20px] bg-[#F3F3F3] dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626] space-y-3">
-            <blockquote className="text-lg sm:text-xl font-sans font-normal text-[#171717] dark:text-white leading-snug">
-              &ldquo;Building scalable, user-focused applications backed by computational rigor.&rdquo;
-            </blockquote>
-            <span className="text-[11px] font-mono tracking-widest uppercase text-[#6F6F6F] dark:text-slate-400 block">
-              Aman Mishra &bull; Engineering Focus
-            </span>
-          </div>
+    <section id="about" className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
+      <div className="editorial-panel p-6 sm:p-10 lg:p-14 relative overflow-hidden">
+        {/* Watermark */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-7xl sm:text-9xl md:text-[11rem] font-extrabold uppercase tracking-widest text-black/[0.03] dark:text-white/[0.03] select-none pointer-events-none whitespace-nowrap">
+          PROFILE
         </div>
 
-        {/* Right Column: Academic & Foundational Attributes */}
-        <div className="lg:col-span-5">
-          <div className="p-6 rounded-[20px] bg-white dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626] space-y-5 shadow-xs">
-            <h3 className="text-xs uppercase font-mono font-medium tracking-widest text-[#6F6F6F] dark:text-slate-400">
-              Academic Grounding
-            </h3>
+        {/* Section Header */}
+        <div className="relative z-10 pb-8 border-b border-black/[0.06] dark:border-white/[0.08]">
+          <span className="text-xs font-mono font-medium tracking-widest uppercase text-[#8E8E93] dark:text-slate-400 block mb-1">
+            /ABOUT ME
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-sans font-bold tracking-tight text-[#171717] dark:text-white uppercase">
+            Engineering Foundations
+          </h2>
+        </div>
 
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-full bg-[#F3F3F3] dark:bg-[#161B22] text-[#171717] dark:text-white border border-[#E5E7EB] dark:border-[#262626] shrink-0">
-                <GraduationCap className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-[#171717] dark:text-white block">
-                  {personalInfo.degree}
-                </span>
-                <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
-                  {personalInfo.college}
-                </span>
-                <span className="text-[11px] font-mono text-[#6F6F6F] dark:text-slate-400 mt-0.5 block">
-                  Class of {personalInfo.graduationYear}
-                </span>
-              </div>
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 pt-8 items-start">
+          {/* Left Column: Narrative & Quote */}
+          <div className="lg:col-span-7 space-y-6">
+            <p className="text-sm sm:text-base md:text-lg text-[#5E5E5E] dark:text-slate-300 leading-relaxed font-normal">
+              I am a second-year Computer Science Engineering student at{' '}
+              <strong className="text-[#171717] dark:text-white font-semibold">
+                NIET Greater Noida
+              </strong>
+              , maintaining a current cumulative GPA of{' '}
+              <strong className="text-[#171717] dark:text-white font-semibold">
+                {educationInfo.cgpa}
+              </strong>
+              . My engineering journey is anchored in computer science fundamentals: modern C++, data structures, object-oriented systems, and end-to-end full-stack web architectures.
+            </p>
+
+            <p className="text-sm sm:text-base text-[#5E5E5E] dark:text-slate-400 leading-relaxed font-normal">
+              Beyond theory, I focus on shipping real software. From engineering our full-stack employment platform{' '}
+              <strong className="text-[#171717] dark:text-white font-medium">KaushalNexus</strong> to completing a verified industry internship in AI/ML pipelines at{' '}
+              <strong className="text-[#171717] dark:text-white font-medium">Codomax Solution</strong>, I strive to write code that is clean, resilient, and computationally efficient.
+            </p>
+
+            {/* Editorial Manifesto Quote */}
+            <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border-l-4 border-[#171717] dark:border-white space-y-2">
+              <blockquote className="text-lg sm:text-xl font-sans font-medium text-[#171717] dark:text-white leading-snug">
+                &ldquo;Rigorous computational thinking, disciplined DSA problem-solving, and practical user-facing software.&rdquo;
+              </blockquote>
+              <span className="text-xs font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block">
+                Aman Mishra &bull; CSE &bull; Class of 2029
+              </span>
             </div>
+          </div>
 
-            <div className="border-t border-[#E5E7EB] dark:border-[#262626]"></div>
-
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-full bg-[#F3F3F3] dark:bg-[#161B22] text-[#171717] dark:text-white border border-[#E5E7EB] dark:border-[#262626] shrink-0">
-                <MapPin className="w-4 h-4" />
+          {/* Right Column: Academic & Attribute Highlights */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-4">
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+                    Degree &amp; Institution
+                  </span>
+                  <span className="text-sm font-semibold text-[#171717] dark:text-white block">
+                    {educationInfo.degree}
+                  </span>
+                  <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
+                    {educationInfo.institution} (Expected {educationInfo.timeline})
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-[#171717] dark:text-white block">
-                  Location
-                </span>
-                <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
-                  {personalInfo.location}
-                </span>
-              </div>
-            </div>
 
-            <div className="border-t border-[#E5E7EB] dark:border-[#262626]"></div>
+              <div className="border-t border-black/[0.06] dark:border-white/[0.08]" />
 
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-full bg-[#F3F3F3] dark:bg-[#161B22] text-[#171717] dark:text-white border border-[#E5E7EB] dark:border-[#262626] shrink-0">
-                <Code2 className="w-4 h-4" />
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                  <Award className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+                    Academic Merit
+                  </span>
+                  <span className="text-sm font-semibold text-[#171717] dark:text-white block">
+                    Cumulative GPA: {educationInfo.cgpa} / 10
+                  </span>
+                  <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
+                    Top academic percentile in CSE department
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-[#171717] dark:text-white block">
-                  Primary Vectors
-                </span>
-                <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
-                  C++, Data Structures, Full-Stack Architecture, AI/ML
-                </span>
+
+              <div className="border-t border-black/[0.06] dark:border-white/[0.08]" />
+
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                  <Terminal className="w-5 h-5 text-indigo-500" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+                    DSA Problem Solving
+                  </span>
+                  <span className="text-sm font-semibold text-[#171717] dark:text-white block">
+                    {dsaRepo.problemsSolved} Problems Solved
+                  </span>
+                  <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
+                    Modern C++, STL, Complexity Analysis
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t border-black/[0.06] dark:border-white/[0.08]" />
+
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                  <MapPin className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block mb-0.5">
+                    Location
+                  </span>
+                  <span className="text-sm font-semibold text-[#171717] dark:text-white block">
+                    {personalInfo.location}
+                  </span>
+                  <span className="text-xs text-[#5E5E5E] dark:text-slate-400 block">
+                    Open to on-site (NCR/Bengaluru) &amp; remote roles
+                  </span>
+                </div>
               </div>
             </div>
           </div>

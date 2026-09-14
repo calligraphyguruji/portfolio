@@ -3,18 +3,16 @@ import { Analytics } from '@vercel/analytics/react';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { Hero } from './components/sections/Hero';
-import { About } from './components/sections/About';
+import { Projects } from './components/sections/Projects';
+import { WhatIBuild } from './components/sections/WhatIBuild';
 import { Skills } from './components/sections/Skills';
 import { Experience } from './components/sections/Experience';
-import { Projects } from './components/sections/Projects';
-import { ProblemSolving } from './components/sections/ProblemSolving';
-import { Learning } from './components/sections/Learning';
+import { About } from './components/sections/About';
 import { Contact } from './components/sections/Contact';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('theme');
-    // Default to Light mode matching Compound ink-on-paper style reference
     return saved ? saved === 'dark' : false;
   });
 
@@ -29,16 +27,15 @@ export default function App() {
   }, [darkMode]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0B0F17] text-[#171717] dark:text-[#F8FAFC] flex flex-col font-sans transition-colors duration-200">
+    <div className="atmospheric-bg min-h-screen text-[#171717] dark:text-[#F8FAFC] flex flex-col font-sans transition-colors duration-300 selection:bg-[#171717] selection:text-white dark:selection:bg-white dark:selection:text-[#171717]">
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-      <main className="flex-grow space-y-6 sm:space-y-10">
+      <main className="flex-grow space-y-4 sm:space-y-8">
         <Hero />
-        <About />
+        <Projects />
+        <WhatIBuild />
         <Skills />
         <Experience />
-        <Projects />
-        <ProblemSolving />
-        <Learning />
+        <About />
         <Contact />
       </main>
       <Footer />

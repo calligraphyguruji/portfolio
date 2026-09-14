@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { personalInfo } from '../../data/portfolioData';
-import { SectionHeading } from '../ui/SectionHeading';
+import { sendEmail } from '../../services/emailService';
 import {
-  Mail,
+  ArrowUpRight,
+  Github,
   Linkedin,
-  MapPin,
-  Clock,
+  Code,
+  Mail,
   Send,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Github,
 } from 'lucide-react';
-
-import { sendEmail } from '../../services/emailService';
 
 interface FormData {
   name: string;
@@ -23,6 +21,7 @@ interface FormData {
 }
 
 export const Contact: React.FC = () => {
+  const [showForm, setShowForm] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -68,251 +67,232 @@ export const Contact: React.FC = () => {
     }
   };
 
-
   return (
-    <section id="contact" className="py-14 sm:py-20 px-5 sm:px-8 max-w-6xl mx-auto">
-      {/* Section Divider & Header */}
-      <SectionHeading
-        eyebrow="07 // Direct Dispatch"
-        title="Let's Create Something Amazing!"
-        number="07"
-        description="Have a project in mind? Let's discuss how we can work together to bring your ideas to life."
-        align="center"
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-8">
-        {/* Left Column: "Get in Touch" (Matching Reference Screenshot) */}
-        <div className="lg:col-span-5 space-y-4">
-          <h3 className="text-xl sm:text-2xl font-sans font-medium text-[#171717] dark:text-white">
-            Get in Touch
-          </h3>
-
-          <div className="rounded-[20px] bg-white dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626] p-6 sm:p-7 space-y-6 shadow-xs">
-            {/* Email item */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/40 shrink-0">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 block">
-                  Email
-                </span>
-                <a
-                  href={`mailto:${personalInfo.socials.email}`}
-                  className="text-sm font-medium text-[#171717] dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block truncate"
-                >
-                  {personalInfo.socials.email}
-                </a>
-              </div>
-            </div>
-
-            {/* GitHub item */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/40 shrink-0">
-                <Github className="w-5 h-5" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 block">
-                  GitHub
-                </span>
-                <a
-                  href={personalInfo.socials.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-[#171717] dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block truncate"
-                >
-                  github.com/calligraphyguruji
-                </a>
-              </div>
-            </div>
-
-            {/* LinkedIn item */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/40 shrink-0">
-                <Linkedin className="w-5 h-5" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 block">
-                  LinkedIn
-                </span>
-                <a
-                  href={personalInfo.socials.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-[#171717] dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block truncate"
-                >
-                  linkedin.com/in/calligraphygurji
-                </a>
-              </div>
-            </div>
-
-            {/* Location item */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/40 shrink-0">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 block">
-                  Location
-                </span>
-                <span className="text-sm font-medium text-[#171717] dark:text-white block">
-                  {personalInfo.location}
-                </span>
-              </div>
-            </div>
-
-            {/* Working Hours / Availability item */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/40 shrink-0">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-[#6F6F6F] dark:text-slate-400 block">
-                  Working Hours
-                </span>
-                <span className="text-sm font-medium text-[#171717] dark:text-white block">
-                  Mon &ndash; Fri, 9:00 &ndash; 18:00 (IST)
-                </span>
-              </div>
-            </div>
-          </div>
+    <section id="contact" className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
+      {/* Editorial Panel matching Screenshot 5 */}
+      <div className="editorial-panel p-8 sm:p-14 lg:p-20 text-center relative overflow-hidden">
+        {/* Faint Watermark Typography */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-7xl sm:text-9xl md:text-[11rem] font-extrabold uppercase tracking-widest text-black/[0.03] dark:text-white/[0.03] select-none pointer-events-none whitespace-nowrap">
+          CONNECT
         </div>
 
-        {/* Right Column: "Send a Message" Form (Matching Reference Screenshot) */}
-        <div className="lg:col-span-7 space-y-4">
-          <h3 className="text-xl sm:text-2xl font-sans font-medium text-[#171717] dark:text-white">
-            Send a Message
-          </h3>
+        <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
+          {/* Centered Availability Status Pill matching Screenshot 5 */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] shadow-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-mono font-medium tracking-wider uppercase text-[#171717] dark:text-slate-200">
+              Available for New Projects &amp; Internships
+            </span>
+          </div>
 
-          <div className="rounded-[20px] bg-white dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626] p-6 sm:p-8 shadow-xs">
-            {status === 'success' ? (
-              <div className="py-8 text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <h4 className="text-lg font-medium text-[#171717] dark:text-white">
-                  Message Sent!
-                </h4>
-                <p className="text-sm text-[#5E5E5E] dark:text-slate-300 max-w-md mx-auto leading-relaxed">
-                  {statusMessage}
-                </p>
-                <button
-                  onClick={() => setStatus('idle')}
-                  className="mt-2 px-6 py-2.5 rounded-xl bg-[#171717] text-white hover:bg-[#222222] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs font-semibold uppercase tracking-wider transition-all"
-                >
-                  Send Another Message
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 text-left">
-                {status === 'error' && (
-                  <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{statusMessage}</span>
+          {/* Giant Editorial Headline matching Screenshot 5 */}
+          <h2 className="text-4xl sm:text-6xl md:text-7xl font-sans font-extrabold uppercase tracking-tight text-[#171717] dark:text-white leading-[1.02]">
+            HAVE A PROJECT OR OPPORTUNITY IN MIND?
+          </h2>
+
+          {/* Supporting Text */}
+          <p className="text-sm sm:text-base text-[#5E5E5E] dark:text-slate-300 max-w-xl mx-auto leading-relaxed font-normal">
+            Interested in software development, internships, collaborations, or building something useful? Let&apos;s connect.
+          </p>
+
+          {/* Primary Action Button */}
+          <div className="pt-2">
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              <span>{showForm ? 'Write Message Below' : 'Open Message Form'}</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Interactive Message Form (Clean in-page, zero external redirects) */}
+          {showForm && (
+            <div className="pt-8 max-w-xl mx-auto text-left">
+              <div className="p-6 sm:p-8 rounded-3xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] shadow-xs">
+                {status === 'success' ? (
+                  <div className="py-6 text-center space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-lg font-medium text-[#171717] dark:text-white">
+                      Message Dispatched!
+                    </h4>
+                    <p className="text-xs sm:text-sm text-[#5E5E5E] dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+                      {statusMessage}
+                    </p>
+                    <button
+                      onClick={() => setStatus('idle')}
+                      className="px-5 py-2 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] text-xs font-medium uppercase tracking-wider transition-all"
+                    >
+                      Send Another
+                    </button>
                   </div>
-                )}
-
-                {/* Name field */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-[#171717] dark:text-slate-200"
-                  >
-                    Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Your name"
-                    className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] dark:border-[#262626] bg-white dark:bg-[#161B22] text-[#171717] dark:text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-
-                {/* Email field */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-[#171717] dark:text-slate-200"
-                  >
-                    Email <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="your.email@example.com"
-                    className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] dark:border-[#262626] bg-white dark:bg-[#161B22] text-[#171717] dark:text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-
-                {/* Subject field */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="subject"
-                    className="block text-sm font-medium text-[#171717] dark:text-slate-200"
-                  >
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    placeholder="Project inquiry / Opportunity"
-                    className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] dark:border-[#262626] bg-white dark:bg-[#161B22] text-[#171717] dark:text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-
-                {/* Message field */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="message"
-                    className="block text-sm font-medium text-[#171717] dark:text-slate-200"
-                  >
-                    Message <span className="text-rose-500">*</span>
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    required
-                    rows={4}
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Tell me about your project, timeline, or open role..."
-                    className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] dark:border-[#262626] bg-white dark:bg-[#161B22] text-[#171717] dark:text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all resize-none"
-                  />
-                </div>
-
-                {/* Submit button (Matching Screenshot's Vibrant Royal-Blue/Indigo CTA) */}
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={status === 'loading'}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-medium text-sm tracking-wide shadow-md active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    {status === 'loading' ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Sending Message...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Send Message</span>
-                        <Send className="w-4 h-4" />
-                      </>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {status === 'error' && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{statusMessage}</span>
+                      </div>
                     )}
-                  </button>
-                </div>
-              </form>
-            )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="name"
+                          className="block text-xs font-mono uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400"
+                        >
+                          Name *
+                        </label>
+                        <input
+                          type="text"
+                          id="name"
+                          name="name"
+                          required
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="Your Name"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="email"
+                          className="block text-xs font-mono uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400"
+                        >
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          required
+                          value={formData.email}
+                          onChange={handleChange}
+                          placeholder="your.email@example.com"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label
+                        htmlFor="subject"
+                        className="block text-xs font-mono uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400"
+                      >
+                        Subject
+                      </label>
+                      <input
+                        type="text"
+                        id="subject"
+                        name="subject"
+                        value={formData.subject}
+                        onChange={handleChange}
+                        placeholder="Project or Internship Discussion"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label
+                        htmlFor="message"
+                        className="block text-xs font-mono uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400"
+                      >
+                        Message *
+                      </label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        required
+                        rows={3}
+                        value={formData.message}
+                        onChange={handleChange}
+                        placeholder="Tell me about your project, timeline, or open role..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10 resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={status === 'loading'}
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#171717] hover:bg-[#2A2A2A] dark:bg-white dark:hover:bg-slate-200 text-white dark:text-black font-semibold text-xs uppercase tracking-wider transition-all shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                    >
+                      {status === 'loading' ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Send Message</span>
+                          <Send className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Row of Pill Links matching Screenshot 5 */}
+          <div className="pt-10 flex flex-wrap items-center justify-center gap-3">
+            {/* Avatar Pill */}
+            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#171717] text-white dark:bg-white dark:text-[#171717] shadow-sm">
+              <img
+                src="/images/potrait.png"
+                alt="Aman Mishra"
+                className="w-6 h-6 rounded-full object-cover grayscale"
+              />
+              <span className="text-xs font-medium tracking-wide">Aman Mishra</span>
+            </div>
+
+            {/* GitHub Pill */}
+            <a
+              href={personalInfo.socials.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Github className="w-3.5 h-3.5" />
+              <span>GitHub</span>
+            </a>
+
+            {/* LinkedIn Pill */}
+            <a
+              href={personalInfo.socials.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" />
+              <span>LinkedIn</span>
+            </a>
+
+            {/* LeetCode Pill */}
+            <a
+              href={personalInfo.socials.leetcode}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Code className="w-3.5 h-3.5 text-amber-500" />
+              <span>LeetCode</span>
+            </a>
+
+            {/* Direct Email Pill */}
+            <a
+              href={`mailto:${personalInfo.socials.email}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>{personalInfo.socials.email}</span>
+            </a>
           </div>
         </div>
       </div>

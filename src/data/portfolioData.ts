@@ -3,19 +3,18 @@ import {
   ExperienceItem,
   SkillCategory,
   Project,
-  DsaTopic,
   LearningItem,
 } from '../types';
 
 export const personalInfo: PersonalInfo = {
   name: 'Aman Mishra',
-  role: 'Computer Science Engineering Student / Aspiring Software Developer',
-  college: 'NIET, Greater Noida',
-  degree: 'B.Tech in Computer Science Engineering',
-  graduationYear: '2029 (Expected)',
+  role: 'CSE Student · Software Developer',
+  college: 'NIET Greater Noida',
+  degree: 'B.Tech in Computer Science & Engineering',
+  graduationYear: '2029',
   location: 'Greater Noida, Uttar Pradesh, India',
   summary:
-    'I’m Aman Mishra, a Computer Science Engineering student and aspiring Software Developer passionate about building practical, scalable, and user-focused applications. I enjoy solving problems with C++ and DSA while exploring full-stack development, AI/ML, and modern software engineering. I’m constantly learning, building projects, and improving my skills with the goal of creating impactful technology.',
+    'Building practical software with strong foundations in C++, DSA, full-stack development, and AI/ML. Passionate about engineering high-performance systems and user-focused web architectures.',
   socials: {
     github: 'https://github.com/calligraphyguruji',
     linkedin: 'https://www.linkedin.com/in/calligraphygurji/',
@@ -24,58 +23,102 @@ export const personalInfo: PersonalInfo = {
   },
 };
 
+export const educationInfo = {
+  degree: 'B.Tech — Computer Science & Engineering',
+  institution: 'NIET Greater Noida',
+  timeline: '2025 – 2029',
+  cgpa: '9.38',
+  status: 'Current Student',
+};
+
 export const experience: ExperienceItem[] = [
   {
     id: 'codomax-internship',
     role: 'AI & ML Intern',
-    company: 'Codomax Solutions',
+    company: 'Codomax Solution',
     duration: '12 July – 12 August',
     durationLength: '1 month',
   },
 ];
 
+export const groupedSkills = {
+  LANGUAGES: ['C++', 'C', 'Python', 'Java', 'JavaScript'],
+  FRONTEND: ['React', 'Tailwind CSS', 'HTML', 'CSS'],
+  BACKEND: ['Node.js', 'Express.js', 'FastAPI', 'REST APIs'],
+  DATABASE: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis'],
+  ENGINEERING: ['DSA', 'OOP', 'Git', 'GitHub', 'Linux'],
+  'AI / ML': ['Machine Learning', 'Data Analysis', 'GenAI'],
+};
+
 export const skillCategories: SkillCategory[] = [
   {
-    category: 'Programming Languages',
+    category: 'Languages',
     iconName: 'Code2',
-    skills: ['C++', 'C', 'Python', 'Java', 'JavaScript'],
+    skills: groupedSkills.LANGUAGES,
   },
   {
-    category: 'Frontend Development',
+    category: 'Frontend',
     iconName: 'Layout',
-    skills: ['HTML5', 'CSS3', 'React.js', 'Tailwind CSS', 'Responsive Web Design'],
+    skills: groupedSkills.FRONTEND,
   },
   {
-    category: 'Backend & APIs',
+    category: 'Backend',
     iconName: 'Server',
-    skills: ['FastAPI', 'Node.js', 'Express.js', 'REST APIs'],
+    skills: groupedSkills.BACKEND,
   },
   {
-    category: 'Databases & Caching',
+    category: 'Databases',
     iconName: 'Database',
-    skills: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis'],
+    skills: groupedSkills.DATABASE,
   },
   {
-    category: 'Core Computer Science',
+    category: 'Systems & Core',
     iconName: 'Cpu',
-    skills: [
-      'Data Structures & Algorithms',
-      'OOP',
-      'Full-Stack Development',
-      'Backend Development',
-      'API Development',
-      'Software Engineering',
-    ],
+    skills: groupedSkills.ENGINEERING,
   },
   {
-    category: 'AI & Machine Learning',
+    category: 'AI & Intelligence',
     iconName: 'Brain',
-    skills: ['Machine Learning', 'Data Analysis', 'AI/ML Integration', 'Generative AI'],
+    skills: groupedSkills['AI / ML'],
+  },
+];
+
+export const whatIBuild = [
+  {
+    id: 'fullstack',
+    title: 'FULL-STACK APPLICATIONS',
+    tagline: 'End-to-end web architectures with modern client-server synergy',
+    description:
+      'Designing and developing scalable web applications using React, Tailwind CSS, Node.js, and relational/document databases. Focused on fast load times, accessible design, and maintainable component hierarchies.',
+    technologies: ['React', 'Tailwind CSS', 'Node.js', 'MongoDB', 'REST APIs'],
+    highlight: 'Flagship project KaushalNexus built from scratch to production.',
   },
   {
-    category: 'Developer Tools',
-    iconName: 'Wrench',
-    skills: ['Git', 'GitHub', 'VS Code', 'Postman', 'Linux', 'Vite'],
+    id: 'backend',
+    title: 'BACKEND & REST APIs',
+    tagline: 'Robust server logic, clean endpoints, and database schema design',
+    description:
+      'Engineering performant RESTful APIs using Express.js and FastAPI. Implementing secure routing, data validation, database connection pooling, and caching with Redis and SQL/NoSQL stores.',
+    technologies: ['Node.js', 'Express.js', 'FastAPI', 'PostgreSQL', 'Redis'],
+    highlight: 'Strict schema integrity, error handling, and modular service patterns.',
+  },
+  {
+    id: 'aiml',
+    title: 'AI / ML INTEGRATION',
+    tagline: 'Applied machine learning pipelines and generative intelligence',
+    description:
+      'Exploring predictive modeling, natural language processing, and generative AI integrations. Hands-on experience gained during industry internship at Codomax Solution working on applied AI/ML pipelines.',
+    technologies: ['Python', 'Machine Learning', 'Data Analysis', 'GenAI', 'FastAPI'],
+    highlight: 'Industry-verified internship in AI & ML solutions.',
+  },
+  {
+    id: 'dsa',
+    title: 'DSA & SOFTWARE ENGINEERING',
+    tagline: 'Algorithmic efficiency, time-space optimization, and clean C++',
+    description:
+      'Deep algorithmic problem solving in modern C++. Solid understanding of memory allocation, pointer mechanics, asymptotic time complexity, and data structure internals across 150+ LeetCode problems.',
+    technologies: ['C++', 'STL', 'Dynamic Programming', 'Graph Theory', 'Trees'],
+    highlight: '150+ LeetCode problems solved with verified algorithmic rigor.',
   },
 ];
 
@@ -83,104 +126,70 @@ export const projects: Project[] = [
   {
     id: 'kaushal-nexus',
     title: 'KaushalNexus',
-    tagline: 'Skilling & Employment-Outcome Tracking Platform',
+    tagline: 'Full-Stack Employment & Skilling Outcomes Platform',
     description:
-      'A full-stack skilling and employment-outcome tracking platform focused on skill gaps, training outcomes, employment matching, and workforce analytics.',
-    tier: 'flagship',
-    technologies: [
-      'React.js',
-      'Vite',
-      'Tailwind CSS',
-      'FastAPI',
-      'PostgreSQL',
-      'Redis',
-      'Celery',
-      'JWT / RBAC',
-      'REST APIs',
-      'Machine Learning',
-    ],
+      'A comprehensive web platform dedicated to bridging skilling outcomes, career readiness, and user opportunity. Engineered with modular React components, custom responsive Tailwind layouts, and robust backend data synchronization.',
+    technologies: ['React', 'Tailwind CSS', 'JavaScript', 'REST APIs', 'Node.js'],
     features: [
-      'Skill-gap analysis and recommendations',
-      'Employment/training outcome tracking',
-      'Job matching based on skills, location, and readiness',
-      'Regional skill-gap analytics',
-      'Follow-up workflows',
-      'Role-based authentication',
-      'Privacy and consent controls',
-      'ML-based skill similarity',
-      'Wage prediction',
+      'Interactive skilling modules & dynamic pathways',
+      'Real-time career assessment & progress tracking',
+      'Clean editorial user interface with zero slop',
+      'Responsive multi-breakpoint design across mobile & desktop',
     ],
     liveUrl: 'https://kaushal-nexus.vercel.app/',
-    githubUrl: 'https://github.com/calligraphyguruji',
+    githubUrl: 'https://github.com/calligraphyguruji/Kaushal-Nexus',
+    tier: 'flagship',
   },
   {
     id: 'youtube-clone',
     title: 'YouTube Clone',
-    tagline: 'Responsive Video Browsing Frontend',
-    description: 'A responsive YouTube-inspired frontend project.',
-    tier: 'core',
-    technologies: ['HTML5', 'CSS3', 'JavaScript', 'React.js'],
+    tagline: 'High-Fidelity Video Streaming Interface',
+    description:
+      'A responsive, high-performance video streaming web application recreating core YouTube experiences: category video feeds, fluid search, video player view, channel metadata, and related recommendations.',
+    technologies: ['React', 'Tailwind CSS', 'REST API', 'JavaScript'],
     features: [
-      'Responsive UI',
-      'Video browsing/content layouts',
-      'Component-based architecture',
+      'Video feed with category filtering',
+      'Dynamic video playback with channel stats',
+      'Instant search and related content rendering',
+      'Optimized loading states and responsive grid',
     ],
     githubUrl: 'https://github.com/calligraphyguruji/YouTube-Clone',
-  },
-  {
-    id: 'rock-paper-scissors',
-    title: 'Rock Paper Scissors Game',
-    tagline: 'Interactive DOM & State Game',
-    description:
-      'A browser-based game focused on JavaScript fundamentals, DOM manipulation, and interactive UI.',
     tier: 'core',
-    technologies: ['HTML5', 'CSS3', 'JavaScript'],
-    features: [
-      'Gameplay',
-      'Score tracking',
-      'Dynamic UI',
-      'Deployed application',
-    ],
-    liveUrl: 'https://rock-paper-scissors-game-phi.vercel.app/',
-    githubUrl: 'https://github.com/calligraphyguruji/rock-paper-scissors-game',
   },
 ];
 
 export const dsaRepo = {
-  title: 'LeetCode Solutions',
-  description: 'A growing collection of C++ algorithm and data-structure solutions.',
-  githubUrl: 'https://github.com/calligraphyguruji/LeetCode-Questions',
+  title: 'C++ Algorithmic Problem Solving',
+  description:
+    'Continuous algorithmic training in modern C++ with focus on computational efficiency and clean implementation.',
+  problemsSolved: '150+',
+  githubUrl: 'https://github.com/calligraphyguruji/C-Plus-Plus-DSA',
   leetcodeProfile: 'https://leetcode.com/u/calligraphyguruji/',
   topics: [
-    { name: 'Arrays', category: 'Linear' },
-    { name: 'Strings', category: 'Linear' },
+    { name: 'Arrays & Vectors', category: 'Linear' },
+    { name: 'Strings & Two Pointers', category: 'Linear' },
     { name: 'Linked Lists', category: 'Linear' },
-    { name: 'Trees', category: 'Non-Linear' },
-    { name: 'Graphs', category: 'Non-Linear' },
-    { name: 'BFS / DFS', category: 'Advanced Algorithms' },
+    { name: 'Stacks & Queues', category: 'Linear' },
+    { name: 'Binary Trees & BST', category: 'Non-Linear' },
+    { name: 'Heaps & Priority Queues', category: 'Non-Linear' },
+    { name: 'Graphs (BFS/DFS)', category: 'Non-Linear' },
+    { name: 'Recursion & Backtracking', category: 'Advanced Algorithms' },
     { name: 'Dynamic Programming', category: 'Advanced Algorithms' },
-    { name: 'Greedy', category: 'Advanced Algorithms' },
-    { name: 'Dijkstra', category: 'Advanced Algorithms' },
-    { name: 'DSU', category: 'Advanced Algorithms' },
-    { name: 'MST', category: 'Advanced Algorithms' },
-  ] as DsaTopic[],
+    { name: 'Greedy Algorithms', category: 'Advanced Algorithms' },
+    { name: 'Bit Manipulation', category: 'Advanced Algorithms' },
+  ],
 };
 
 export const currentlyLearning: LearningItem[] = [
-  { topic: 'Advanced C++', status: 'In Progress', category: 'Languages' },
-  { topic: 'JavaScript / React', status: 'Deepening', category: 'Frontend' },
-  { topic: 'Node.js / Express', status: 'In Progress', category: 'Backend' },
-  { topic: 'FastAPI', status: 'Deepening', category: 'Backend' },
-  { topic: 'Machine Learning & AI', status: 'In Progress', category: 'Intelligence' },
-  { topic: 'System Design', status: 'In Progress', category: 'Architecture' },
+  { topic: 'Advanced C++20 & Systems Programming', category: 'Systems', status: 'In Progress' },
+  { topic: 'Distributed Systems & Microservices', category: 'Backend', status: 'In Progress' },
+  { topic: 'Generative AI & LLM Orchestration', category: 'AI/ML', status: 'Deepening' },
 ];
 
 export const navigationLinks = [
+  { name: 'Work', href: '#work', count: '2' },
   { name: 'About', href: '#about' },
-  { name: 'Skills', href: '#skills' },
-  { name: 'Experience', href: '#experience' },
-  { name: 'Projects', href: '#projects' },
-  { name: 'DSA', href: '#dsa' },
-  { name: 'Learning', href: '#learning' },
+  { name: 'Build', href: '#build', count: '4' },
+  { name: 'Experience', href: '#experience', count: 'Intern' },
   { name: 'Contact', href: '#contact' },
 ];

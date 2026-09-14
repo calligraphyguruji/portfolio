@@ -1,107 +1,62 @@
-import React, { useState } from 'react';
-import { skillCategories } from '../../data/portfolioData';
-import { SectionHeading } from '../ui/SectionHeading';
-import {
-  Code2,
-  Layout,
-  Server,
-  Database,
-  Cpu,
-  Brain,
-  Wrench,
-  LucideIcon,
-} from 'lucide-react';
-
-const iconMap: Record<string, LucideIcon> = {
-  Code2,
-  Layout,
-  Server,
-  Database,
-  Cpu,
-  Brain,
-  Wrench,
-};
+import React from 'react';
+import { groupedSkills } from '../../data/portfolioData';
 
 export const Skills: React.FC = () => {
-  const [selectedFilter, setSelectedFilter] = useState<string>('All');
-
-  const filterOptions = ['All', ...skillCategories.map((c) => c.category)];
-
-  const displayedCategories =
-    selectedFilter === 'All'
-      ? skillCategories
-      : skillCategories.filter((c) => c.category === selectedFilter);
-
-  const totalSkillsCount = skillCategories.reduce(
-    (acc, group) => acc + group.skills.length,
-    0
-  );
+  const skillGroups = [
+    { title: 'LANGUAGES', items: groupedSkills.LANGUAGES },
+    { title: 'FRONTEND', items: groupedSkills.FRONTEND },
+    { title: 'BACKEND', items: groupedSkills.BACKEND },
+    { title: 'DATABASE', items: groupedSkills.DATABASE },
+    { title: 'ENGINEERING', items: groupedSkills.ENGINEERING },
+    { title: 'AI / ML', items: groupedSkills['AI / ML'] },
+  ];
 
   return (
-    <section id="skills" className="py-14 sm:py-16 px-5 sm:px-8 max-w-5xl mx-auto">
-      <SectionHeading
-        eyebrow="02 // Technical Capabilities"
-        title="Technical Skills"
-        number="02"
-        description="Structured competency matrix across systems programming, full-stack web, databases, and computer science foundations."
-      />
-
-      {/* Filter Tabs & Counter */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
-        <div className="flex flex-wrap items-center gap-2">
-          {filterOptions.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setSelectedFilter(filter)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-mono transition-all ${
-                selectedFilter === filter
-                  ? 'bg-[#171717] text-white dark:bg-white dark:text-[#171717] shadow-xs'
-                  : 'bg-[#F3F3F3] dark:bg-[#121722] text-[#5E5E5E] dark:text-slate-400 border border-[#E5E7EB] dark:border-[#262626] hover:text-[#171717] dark:hover:text-white'
-              }`}
-            >
-              {filter === 'All' ? 'All Tracks' : filter}
-            </button>
-          ))}
+    <section id="skills" className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
+      <div className="editorial-panel p-6 sm:p-10 lg:p-14 relative overflow-hidden">
+        {/* Faint Watermark Typography */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-7xl sm:text-9xl md:text-[11rem] font-extrabold uppercase tracking-widest text-black/[0.03] dark:text-white/[0.03] select-none pointer-events-none whitespace-nowrap">
+          SYSTEMS
         </div>
 
-        <span className="text-[11px] font-mono text-[#6F6F6F] dark:text-slate-400">
-          {totalSkillsCount} Skills Cataloged
-        </span>
-      </div>
+        {/* Header */}
+        <div className="relative z-10 pb-8 border-b border-black/[0.06] dark:border-white/[0.08]">
+          <span className="text-xs font-mono font-medium tracking-widest uppercase text-[#8E8E93] dark:text-slate-400 block mb-1">
+            /TECH STACK
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-sans font-bold tracking-tight text-[#171717] dark:text-white uppercase">
+            Core Competencies
+          </h2>
+        </div>
 
-      {/* Skills Grid with 20px compound cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {displayedCategories.map((group) => {
-          const Icon = iconMap[group.iconName] || Code2;
-          return (
+        {/* Grouped Typography Matrix (Zero Fake Bars or Percentages) */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8">
+          {skillGroups.map((group) => (
             <div
-              key={group.category}
-              className="p-6 rounded-[20px] bg-white dark:bg-[#121722] border border-[#E5E7EB] dark:border-[#262626] hover:border-[#A0A0A0] dark:hover:border-slate-600 transition-all duration-200 flex flex-col justify-between group shadow-xs"
+              key={group.title}
+              className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] hover:border-black/20 dark:hover:border-white/20 transition-all duration-200 group"
             >
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-full bg-[#F3F3F3] dark:bg-[#161B22] text-[#171717] dark:text-white border border-[#E5E7EB] dark:border-[#262626] transition-colors">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-sans font-medium tracking-tight text-[#171717] dark:text-white">
-                    {group.category}
-                  </h3>
-                </div>
+              <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#8E8E93] dark:text-slate-400 block mb-3">
+                {group.title}
+              </span>
 
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {group.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-mono tracking-wide bg-[#F3F3F3] dark:bg-[#161B22] text-[#171717] dark:text-slate-300 border border-[#E5E7EB] dark:border-[#262626] hover:border-[#A0A0A0] dark:hover:border-slate-500 transition-colors"
-                    >
+              <div className="text-base sm:text-lg font-sans font-medium text-[#171717] dark:text-white leading-relaxed">
+                {group.items.map((skill, index) => (
+                  <React.Fragment key={skill}>
+                    <span className="inline-block hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors">
                       {skill}
                     </span>
-                  ))}
-                </div>
+                    {index < group.items.length - 1 && (
+                      <span className="text-[#8E8E93] dark:text-slate-500 mx-2 select-none">
+                        &bull;
+                      </span>
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </section>
   );
