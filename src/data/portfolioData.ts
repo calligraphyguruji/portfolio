@@ -162,6 +162,7 @@ export const projects: Project[] = [
     ],
     liveUrl: 'https://kaushal-nexus.vercel.app/',
     githubUrl: 'https://github.com/calligraphyguruji/Kaushal-Nexus',
+    thumbnail: '/images/KaushalNexus-dashboard.png',
   },
   {
     id: 'internship-advisor',
@@ -276,6 +277,7 @@ export const projects: Project[] = [
     ],
     liveUrl: 'https://rock-paper-scissors-game-seven-tawny.vercel.app/',
     githubUrl: 'https://github.com/calligraphyguruji/rock-paper-scissors-game',
+    thumbnail: '/images/Rock-paper-scissors.png',
   },
   {
     id: 'leetcode-solutions',
@@ -350,6 +352,7 @@ export const projects: Project[] = [
       { label: 'Codebase', value: 'Semantic HTML' },
     ],
     githubUrl: 'https://github.com/calligraphyguruji/YouTube-Clone',
+    thumbnail: '/images/youtube-clone.png',
   },
 ];
 

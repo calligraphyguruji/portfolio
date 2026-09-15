@@ -160,42 +160,87 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
           </div>
         )}
 
-        {/* Visual Mockup Banner */}
-        <div className="relative z-10 my-8 rounded-[24px] overflow-hidden aspect-[16/8] bg-gradient-to-br from-stone-900 via-zinc-900 to-black p-6 sm:p-10 flex flex-col justify-between border border-black/10 dark:border-white/10 shadow-lg text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-              <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
-              <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-            </div>
-            <span className="text-xs font-mono tracking-widest text-slate-400 uppercase">
-              {project.id}.dev
-            </span>
-          </div>
+        {/* Visual Mockup Banner / Browser Showcase */}
+        {project.thumbnail ? (
+          <div className="relative z-10 my-8 rounded-[24px] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-stone-900 dark:bg-[#12161F]">
+            {/* macOS Browser Chrome Header */}
+            <div className="px-4 py-3 bg-stone-950/90 dark:bg-black/70 border-b border-black/10 dark:border-white/10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+              </div>
 
-          <div className="space-y-3">
-            <div className="font-mono text-xs text-cyan-300 uppercase tracking-widest">
-              Verified Project Artifact
-            </div>
-            <div className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              {project.title}
-            </div>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl line-clamp-2">
-              {project.description}
-            </p>
-          </div>
+              {/* URL bar pill */}
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono text-slate-300 max-w-xs sm:max-w-md truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                <span className="truncate">{project.liveUrl || `https://${project.id}.dev`}</span>
+              </div>
 
-          <div className="flex flex-wrap gap-2 pt-2">
-            {project.technologies.slice(0, 5).map((t) => (
-              <span
-                key={t}
-                className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-white/10 backdrop-blur-md text-white border border-white/15"
-              >
-                {t}
+              <div className="flex items-center gap-2">
+                {project.liveUrl ? (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-mono font-medium text-slate-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-0.5 rounded-md hover:bg-white/10"
+                    title="Open live app"
+                  >
+                    <span className="hidden sm:inline">Visit Live</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <span className="text-[11px] font-mono text-slate-500">Live Preview</span>
+                )}
+              </div>
+            </div>
+
+            {/* High-res Screenshot */}
+            <div className="relative overflow-hidden bg-black/40">
+              <img
+                src={project.thumbnail}
+                alt={`${project.title} Interface Screenshot`}
+                className="w-full h-auto object-cover object-top max-h-[620px]"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="relative z-10 my-8 rounded-[24px] overflow-hidden aspect-[16/8] bg-gradient-to-br from-stone-900 via-zinc-900 to-black p-6 sm:p-10 flex flex-col justify-between border border-black/10 dark:border-white/10 shadow-lg text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+              </div>
+              <span className="text-xs font-mono tracking-widest text-slate-400 uppercase">
+                {project.id}.dev
               </span>
-            ))}
+            </div>
+
+            <div className="space-y-3">
+              <div className="font-mono text-xs text-cyan-300 uppercase tracking-widest">
+                Verified Project Artifact
+              </div>
+              <div className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+                {project.title}
+              </div>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl line-clamp-2">
+                {project.description}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              {project.technologies.slice(0, 5).map((t) => (
+                <span
+                  key={t}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-white/10 backdrop-blur-md text-white border border-white/15"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Deep Dive Content Sections */}
         <div className="relative z-10 space-y-10 pt-4">

@@ -47,6 +47,8 @@ export interface Project {
   liveUrl?: string;
   githubUrl: string;
   badge?: string;
+  thumbnail?: string;
+  image?: string;
 }
 
 export interface DsaTopic {

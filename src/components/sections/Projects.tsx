@@ -146,7 +146,9 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                   {/* Clickable Visual Preview Container (Redirects to project about/case-study page) */}
                   <div
                     onClick={() => handleProjectClick(project.id)}
-                    className={`relative rounded-2xl overflow-hidden aspect-[16/10] bg-gradient-to-br ${theme.bg} p-6 flex flex-col justify-between border border-black/10 dark:border-white/10 group-hover:shadow-lg transition-all cursor-pointer select-none group/preview`}
+                    className={`relative rounded-2xl overflow-hidden aspect-[16/10] ${
+                      project.thumbnail ? 'bg-stone-950' : `bg-gradient-to-br ${theme.bg}`
+                    } p-6 flex flex-col justify-between border border-black/10 dark:border-white/10 group-hover:shadow-lg transition-all cursor-pointer select-none group/preview`}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -156,9 +158,22 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                     }}
                     aria-label={`View full details for ${project.title}`}
                   >
+                    {/* Background thumbnail image if available */}
+                    {project.thumbnail && (
+                      <>
+                        <img
+                          src={project.thumbnail}
+                          alt={`${project.title} screenshot`}
+                          loading="lazy"
+                          className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover/preview:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/35 transition-opacity duration-300 group-hover/preview:from-black/95 group-hover/preview:via-black/50" />
+                      </>
+                    )}
+
                     {/* Top Badge & Clickable Arrow Button */}
                     <div className="flex items-center justify-between relative z-10">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-white/15 backdrop-blur-md text-white border border-white/20">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-black/50 dark:bg-white/15 backdrop-blur-md text-white border border-white/20 shadow-sm">
                         <ThemeIcon className={`w-3 h-3 ${theme.accent}`} />
                         {project.badge || project.tier.toUpperCase()}
                       </span>
@@ -169,14 +184,14 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                     </div>
 
                     {/* Visual Interface Mockup Details */}
-                    <div className="space-y-2 text-white relative z-10">
-                      <div className={`font-mono text-[11px] ${theme.accent} uppercase tracking-widest`}>
+                    <div className="space-y-1.5 text-white relative z-10">
+                      <div className={`font-mono text-[11px] ${theme.accent} uppercase tracking-widest drop-shadow-sm`}>
                         {project.category} &bull; Click to View Case Study
                       </div>
-                      <div className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      <div className="text-2xl sm:text-3xl font-bold tracking-tight drop-shadow-md">
                         {project.title}
                       </div>
-                      <p className="text-xs text-slate-300 line-clamp-2 max-w-sm">
+                      <p className="text-xs text-slate-200 line-clamp-2 max-w-sm drop-shadow-sm">
                         {project.tagline}
                       </p>
                     </div>
