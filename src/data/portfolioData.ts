@@ -35,8 +35,8 @@ export const experience: ExperienceItem[] = [
   {
     id: 'codomax-internship',
     role: 'AI & ML Intern',
-    company: 'Codomax Solution',
-    duration: '12 July – 12 August',
+    company: 'Codomax Digital Solutions',
+    duration: '12 July 2026 – 12 August 2026',
     durationLength: '1 month',
   },
 ];

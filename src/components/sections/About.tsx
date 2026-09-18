@@ -46,7 +46,7 @@ export const About: React.FC = () => {
             <p className="text-sm sm:text-base text-[#5E5E5E] dark:text-slate-400 leading-relaxed font-normal">
               Beyond theory, I focus on shipping real software. From engineering our full-stack employment platform{' '}
               <strong className="text-[#171717] dark:text-white font-medium">KaushalNexus</strong> to completing a verified industry internship in AI/ML pipelines at{' '}
-              <strong className="text-[#171717] dark:text-white font-medium">Codomax Solution</strong>, I strive to write code that is clean, resilient, and computationally efficient.
+              <strong className="text-[#171717] dark:text-white font-medium">Codomax Digital Solutions</strong>, I strive to write code that is clean, resilient, and computationally efficient.
             </p>
 
             {/* Editorial Manifesto Quote */}

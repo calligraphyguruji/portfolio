@@ -21,17 +21,17 @@ export const Experience: React.FC = () => {
   const experienceList: ExperienceRowItem[] = [
     {
       id: 'codomax',
-      company: 'Codomax Solution',
+      company: 'Codomax Digital Solutions',
       role: 'AI & ML Intern',
-      period: 'Jul 2024 – Aug 2024',
+      period: '12 July 2026 – 12 August 2026',
       type: 'Industry Internship',
       summary: 'Engineered AI/ML pipelines, prompt constraints, and Gemini REST API integrations.',
     },
     {
       id: 'sih2026',
-      company: 'Smart India Hackathon',
+      company: 'Smart India Hackathon 2026',
       role: 'Lead Full-Stack Architect · KaushalNexus (PS 135)',
-      period: 'Aug 2024 – Present',
+      period: 'Aug 2026 – Present',
       type: 'National Innovation',
       summary: 'Built longitudinal learner tracking & district analytics platform with FastAPI & React 19.',
     },
@@ -234,7 +234,7 @@ export const Experience: React.FC = () => {
           </h2>
 
           <span className="text-xs sm:text-sm font-sans text-neutral-400 tracking-wide">
-            3+ years of building experience
+            6 months of experience
           </span>
         </div>
 
