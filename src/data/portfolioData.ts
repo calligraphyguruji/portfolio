@@ -83,44 +83,46 @@ export const skillCategories: SkillCategory[] = [
   },
 ];
 
-export const whatIBuild = [
+export const services = [
   {
-    id: 'fullstack',
-    title: 'FULL-STACK APPLICATIONS',
-    tagline: 'End-to-end web architectures with modern client-server synergy',
+    id: 'uiux-design',
+    title: 'UIUX DESIGN',
+    tagline: 'Interfaces & Product Design',
     description:
-      'Designing and developing scalable web applications using React, Tailwind CSS, FastAPI, Node.js, and relational/document databases. Focused on fast load times, accessible design, and maintainable component hierarchies.',
-    technologies: ['React', 'Tailwind CSS', 'FastAPI', 'Node.js', 'PostgreSQL', 'MongoDB'],
-    highlight: 'Flagship project KaushalNexus built from scratch to production.',
+      'Designing clear and scalable interfaces for dashboards, mobile apps, and websites.',
+    technologies: ['Figma', 'Design Systems', 'Responsive UI', 'Prototyping', 'Accessibility'],
+    highlight: 'Clean typographic hierarchy, intuitive user flows, and zero cognitive bloat.',
   },
   {
-    id: 'backend',
-    title: 'BACKEND & REST APIs',
-    tagline: 'Robust server logic, clean endpoints, and database schema design',
+    id: 'web-design-dev',
+    title: 'WEB DESIGN & DEV',
+    tagline: 'Full-Stack Architecture & Web Engineering',
     description:
-      'Engineering performant RESTful APIs using Express.js and FastAPI. Implementing secure routing, data validation, database connection pooling, and caching with Redis and SQL/NoSQL stores.',
-    technologies: ['FastAPI', 'Node.js', 'Express.js', 'PostgreSQL', 'Redis', 'SQLAlchemy'],
-    highlight: 'Strict schema integrity, error handling, and modular service patterns.',
+      'Building high-performance full-stack web applications, reactive client architectures, and resilient backend APIs with modern developer rigor.',
+    technologies: ['React 19', 'TypeScript', 'Tailwind CSS', 'FastAPI', 'Node.js', 'PostgreSQL'],
+    highlight: 'Production-ready codebases with clean separation of concerns and sub-second load times.',
   },
   {
-    id: 'aiml',
-    title: 'AI / ML INTEGRATION',
-    tagline: 'Applied machine learning pipelines and generative intelligence',
+    id: 'branding',
+    title: 'BRANDING',
+    tagline: 'Visual Identity & Design Systems',
     description:
-      'Exploring predictive modeling, natural language processing, and generative AI integrations. Hands-on experience building the AI Internship Advisor and verified industry internship at Codomax Solution.',
-    technologies: ['Python', 'Google Gemini AI', 'Scikit-Learn', 'Pandas', 'NumPy', 'FastAPI'],
-    highlight: 'Production Gemini API integration and AI diagnostic pipelines.',
+      'Crafting cohesive visual product languages, developer identity, precision typography hierarchies, and scalable token systems.',
+    technologies: ['Design Tokens', 'Typography Systems', 'Component Libraries', 'Brand Kits'],
+    highlight: 'Consistent editorial polish across digital touchpoints and developer portfolios.',
   },
   {
-    id: 'dsa',
-    title: 'DSA & SOFTWARE ENGINEERING',
-    tagline: 'Algorithmic efficiency, time-space optimization, and clean C++',
+    id: 'motions-animations',
+    title: 'MOTIONS & ANIMATIONS',
+    tagline: 'Interactive Motion & Micro-Interactions',
     description:
-      'Deep algorithmic problem solving in modern C++. Solid understanding of memory allocation, pointer mechanics, asymptotic time complexity, and data structure internals across 150+ LeetCode problems.',
-    technologies: ['C++', 'STL', 'Dynamic Programming', 'Graph Theory', 'Trees'],
-    highlight: '150+ LeetCode problems solved with verified algorithmic rigor.',
+      'Engineering purposeful UI motion systems, spring physics transitions, and accessible micro-interactions that make interfaces feel alive and tactile.',
+    technologies: ['Motion / Framer', 'Spring Physics', 'CSS Animations', 'Scroll-Linked Motion'],
+    highlight: 'Performance-conscious animations respecting prefers-reduced-motion standards.',
   },
 ];
+
+export const whatIBuild = services;
 
 export const projects: Project[] = [
   {
@@ -398,8 +400,8 @@ export const currentlyLearning: LearningItem[] = [
 
 export const navigationLinks = [
   { name: 'Work', href: '#work', count: '6' },
+  { name: 'Service', href: '#services', count: '4' },
   { name: 'About', href: '#about' },
-  { name: 'Build', href: '#build', count: '4' },
   { name: 'Experience', href: '#experience', count: 'Intern' },
   { name: 'Contact', href: '#contact' },
 ];

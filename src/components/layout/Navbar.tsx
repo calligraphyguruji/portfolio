@@ -16,7 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
 
-      const sectionIds = ['hero', 'work', 'about', 'build', 'experience', 'contact'];
+      const sectionIds = ['hero', 'work', 'services', 'about', 'build', 'experience', 'contact'];
       const scrollPos = window.scrollY + 160;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
