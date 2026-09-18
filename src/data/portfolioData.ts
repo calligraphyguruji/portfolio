@@ -85,40 +85,40 @@ export const skillCategories: SkillCategory[] = [
 
 export const services = [
   {
-    id: 'uiux-design',
-    title: 'UIUX DESIGN',
-    tagline: 'Interfaces & Product Design',
+    id: 'fullstack',
+    title: 'FULL-STACK WEB DEV',
+    tagline: 'Client & Server Architecture',
     description:
-      'Designing clear and scalable interfaces for dashboards, mobile apps, and websites.',
-    technologies: ['Figma', 'Design Systems', 'Responsive UI', 'Prototyping', 'Accessibility'],
-    highlight: 'Clean typographic hierarchy, intuitive user flows, and zero cognitive bloat.',
-  },
-  {
-    id: 'web-design-dev',
-    title: 'WEB DESIGN & DEV',
-    tagline: 'Full-Stack Architecture & Web Engineering',
-    description:
-      'Building high-performance full-stack web applications, reactive client architectures, and resilient backend APIs with modern developer rigor.',
+      'Engineering scalable end-to-end web architectures, reactive client interfaces, and high-concurrency backend services.',
     technologies: ['React 19', 'TypeScript', 'Tailwind CSS', 'FastAPI', 'Node.js', 'PostgreSQL'],
     highlight: 'Production-ready codebases with clean separation of concerns and sub-second load times.',
   },
   {
-    id: 'branding',
-    title: 'BRANDING',
-    tagline: 'Visual Identity & Design Systems',
+    id: 'backend',
+    title: 'BACKEND & REST APIs',
+    tagline: 'Server Logic & Data Pipelines',
     description:
-      'Crafting cohesive visual product languages, developer identity, precision typography hierarchies, and scalable token systems.',
-    technologies: ['Design Tokens', 'Typography Systems', 'Component Libraries', 'Brand Kits'],
-    highlight: 'Consistent editorial polish across digital touchpoints and developer portfolios.',
+      'Designing robust server logic, high-throughput RESTful endpoints, relational database schemas, and Redis caching layers.',
+    technologies: ['FastAPI', 'Node.js', 'Express.js', 'PostgreSQL', 'Redis', 'SQLAlchemy'],
+    highlight: 'Strict schema integrity, connection pooling, and resilient microservices.',
   },
   {
-    id: 'motions-animations',
-    title: 'MOTIONS & ANIMATIONS',
-    tagline: 'Interactive Motion & Micro-Interactions',
+    id: 'aiml',
+    title: 'AI & ML INTEGRATION',
+    tagline: 'Generative AI & Intelligent Systems',
     description:
-      'Engineering purposeful UI motion systems, spring physics transitions, and accessible micro-interactions that make interfaces feel alive and tactile.',
-    technologies: ['Motion / Framer', 'Spring Physics', 'CSS Animations', 'Scroll-Linked Motion'],
-    highlight: 'Performance-conscious animations respecting prefers-reduced-motion standards.',
+      'Embedding generative AI, Google Gemini pipelines, intelligent diagnostic engines, and automated data workflows into production applications.',
+    technologies: ['Google Gemini AI', 'Python', 'Prompt Engineering', 'Structured JSON', 'Scikit-Learn'],
+    highlight: 'Deterministic JSON schema parsing and real-time LLM inference pipelines.',
+  },
+  {
+    id: 'dsa',
+    title: 'ALGORITHMS & OPTIMIZATION',
+    tagline: 'Systems Rigor & Algorithmic Efficiency',
+    description:
+      'High-performance software engineering in modern C++, time-space complexity optimization, and rigorous problem-solving.',
+    technologies: ['Modern C++', 'STL', 'Dynamic Programming', 'Graph Theory', 'Big-O Analysis'],
+    highlight: '150+ LeetCode problems solved with asymptotic runtime and space optimization.',
   },
 ];
 
