@@ -217,18 +217,18 @@ export const Experience: React.FC = () => {
 
   return (
     <section id="experience" className="max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-16 relative z-10">
-      {/* Dark Obsidian Frame matching Screenshot */}
-      <div className="rounded-[28px] sm:rounded-[36px] bg-[#18191E] border border-white/10 p-6 sm:p-10 md:p-14 lg:p-16 relative overflow-visible shadow-2xl text-white select-none">
-        {/* Faint Background Watermark Typography matching Screenshot */}
+      {/* Dark Obsidian Frame matching Screenshot (#262626 neutral charcoal) */}
+      <div className="rounded-[28px] sm:rounded-[36px] bg-[#262626] border border-[#383838] p-6 sm:p-10 md:p-14 lg:p-16 relative overflow-hidden shadow-2xl text-white select-none">
+        {/* Background Watermark Typography directly behind /EXPERIENCE text matching Screenshot */}
         <div
           aria-hidden="true"
-          className="absolute top-4 sm:top-8 left-1/2 -translate-x-1/2 text-7xl sm:text-9xl md:text-[11rem] lg:text-[13rem] font-black uppercase tracking-[0.22em] text-white/[0.035] select-none pointer-events-none whitespace-nowrap text-center z-0"
+          className="absolute top-2 sm:top-4 md:top-6 left-6 sm:left-10 md:left-14 lg:left-16 text-5xl sm:text-7xl md:text-8xl lg:text-[7.25rem] font-black uppercase tracking-[0.14em] text-[#343434] select-none pointer-events-none whitespace-nowrap z-0"
         >
           EXPERIENCE
         </div>
 
         {/* Section Header */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 sm:pb-10 border-b border-white/[0.08]">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 sm:pb-10 border-b border-[#383838]">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-sans tracking-tight text-white uppercase">
             /EXPERIENCE
           </h2>
@@ -239,7 +239,7 @@ export const Experience: React.FC = () => {
         </div>
 
         {/* Experience List Rows matching Screenshot */}
-        <div className="relative z-10 divide-y divide-white/[0.08]">
+        <div className="relative z-10 divide-y divide-[#343434]">
           {experienceList.map((item) => {
             const isHovered = hoveredRow === item.id;
 
@@ -290,7 +290,7 @@ export const Experience: React.FC = () => {
         </div>
 
         {/* LeetCode Verification Ribbon */}
-        <div className="mt-8 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-neutral-400 relative z-10">
+        <div className="mt-8 pt-6 border-t border-[#383838] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-neutral-400 relative z-10">
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-cyan-400" />
             <span>Verified 150+ C++ Algorithmic Challenges on LeetCode</span>
