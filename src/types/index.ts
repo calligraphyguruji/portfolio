@@ -49,6 +49,8 @@ export interface Project {
   badge?: string;
   thumbnail?: string;
   image?: string;
+  projectType?: 'real' | 'exploration';
+  tags?: string[];
 }
 
 export interface DsaTopic {

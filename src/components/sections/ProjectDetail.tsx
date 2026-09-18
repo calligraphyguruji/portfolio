@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Project } from '../../types';
 import { projects } from '../../data/portfolioData';
 import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
@@ -27,6 +28,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   onSelectProject,
 }) => {
   const leetcodeStats = useLeetCodeStats();
+  const shouldReduceMotion = useReducedMotion();
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [project.id]);
@@ -55,7 +57,12 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 animate-fadeIn">
+    <motion.div
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10"
+    >
       {/* Top Back & Action Bar */}
       <div className="flex items-center justify-between gap-4 mb-8">
         <button
@@ -368,6 +375,6 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
           </div>
         </div>
       </article>
-    </div>
+    </motion.div>
   );
 };

@@ -163,6 +163,8 @@ export const projects: Project[] = [
     liveUrl: 'https://kaushal-nexus.vercel.app/',
     githubUrl: 'https://github.com/calligraphyguruji/Kaushal-Nexus',
     thumbnail: '/images/KaushalNexus-dashboard.png',
+    projectType: 'real',
+    tags: ['Full-Stack Platform', 'SIH 2026 Flagship'],
   },
   {
     id: 'internship-advisor',
@@ -171,6 +173,8 @@ export const projects: Project[] = [
     category: 'AI / ML',
     badge: 'GEMINI AI ENGINE',
     tier: 'core',
+    projectType: 'real',
+    tags: ['AI Career Advisor', 'Gemini 1.5 Engine'],
     description:
       'A smart, beginner-friendly Python application that leverages the Google Gemini API to analyze target internship roles or pasted job descriptions, diagnose missing skills, calculate study hours, and generate custom learning roadmaps.',
     longDescription:
@@ -209,6 +213,8 @@ export const projects: Project[] = [
     category: 'Frontend',
     badge: 'VANILLA JS ARCHITECTURE',
     tier: 'core',
+    projectType: 'exploration',
+    tags: ['E-Commerce Architecture', 'Vanilla JavaScript'],
     description:
       'A multi-page e-commerce web application inspired by Amazon, replicating dynamic product rendering, interactive cart management, checkout order review, order history, and package delivery tracking using modern vanilla JavaScript and modular CSS.',
     longDescription:
@@ -246,6 +252,8 @@ export const projects: Project[] = [
     category: 'Game',
     badge: 'LIVE ON VERCEL',
     tier: 'core',
+    projectType: 'real',
+    tags: ['Interactive Game', 'Vercel Live'],
     description:
       'A classic browser-based game featuring player vs computer mechanics, randomized decision algorithms, instant win/loss/draw detection, dynamic score tracking, and an animated responsive interface deployed live on Vercel.',
     longDescription:
@@ -286,6 +294,8 @@ export const projects: Project[] = [
     category: 'Algorithms',
     badge: '150+ PROBLEMS SOLVED',
     tier: 'core',
+    projectType: 'exploration',
+    tags: ['Algorithms & DSA', '150+ C++ Solved'],
     description:
       'A curated repository of 150+ optimized algorithmic solutions across core Data Structures & Algorithms, featuring detailed time and space complexity breakdowns, pattern classifications, and clean modern C++ implementations.',
     longDescription:
@@ -324,6 +334,8 @@ export const projects: Project[] = [
     category: 'Frontend',
     badge: 'RESPONSIVE UI',
     tier: 'core',
+    projectType: 'exploration',
+    tags: ['Video Streaming Platform', 'Responsive UI'],
     description:
       'A responsive, modern video streaming web application recreating core YouTube experiences: category video feeds, fluid navigation sidebar, search interface, video player layout, channel metadata, and related video cards.',
     longDescription:
