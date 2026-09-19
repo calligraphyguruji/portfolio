@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { services } from '../../data/portfolioData';
 import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
 import { ArrowUpRight, X } from 'lucide-react';
 
 export const WhatIBuild: React.FC = () => {
-  const [hoveredRow, setHoveredRow] = useState<string | null>('fullstack');
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>('fullstack');
   const shouldReduceMotion = useReducedMotion();
   const leetcodeStats = useLeetCodeStats();
 
@@ -158,11 +157,10 @@ export const WhatIBuild: React.FC = () => {
         </h2>
       </div>
 
-      {/* Interactive Service Rows with Hover Floating Mockup */}
+      {/* Interactive Service Rows with Hover Details Card */}
       <div className="border-t border-black/[0.12] dark:border-white/[0.12]">
         {services.map((item) => {
           const isExpanded = activeId === item.id;
-          const isHovered = hoveredRow === item.id;
 
           if (isExpanded) {
             return (
@@ -205,7 +203,10 @@ export const WhatIBuild: React.FC = () => {
 
                   {/* Close Icon matching Screenshot */}
                   <button
-                    onClick={() => setActiveId(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveId(null);
+                    }}
                     className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                     aria-label={`Close ${item.title} details`}
                   >
@@ -216,11 +217,11 @@ export const WhatIBuild: React.FC = () => {
             );
           }
 
-          // Service Row matching Experience Section Hover Effect
+          // Collapsed Service Row - Hovering expands details card matching screenshot
           return (
             <div
               key={item.id}
-              onMouseEnter={() => setHoveredRow(item.id)}
+              onMouseEnter={() => setActiveId(item.id)}
               onClick={() => setActiveId(item.id)}
               role="button"
               tabIndex={0}
@@ -230,37 +231,13 @@ export const WhatIBuild: React.FC = () => {
                   setActiveId(item.id);
                 }
               }}
-              aria-label={`Expand details for ${item.title}`}
+              aria-label={`Show details for ${item.title}`}
               className="group py-7 sm:py-9 px-1 flex items-center justify-between border-b border-black/[0.12] dark:border-white/[0.12] cursor-pointer select-none transition-colors relative"
             >
-              {/* Left Side: Title & Subtitle / Tagline */}
-              <div className="space-y-1 max-w-lg">
-                <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-bold font-sans tracking-tight text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors uppercase">
-                  {item.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-sans">
-                  {item.tagline}
-                </p>
-              </div>
-
-              {/* Floating Tilted Mockup Preview on Hover matching Experience Section */}
-              <AnimatePresence>
-                {isHovered && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.85, y: 10, rotate: -6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0, rotate: -6 }}
-                    exit={{ opacity: 0, scale: 0.85, y: 5 }}
-                    transition={
-                      shouldReduceMotion
-                        ? { duration: 0 }
-                        : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }
-                    }
-                    className="hidden md:flex absolute right-44 lg:right-64 -top-6 sm:-top-8 z-30 pointer-events-none transform -rotate-6 filter drop-shadow-2xl"
-                  >
-                    {renderFloatingMockup(item.id)}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Left Side: Title matching Screenshot */}
+              <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-bold font-sans tracking-tight text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors uppercase">
+                {item.title}
+              </h3>
 
               {/* Right Side: Arrow Icon with hover animation */}
               <div className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-900 dark:text-white transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 shrink-0">
