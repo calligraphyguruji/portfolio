@@ -105,7 +105,7 @@ export const ProblemSolving: React.FC = () => {
           {/* Breakdown Grid: Easy, Medium, Hard, Global Rank */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Easy */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold">
                   Easy
@@ -118,7 +118,7 @@ export const ProblemSolving: React.FC = () => {
             </div>
 
             {/* Medium */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold">
                   Medium
@@ -131,7 +131,7 @@ export const ProblemSolving: React.FC = () => {
             </div>
 
             {/* Hard */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-rose-600 dark:text-rose-400 font-bold">
                   Hard
@@ -144,15 +144,18 @@ export const ProblemSolving: React.FC = () => {
             </div>
 
             {/* Global Ranking */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+            <div
+              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0"
+              title={stats.ranking ? `Global Rank: #${stats.ranking.toLocaleString('en-US')}` : undefined}
+            >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-indigo-600 dark:text-cyan-400 font-bold">
                   Rank
                 </span>
-                <span className="text-[10px] font-mono text-slate-400">Top</span>
+                <span className="text-[10px] font-mono text-slate-400">Global</span>
               </div>
-              <div className="text-base sm:text-lg font-bold text-[#171717] dark:text-white font-mono truncate">
-                {stats.ranking ? `#${stats.ranking.toLocaleString()}` : 'Top 10%'}
+              <div className="text-base sm:text-lg lg:text-xl font-bold text-[#171717] dark:text-white tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                {stats.ranking ? `#${stats.ranking.toLocaleString('en-US')}` : 'Top 10%'}
               </div>
             </div>
           </div>

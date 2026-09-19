@@ -374,7 +374,7 @@ export const dsaRepo = {
   title: 'C++ Algorithmic Problem Solving',
   description:
     'Continuous algorithmic training in modern C++ with focus on computational efficiency and clean implementation.',
-  problemsSolved: '150+',
+  problemsSolved: '190+',
   githubUrl: 'https://github.com/calligraphyguruji/LeetCode-Questions',
   leetcodeProfile: 'https://leetcode.com/u/calligraphyguruji/',
   topics: [
