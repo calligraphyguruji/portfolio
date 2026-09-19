@@ -50,7 +50,7 @@ export const Footer: React.FC = () => {
           </a>
           <button
             onClick={scrollToTop}
-            className="p-2 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white hover:scale-105 transition-all ml-2"
+            className="p-2 rounded-full bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white hover:scale-105 transition-all ml-2"
             aria-label="Scroll to top"
             title="Scroll to top"
           >

@@ -180,7 +180,7 @@ export const WhatIBuild: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="my-6 rounded-2xl sm:rounded-[26px] bg-[#18191E] text-white p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-2xl border border-white/10"
+                className="my-6 rounded-2xl sm:rounded-[26px] bg-[#262626] text-white p-6 sm:p-10 lg:p-12 relative overflow-visible shadow-2xl border border-[#383838]"
               >
                 {/* Floating Tilted Mockup Preview */}
                 {renderFloatingMockup(item.id)}

@@ -14,11 +14,11 @@
 
   .dark {
     --canvas: #090C10;
-    --panel: #12161F;
+    --panel: #262626;
     --text-primary: #FFFFFF;
     --text-secondary: #94A3B8;
-    --text-muted: #64748B;
-    --border: rgba(255, 255, 255, 0.10);
+    --text-muted: #8E8E93;
+    --border: #383838;
   }
 
   html {
@@ -120,16 +120,16 @@
 }
 
 .dark .editorial-panel {
-  background: rgba(18, 22, 31, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #262626;
+  border: 1px solid #383838;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 }
 
 /* Reference Dark Experience Panel */
 .experience-panel {
   border-radius: 32px;
-  background: #14161B;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #262626;
+  border: 1px solid #383838;
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
   color: #FFFFFF;
 }

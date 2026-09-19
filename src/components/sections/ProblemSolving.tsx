@@ -64,7 +64,7 @@ export const ProblemSolving: React.FC = () => {
               href={dsaRepo.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] text-[#171717] dark:text-white border border-black/[0.08] dark:border-white/[0.12] text-xs font-semibold uppercase tracking-wider hover:border-black dark:hover:border-white transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#1E1E1E] text-[#171717] dark:text-white border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider hover:border-black dark:hover:border-white transition-all shadow-2xs"
             >
               <Github className="w-4 h-4" />
               <span>C++ DSA Repo</span>
@@ -73,7 +73,7 @@ export const ProblemSolving: React.FC = () => {
         </div>
 
         {/* Dynamic LeetCode Live Metric Dashboard Card */}
-        <div className="relative z-10 my-8 p-6 sm:p-8 rounded-[24px] bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+        <div className="relative z-10 my-8 p-6 sm:p-8 rounded-[24px] bg-black/[0.02] dark:bg-[#1C1C1C] border border-black/[0.06] dark:border-[#383838] flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
           {/* Main Counter */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ export const ProblemSolving: React.FC = () => {
           {/* Breakdown Grid: Easy, Medium, Hard, Global Rank */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full lg:w-auto lg:shrink-0">
             {/* Easy */}
-            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.06] dark:border-[#383838] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold">
                   Easy
@@ -118,7 +118,7 @@ export const ProblemSolving: React.FC = () => {
             </div>
 
             {/* Medium */}
-            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.06] dark:border-[#383838] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold">
                   Medium
@@ -131,7 +131,7 @@ export const ProblemSolving: React.FC = () => {
             </div>
 
             {/* Hard */}
-            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.06] dark:border-[#383838] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-rose-600 dark:text-rose-400 font-bold">
                   Hard
@@ -145,7 +145,7 @@ export const ProblemSolving: React.FC = () => {
 
             {/* Global Ranking */}
             <div
-              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0 sm:min-w-[108px]"
+              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.06] dark:border-[#383838] space-y-1 min-w-0 sm:min-w-[108px]"
               title={stats.ranking ? `Global Rank: ${stats.ranking.toLocaleString('en-US')}` : undefined}
             >
               <div className="flex items-center justify-between">
@@ -164,7 +164,7 @@ export const ProblemSolving: React.FC = () => {
         {/* Algorithm Topic Categories */}
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
           {/* Linear Data Structures */}
-          <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
+          <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-[#1C1C1C] border border-black/[0.06] dark:border-[#383838] space-y-3">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block">
               Linear Foundations
             </span>
@@ -172,7 +172,7 @@ export const ProblemSolving: React.FC = () => {
               {linearTopics.map((topic) => (
                 <span
                   key={topic.name}
-                  className="px-3 py-1 rounded-full text-xs font-mono bg-white dark:bg-[#161B24] text-[#171717] dark:text-slate-300 border border-black/[0.06] dark:border-white/[0.08]"
+                  className="px-3 py-1 rounded-full text-xs font-mono bg-white dark:bg-[#262626] text-[#171717] dark:text-slate-300 border border-black/[0.06] dark:border-[#383838]"
                 >
                   {topic.name}
                 </span>
@@ -181,7 +181,7 @@ export const ProblemSolving: React.FC = () => {
           </div>
 
           {/* Hierarchical & Non-Linear */}
-          <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
+          <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-[#1C1C1C] border border-black/[0.06] dark:border-[#383838] space-y-3">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block">
               Trees &amp; Graphs
             </span>
@@ -189,7 +189,7 @@ export const ProblemSolving: React.FC = () => {
               {nonLinearTopics.map((topic) => (
                 <span
                   key={topic.name}
-                  className="px-3 py-1 rounded-full text-xs font-mono bg-white dark:bg-[#161B24] text-[#171717] dark:text-slate-300 border border-black/[0.06] dark:border-white/[0.08]"
+                  className="px-3 py-1 rounded-full text-xs font-mono bg-white dark:bg-[#262626] text-[#171717] dark:text-slate-300 border border-black/[0.06] dark:border-[#383838]"
                 >
                   {topic.name}
                 </span>
@@ -198,7 +198,7 @@ export const ProblemSolving: React.FC = () => {
           </div>
 
           {/* Advanced Optimization & Graph Algorithms */}
-          <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
+          <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-[#1C1C1C] border border-black/[0.06] dark:border-[#383838] space-y-3">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#8E8E93] dark:text-slate-400 block">
               Advanced Paradigms
             </span>
@@ -206,7 +206,7 @@ export const ProblemSolving: React.FC = () => {
               {advancedTopics.map((topic) => (
                 <span
                   key={topic.name}
-                  className="px-3 py-1 rounded-full text-xs font-mono bg-white dark:bg-[#161B24] text-[#171717] dark:text-slate-300 border border-black/[0.06] dark:border-white/[0.08]"
+                  className="px-3 py-1 rounded-full text-xs font-mono bg-white dark:bg-[#262626] text-[#171717] dark:text-slate-300 border border-black/[0.06] dark:border-[#383838]"
                 >
                   {topic.name}
                 </span>

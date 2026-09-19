@@ -243,7 +243,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setActiveTab('All')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-[#12161F] text-xs sm:text-sm font-semibold tracking-wide text-neutral-900 dark:text-white hover:border-neutral-900 dark:hover:border-white hover:shadow-xs transition-all duration-200 group/btn"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-neutral-300 dark:border-[#383838] bg-white dark:bg-[#1E1E1E] text-xs sm:text-sm font-semibold tracking-wide text-neutral-900 dark:text-white hover:border-neutral-900 dark:hover:border-white hover:shadow-xs transition-all duration-200 group/btn"
           >
             <span>View All Work</span>
             <ArrowUpRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />

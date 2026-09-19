@@ -67,7 +67,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
       <div className="flex items-center justify-between gap-4 mb-8">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white hover:border-black dark:hover:border-white shadow-xs hover:shadow transition-all group"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white hover:border-black dark:hover:border-white shadow-xs hover:shadow transition-all group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
           <span>Back to Portfolio</span>
@@ -76,7 +76,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleShare}
-            className="p-2 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white hover:border-black dark:hover:border-white shadow-xs transition-all"
+            className="p-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white hover:border-black dark:hover:border-white shadow-xs transition-all"
             title="Share Project"
             aria-label="Share Project"
           >
@@ -132,7 +132,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white hover:border-black dark:hover:border-white transition-all shadow-xs"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white hover:border-black dark:hover:border-white transition-all shadow-xs"
             >
               <Github className="w-4 h-4" />
               <span>Source Repository</span>
@@ -169,7 +169,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
         {/* Visual Mockup Banner / Browser Showcase */}
         {project.thumbnail ? (
-          <div className="relative z-10 my-8 rounded-[24px] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-stone-900 dark:bg-[#12161F]">
+          <div className="relative z-10 my-8 rounded-[24px] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-stone-900 dark:bg-[#1C1C1C]">
             {/* macOS Browser Chrome Header */}
             <div className="px-4 py-3 bg-stone-950/90 dark:bg-black/70 border-b border-black/10 dark:border-white/10 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">

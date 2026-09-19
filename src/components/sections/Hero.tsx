@@ -123,7 +123,7 @@ export const Hero: React.FC = () => {
               href={personalInfo.socials.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Github className="w-4 h-4 text-[#171717] dark:text-white" />
               <span>GitHub</span>
@@ -133,7 +133,7 @@ export const Hero: React.FC = () => {
               href={personalInfo.socials.linkedin}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Linkedin className="w-4 h-4 text-[#0A66C2]" />
               <span>LinkedIn</span>
@@ -143,7 +143,7 @@ export const Hero: React.FC = () => {
               href={personalInfo.socials.leetcode}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Code className="w-4 h-4 text-amber-500" />
               <span>LeetCode [{leetcodeStats.totalSolved}]</span>
@@ -151,7 +151,7 @@ export const Hero: React.FC = () => {
 
             <a
               href={`mailto:${personalInfo.socials.email}`}
-              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Mail className="w-4 h-4 text-[#171717] dark:text-white" />
               <span>Email</span>

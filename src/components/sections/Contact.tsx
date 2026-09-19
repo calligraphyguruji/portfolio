@@ -78,7 +78,7 @@ export const Contact: React.FC = () => {
 
         <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
           {/* Centered Availability Status Pill matching Screenshot 5 */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] shadow-xs">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] shadow-xs">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -156,7 +156,7 @@ export const Contact: React.FC = () => {
                           value={formData.name}
                           onChange={handleChange}
                           placeholder="Your Name"
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-[#383838] bg-white dark:bg-[#1E1E1E] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
                         />
                       </div>
 
@@ -175,7 +175,7 @@ export const Contact: React.FC = () => {
                           value={formData.email}
                           onChange={handleChange}
                           placeholder="your.email@example.com"
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-[#383838] bg-white dark:bg-[#1E1E1E] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
                         />
                       </div>
                     </div>
@@ -194,7 +194,7 @@ export const Contact: React.FC = () => {
                         value={formData.subject}
                         onChange={handleChange}
                         placeholder="Project or Internship Discussion"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-[#383838] bg-white dark:bg-[#1E1E1E] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10"
                       />
                     </div>
 
@@ -213,7 +213,7 @@ export const Contact: React.FC = () => {
                         value={formData.message}
                         onChange={handleChange}
                         placeholder="Tell me about your project, timeline, or open role..."
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#12161F] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10 resize-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] dark:border-[#383838] bg-white dark:bg-[#1E1E1E] text-xs text-[#171717] dark:text-white placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/10 resize-none"
                       />
                     </div>
 
@@ -257,7 +257,7 @@ export const Contact: React.FC = () => {
               href={personalInfo.socials.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Github className="w-3.5 h-3.5" />
               <span>GitHub</span>
@@ -268,7 +268,7 @@ export const Contact: React.FC = () => {
               href={personalInfo.socials.linkedin}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" />
               <span>LinkedIn</span>
@@ -279,7 +279,7 @@ export const Contact: React.FC = () => {
               href={personalInfo.socials.leetcode}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Code className="w-3.5 h-3.5 text-amber-500" />
               <span>LeetCode</span>
@@ -288,7 +288,7 @@ export const Contact: React.FC = () => {
             {/* Direct Email Pill */}
             <a
               href={`mailto:${personalInfo.socials.email}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
             >
               <Mail className="w-3.5 h-3.5" />
               <span>{personalInfo.socials.email}</span>

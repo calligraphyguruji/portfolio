@@ -50,7 +50,7 @@ export const About: React.FC = () => {
             </p>
 
             {/* Editorial Manifesto Quote */}
-            <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border-l-4 border-[#171717] dark:border-white space-y-2">
+            <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-[#1C1C1C] border-l-4 border-[#171717] dark:border-white space-y-2">
               <blockquote className="text-lg sm:text-xl font-sans font-medium text-[#171717] dark:text-white leading-snug">
                 &ldquo;Rigorous computational thinking, disciplined DSA problem-solving, and practical user-facing software.&rdquo;
               </blockquote>
@@ -62,9 +62,9 @@ export const About: React.FC = () => {
 
           {/* Right Column: Academic & Attribute Highlights */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-4">
+            <div className="p-6 rounded-2xl bg-black/[0.02] dark:bg-[#1C1C1C] border border-black/[0.06] dark:border-[#383838] space-y-4">
               <div className="flex items-start gap-3.5">
-                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white shrink-0">
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
@@ -80,10 +80,10 @@ export const About: React.FC = () => {
                 </div>
               </div>
 
-              <div className="border-t border-black/[0.06] dark:border-white/[0.08]" />
+              <div className="border-t border-black/[0.06] dark:border-[#383838]" />
 
               <div className="flex items-start gap-3.5">
-                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white shrink-0">
                   <Award className="w-5 h-5 text-amber-500" />
                 </div>
                 <div>
@@ -99,10 +99,10 @@ export const About: React.FC = () => {
                 </div>
               </div>
 
-              <div className="border-t border-black/[0.06] dark:border-white/[0.08]" />
+              <div className="border-t border-black/[0.06] dark:border-[#383838]" />
 
               <div className="flex items-start gap-3.5">
-                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white shrink-0">
                   <Terminal className="w-5 h-5 text-indigo-500" />
                 </div>
                 <div>
@@ -118,10 +118,10 @@ export const About: React.FC = () => {
                 </div>
               </div>
 
-              <div className="border-t border-black/[0.06] dark:border-white/[0.08]" />
+              <div className="border-t border-black/[0.06] dark:border-[#383838]" />
 
               <div className="flex items-start gap-3.5">
-                <div className="p-2.5 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white shrink-0">
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white shrink-0">
                   <MapPin className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div>

@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
         {/* Left: Floating Status Pill matching Screenshot 1 */}
         <a
           href="#contact"
-          className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] shadow-sm hover:shadow transition-all group"
+          className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] shadow-sm hover:shadow transition-all group"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -90,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
           {/* Theme Switcher */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-[#5E5E5E] dark:text-slate-300 hover:text-[#171717] dark:hover:text-white transition-all shadow-xs"
+            className="p-2 rounded-full bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#5E5E5E] dark:text-slate-300 hover:text-[#171717] dark:hover:text-white transition-all shadow-xs"
             aria-label="Toggle theme"
             title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
@@ -109,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-full bg-white dark:bg-[#12161F] border border-black/[0.08] dark:border-white/[0.12] text-[#171717] dark:text-white"
+            className="lg:hidden p-2 rounded-full bg-white dark:bg-[#262626] border border-black/[0.08] dark:border-[#383838] text-[#171717] dark:text-white"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -119,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-4 top-20 rounded-3xl bg-white/98 dark:bg-[#12161F]/98 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.12] p-6 space-y-4 shadow-2xl z-50">
+        <div className="lg:hidden fixed inset-x-4 top-20 rounded-3xl bg-white/98 dark:bg-[#262626]/98 backdrop-blur-2xl border border-black/[0.08] dark:border-[#383838] p-6 space-y-4 shadow-2xl z-50">
           <nav className="flex flex-col space-y-3">
             {navigationLinks.map((link) => (
               <a
