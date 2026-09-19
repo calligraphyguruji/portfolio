@@ -103,7 +103,7 @@ export const ProblemSolving: React.FC = () => {
           </div>
 
           {/* Breakdown Grid: Easy, Medium, Hard, Global Rank */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full lg:w-auto lg:shrink-0">
             {/* Easy */}
             <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0">
               <div className="flex items-center justify-between">
@@ -145,8 +145,8 @@ export const ProblemSolving: React.FC = () => {
 
             {/* Global Ranking */}
             <div
-              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0"
-              title={stats.ranking ? `Global Rank: #${stats.ranking.toLocaleString('en-US')}` : undefined}
+              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#161B24] border border-black/[0.06] dark:border-white/[0.08] space-y-1 min-w-0 sm:min-w-[108px]"
+              title={stats.ranking ? `Global Rank: ${stats.ranking.toLocaleString('en-US')}` : undefined}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-indigo-600 dark:text-cyan-400 font-bold">
@@ -154,8 +154,8 @@ export const ProblemSolving: React.FC = () => {
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">Global</span>
               </div>
-              <div className="text-base sm:text-lg lg:text-xl font-bold text-[#171717] dark:text-white tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                {stats.ranking ? `#${stats.ranking.toLocaleString('en-US')}` : 'Top 10%'}
+              <div className="text-lg sm:text-xl font-bold text-[#171717] dark:text-white tracking-tight whitespace-nowrap">
+                {stats.ranking ? stats.ranking.toLocaleString('en-US') : 'Top 10%'}
               </div>
             </div>
           </div>
