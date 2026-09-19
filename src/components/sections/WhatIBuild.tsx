@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { services } from '../../data/portfolioData';
+import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
 import { ArrowUpRight, X } from 'lucide-react';
 
 export const WhatIBuild: React.FC = () => {
   // Default to first item ('fullstack') matching the reference screenshot layout
   const [activeId, setActiveId] = useState<string | null>('fullstack');
   const shouldReduceMotion = useReducedMotion();
+  const leetcodeStats = useLeetCodeStats();
 
   /* Bespoke tilted graphic mockups matching the screenshot aesthetic tailored for software engineering */
   const renderFloatingMockup = (id: string) => {
@@ -134,7 +136,7 @@ export const WhatIBuild: React.FC = () => {
         <div className="w-72 sm:w-80 rounded-2xl bg-[#0A0E17] p-4 shadow-2xl border border-white/15 text-white font-mono text-[10px]">
           <div className="flex items-center justify-between pb-2 border-b border-white/10 text-[9px] text-slate-400">
             <span className="text-cyan-400 font-bold uppercase">C++20 STL Optimization</span>
-            <span className="text-emerald-400">150+ Solved</span>
+            <span className="text-emerald-400">{leetcodeStats.totalSolved}+ Solved</span>
           </div>
           <div className="py-2 space-y-2">
             <div className="h-10 w-full rounded bg-black/40 border border-white/10 relative overflow-hidden flex items-center px-2">

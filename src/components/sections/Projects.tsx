@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { projects } from '../../data/portfolioData';
 import { Project } from '../../types';
+import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
 import {
   ArrowUpRight,
   Github,
@@ -23,6 +24,7 @@ type TabType = 'All' | 'Real Project' | 'Exploration';
 export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
   const [activeTab, setActiveTab] = useState<TabType>('All');
   const shouldReduceMotion = useReducedMotion();
+  const leetcodeStats = useLeetCodeStats();
 
   const tabs: TabType[] = ['All', 'Real Project', 'Exploration'];
 
@@ -176,7 +178,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
             <TrendingUp className="w-3 h-3" />
             Runtime: 0ms (Beats 100%)
           </span>
-          <span className="text-sky-300 font-bold">150+ Verified Solutions</span>
+          <span className="text-sky-300 font-bold">{leetcodeStats.totalSolved}+ Verified Solutions</span>
         </div>
       </div>
     );

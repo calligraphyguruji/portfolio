@@ -293,7 +293,7 @@ export const Experience: React.FC = () => {
         <div className="mt-8 pt-6 border-t border-[#383838] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-neutral-400 relative z-10">
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-cyan-400" />
-            <span>Verified 150+ C++ Algorithmic Challenges on LeetCode</span>
+            <span>Verified {leetcodeStats.totalSolved}+ C++ Algorithmic Challenges on LeetCode</span>
           </div>
           <a
             href={dsaRepo.leetcodeProfile}
