@@ -213,10 +213,10 @@ export const projects: Project[] = [
     title: 'Amazon E-Commerce Clone',
     tagline: 'Multi-Page Responsive E-Commerce Architecture',
     category: 'Frontend',
-    badge: 'VANILLA JS ARCHITECTURE',
+    badge: 'LIVE ON VERCEL',
     tier: 'core',
-    projectType: 'exploration',
-    tags: ['E-Commerce Architecture', 'Vanilla JavaScript'],
+    projectType: 'real',
+    tags: ['E-Commerce Architecture', 'Vercel Live'],
     description:
       'A multi-page e-commerce web application inspired by Amazon, replicating dynamic product rendering, interactive cart management, checkout order review, order history, and package delivery tracking using modern vanilla JavaScript and modular CSS.',
     longDescription:
@@ -240,12 +240,14 @@ export const projects: Project[] = [
       'Layout: Mobile-first responsive grids and flexible navigation bars',
     ],
     stats: [
+      { label: 'Deployment', value: 'Vercel Live' },
       { label: 'Architecture', value: 'Multi-Page' },
       { label: 'Stack', value: 'Vanilla JS (ES6+)' },
-      { label: 'Styling', value: 'CSS Grid / Flex' },
       { label: 'Frameworks', value: 'Zero Bloat' },
     ],
+    liveUrl: 'https://amazon-clone-beta-bay.vercel.app/',
     githubUrl: 'https://github.com/calligraphyguruji/amazon-clone',
+    thumbnail: '/images/amazon-clone.png',
   },
   {
     id: 'rock-paper-scissors',
