@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#090D16" />
+      <stop offset="100%" stop-color="#141B2B" />
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.3" />
+    </linearGradient>
+    <radialGradient id="statusGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Squircle Base (Dark Obsidian) -->
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="4" />
+  <!-- Subtle Cyan Rim -->
+  <rect x="18" y="18" width="476" height="476" rx="114" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-opacity="0.25" />
+
+  <!-- Monogram A (Signature Cyan #38BDF8) -->
+  <path d="M 161.0 168.0 L 119.8 335.8 L 154.8 335.8 L 163.0 297.8 L 202.8 297.8 L 211.0 335.8 L 246.0 335.8 L 204.5 168.2 Z M 182.8 199.5 L 183.5 201.0 L 196.8 270.5 L 168.5 270.2 L 177.2 229.0 Z" fill="#38BDF8" fill-rule="evenodd" />
+
+  <!-- Monogram M (Pristine White #FFFFFF) -->
+  <path d="M 269.8 168.0 L 269.8 335.8 L 301.0 335.8 L 301.0 264.5 L 300.5 247.2 L 298.5 220.8 L 294.2 186.2 L 294.8 186.2 L 314.8 264.5 L 342.0 264.5 L 363.0 183.0 L 363.2 184.5 L 358.5 227.2 L 357.2 246.8 L 356.8 264.5 L 356.8 335.8 L 388.0 335.8 L 388.0 168.0 L 345.8 168.0 L 328.8 239.5 L 311.5 168.0 Z" fill="#FFFFFF" fill-rule="evenodd" />
+
+  <!-- Live Status Indicator (Emerald #10B981) -->
+  <circle cx="422" cy="90" r="32" fill="url(#statusGlow)" />
+  <circle cx="422" cy="90" r="18" fill="#10B981" />
+  <circle cx="417" cy="85" r="5" fill="#FFFFFF" fill-opacity="0.8" />
+</svg>
