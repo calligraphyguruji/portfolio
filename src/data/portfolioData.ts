@@ -245,7 +245,7 @@ export const projects: Project[] = [
       { label: 'Stack', value: 'Vanilla JS (ES6+)' },
       { label: 'Frameworks', value: 'Zero Bloat' },
     ],
-    liveUrl: 'https://amazon-clone-beta-bay.vercel.app/',
+    liveUrl: 'https://myecommerce-project-clone.vercel.app/',
     githubUrl: 'https://github.com/calligraphyguruji/amazon-clone',
     thumbnail: '/images/amazon-clone.png',
   },

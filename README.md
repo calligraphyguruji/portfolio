@@ -68,9 +68,10 @@ Each project includes interactive case study documentation accessible directly b
 * **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/internship-advisor)
 
 ### 3. 🛒 [Amazon E-Commerce Clone](https://calligraphyguruji.dev/#/project/amazon-clone) — Multi-Page Architecture
-* **Badge:** `VANILLA JS ARCHITECTURE`
+* **Badge:** `LIVE ON VERCEL`
 * **Overview:** A multi-page responsive e-commerce application inspired by Amazon, implementing dynamic catalog rendering, live cart state updates, checkout summary, order history, and package tracking in pure vanilla JavaScript and modular CSS.
-* **Tech Stack:** `JavaScript (ES6+)`, `HTML5`, `CSS3 Grid & Flexbox`, `DOM APIs`
+* **Tech Stack:** `JavaScript (ES6+)`, `HTML5`, `CSS3 Grid & Flexbox`, `DOM APIs`, `Vercel`
+* **Live Demo:** [myecommerce-project-clone.vercel.app](https://myecommerce-project-clone.vercel.app/)
 * **Repository:** [github.com/calligraphyguruji/amazon-clone](https://github.com/calligraphyguruji/amazon-clone)
 * **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/amazon-clone)
 
