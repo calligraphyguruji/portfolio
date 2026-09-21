@@ -330,6 +330,7 @@ export const projects: Project[] = [
     ],
     liveUrl: 'https://leetcode.com/u/calligraphyguruji/',
     githubUrl: 'https://github.com/calligraphyguruji/LeetCode-Questions',
+    thumbnail: '/images/leetcode-solutions.png',
   },
   {
     id: 'youtube-clone',
