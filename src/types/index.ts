@@ -2,6 +2,7 @@ export interface SocialLinks {
   github: string;
   linkedin: string;
   leetcode: string;
+  youtube: string;
   email: string;
 }
 

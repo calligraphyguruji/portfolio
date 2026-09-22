@@ -19,6 +19,7 @@ export const personalInfo: PersonalInfo = {
     github: 'https://github.com/calligraphyguruji',
     linkedin: 'https://www.linkedin.com/in/calligraphygurji/',
     leetcode: 'https://leetcode.com/u/calligraphyguruji/',
+    youtube: 'https://www.youtube.com/@calligraphyguruji',
     email: 'amanmishra7774@gmail.com',
   },
 };

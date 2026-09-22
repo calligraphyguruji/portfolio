@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { navigationLinks } from '../../data/portfolioData';
-import { Menu, X, Sun, Moon, ArrowUpRight, Github, Linkedin, Code } from 'lucide-react';
+import { personalInfo, navigationLinks } from '../../data/portfolioData';
+import { Menu, X, Sun, Moon, ArrowUpRight, Github, Linkedin, Code, Youtube } from 'lucide-react';
 
 interface NavbarProps {
   darkMode: boolean;
@@ -139,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
           </nav>
           <div className="pt-2 flex items-center justify-around">
             <a
-              href="https://github.com/calligraphyguruji"
+              href={personalInfo.socials.github}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-[#5E5E5E] dark:text-slate-400 hover:text-black dark:hover:text-white"
@@ -148,7 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
               <Github className="w-4 h-4" />
             </a>
             <a
-              href="https://www.linkedin.com/in/calligraphygurji/"
+              href={personalInfo.socials.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-[#5E5E5E] dark:text-slate-400 hover:text-black dark:hover:text-white"
@@ -157,13 +157,22 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
               <Linkedin className="w-4 h-4" />
             </a>
             <a
-              href="https://leetcode.com/u/calligraphyguruji/"
+              href={personalInfo.socials.leetcode}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-[#5E5E5E] dark:text-slate-400 hover:text-black dark:hover:text-white"
               aria-label="LeetCode"
             >
               <Code className="w-4 h-4" />
+            </a>
+            <a
+              href={personalInfo.socials.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-[#5E5E5E] dark:text-slate-400 hover:text-black dark:hover:text-white"
+              aria-label="YouTube"
+            >
+              <Youtube className="w-4 h-4" />
             </a>
           </div>
         </div>

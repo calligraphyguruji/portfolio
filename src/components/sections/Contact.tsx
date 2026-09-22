@@ -6,6 +6,7 @@ import {
   Github,
   Linkedin,
   Code,
+  Youtube,
   Mail,
   Send,
   CheckCircle2,
@@ -283,6 +284,17 @@ export const Contact: React.FC = () => {
             >
               <Code className="w-3.5 h-3.5 text-amber-500" />
               <span>LeetCode</span>
+            </a>
+
+            {/* YouTube Pill */}
+            <a
+              href={personalInfo.socials.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-white hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Youtube className="w-3.5 h-3.5 text-[#FF0000]" />
+              <span>YouTube</span>
             </a>
 
             {/* Direct Email Pill */}

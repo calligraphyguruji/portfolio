@@ -43,6 +43,14 @@ export const Footer: React.FC = () => {
             LeetCode
           </a>
           <a
+            href={personalInfo.socials.youtube}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#171717] dark:hover:text-white transition-colors"
+          >
+            YouTube
+          </a>
+          <a
             href={`mailto:${personalInfo.socials.email}`}
             className="hover:text-[#171717] dark:hover:text-white transition-colors"
           >

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { personalInfo, educationInfo } from '../../data/portfolioData';
 import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
-import { ArrowUpRight, Github, Linkedin, Code, Mail } from 'lucide-react';
+import { ArrowUpRight, Github, Linkedin, Code, Mail, Youtube } from 'lucide-react';
 
 export const Hero: React.FC = () => {
   const [imgSrc, setImgSrc] = useState('/images/potrait.png');
@@ -147,6 +147,16 @@ export const Hero: React.FC = () => {
             >
               <Code className="w-4 h-4 text-amber-500" />
               <span>LeetCode [{leetcodeStats.totalSolved}]</span>
+            </a>
+
+            <a
+              href={personalInfo.socials.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-medium text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white hover:shadow-xs transition-all"
+            >
+              <Youtube className="w-4 h-4 text-[#FF0000]" />
+              <span>YouTube</span>
             </a>
 
             <a
