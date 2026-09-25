@@ -34,7 +34,7 @@ export const Hero: React.FC = () => {
           <h1 className="flex items-center justify-center gap-x-3 sm:gap-x-6 md:gap-x-8 text-4xl sm:text-6xl md:text-7xl lg:text-[6.8rem] xl:text-[8rem] font-extrabold uppercase tracking-tight leading-none whitespace-nowrap">
             <span className="text-stroke-outline">AMAN</span>
             <span className="text-[#171717] dark:text-white">MISHRA</span>
-            <span className="sr-only"> — Software Developer | C++ • React • AI/ML</span>
+            <span className="sr-only"> (Calligraphy Guruji) — Software Developer | C++ • React • AI/ML</span>
           </h1>
         </div>
 

@@ -12,13 +12,13 @@ export interface PageSEOProps {
   jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const DEFAULT_TITLE = 'Aman Mishra | Software Developer | C++ • React • AI/ML';
+const DEFAULT_TITLE = 'Aman Mishra (Calligraphy Guruji) | Software Developer | C++ • React • AI/ML';
 const DEFAULT_DESCRIPTION =
-  'Aman Mishra is a software developer specializing in C++, Data Structures & Algorithms, React, full-stack systems, and AI/ML integrations.';
+  'Aman Mishra (Calligraphy Guruji) is a software developer specializing in C++, Data Structures & Algorithms, React, full-stack systems, and AI/ML integrations.';
 const DEFAULT_CANONICAL = 'https://www.calligraphyguruji.dev/';
 const DEFAULT_IMAGE = 'https://www.calligraphyguruji.dev/og-image.png';
-const DEFAULT_IMAGE_ALT = 'Aman Mishra - Software Developer Portfolio';
-const SITE_NAME = 'Aman Mishra Portfolio';
+const DEFAULT_IMAGE_ALT = 'Aman Mishra (Calligraphy Guruji) - Software Developer Portfolio';
+const SITE_NAME = 'Aman Mishra (Calligraphy Guruji) Portfolio';
 
 function setMetaTag(selector: string, attrName: string, attrValue: string, content: string) {
   let element = document.querySelector(selector) as HTMLMetaElement | null;
