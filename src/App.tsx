@@ -86,6 +86,9 @@ export default function App() {
         href.startsWith('mailto:') ||
         href.startsWith('tel:') ||
         target.getAttribute('target') === '_blank' ||
+        target.hasAttribute('download') ||
+        href.endsWith('.pdf') ||
+        /\.[a-zA-Z0-9]+$/.test(href.split('?')[0]) ||
         e.ctrlKey ||
         e.metaKey ||
         e.shiftKey ||
