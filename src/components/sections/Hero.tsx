@@ -34,6 +34,7 @@ export const Hero: React.FC = () => {
           <h1 className="flex items-center justify-center gap-x-3 sm:gap-x-6 md:gap-x-8 text-4xl sm:text-6xl md:text-7xl lg:text-[6.8rem] xl:text-[8rem] font-extrabold uppercase tracking-tight leading-none whitespace-nowrap">
             <span className="text-stroke-outline">AMAN</span>
             <span className="text-[#171717] dark:text-white">MISHRA</span>
+            <span className="sr-only"> — Software Developer | C++ • React • AI/ML</span>
           </h1>
         </div>
 
@@ -87,7 +88,11 @@ export const Hero: React.FC = () => {
               <img
                 src={imgSrc}
                 onError={handleImageError}
-                alt="Aman Mishra"
+                alt="Aman Mishra, software developer and computer science engineering student"
+                width={350}
+                height={438}
+                loading="eager"
+                decoding="async"
                 className="w-full h-full object-cover object-top filter grayscale contrast-[1.08] brightness-[0.98] transition-transform duration-700 ease-out group-hover:scale-102"
               />
 
@@ -107,7 +112,12 @@ export const Hero: React.FC = () => {
                 <img
                   src={imgSrc}
                   onError={handleImageError}
-                  alt="Aman Mishra Color Spotlight"
+                  alt=""
+                  aria-hidden="true"
+                  width={350}
+                  height={438}
+                  loading="eager"
+                  decoding="async"
                   className="w-full h-full object-cover object-top filter contrast-[1.05] brightness-[1.02] transition-transform duration-700 ease-out group-hover:scale-102"
                 />
               </div>

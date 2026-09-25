@@ -67,8 +67,45 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
+      <div className="py-4 border-t border-black/[0.04] dark:border-white/[0.04] flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[#5E5E5E] dark:text-slate-400">
+        <nav aria-label="Footer Quick Links" className="flex flex-wrap items-center gap-4">
+          <a href="/projects" className="hover:text-[#171717] dark:hover:text-white transition-colors">
+            Projects
+          </a>
+          <span className="text-black/20 dark:text-white/20">&bull;</span>
+          <a href="/about" className="hover:text-[#171717] dark:hover:text-white transition-colors">
+            About
+          </a>
+          <span className="text-black/20 dark:text-white/20">&bull;</span>
+          <a href="/experience" className="hover:text-[#171717] dark:hover:text-white transition-colors">
+            Experience
+          </a>
+          <span className="text-black/20 dark:text-white/20">&bull;</span>
+          <a href="/contact" className="hover:text-[#171717] dark:hover:text-white transition-colors">
+            Contact
+          </a>
+          <span className="text-black/20 dark:text-white/20">&bull;</span>
+          <a href="/blog" className="hover:text-[#171717] dark:hover:text-white transition-colors">
+            Articles
+          </a>
+        </nav>
+
+        <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#8E8E93] dark:text-slate-500">
+          <span>Featured:</span>
+          <a href="/projects/kaushalnexus" className="hover:text-[#171717] dark:hover:text-slate-300 underline underline-offset-2">
+            KaushalNexus
+          </a>
+          <a href="/projects/youtube-clone" className="hover:text-[#171717] dark:hover:text-slate-300 underline underline-offset-2">
+            YouTube Clone
+          </a>
+          <a href="/projects/amazon-clone" className="hover:text-[#171717] dark:hover:text-slate-300 underline underline-offset-2">
+            Amazon Clone
+          </a>
+        </div>
+      </div>
+
       <div className="text-center text-[11px] font-mono text-[#8E8E93] dark:text-slate-500 pt-2">
-        &copy; 2026 Aman Mishra. All rights reserved.
+        &copy; 2026 Aman Mishra (CalligraphyGuruji). All rights reserved.
       </div>
     </footer>
   );

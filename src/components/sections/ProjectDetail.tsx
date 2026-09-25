@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { Project } from '../../types';
 import { projects } from '../../data/portfolioData';
 import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
+import { PageSEO } from '../common/PageSEO';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -56,22 +57,58 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
     }
   };
 
+  const projectImageUrl = project.thumbnail
+    ? project.thumbnail.startsWith('http')
+      ? project.thumbnail
+      : `https://www.calligraphyguruji.dev${project.thumbnail}`
+    : 'https://www.calligraphyguruji.dev/og-image.png';
+
+  const projectJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareSourceCode',
+    name: project.title,
+    description: project.description,
+    codeRepository: project.githubUrl,
+    programmingLanguage: project.technologies,
+    ...(project.liveUrl ? { url: project.liveUrl } : {}),
+    author: {
+      '@type': 'Person',
+      name: 'Aman Mishra',
+      url: 'https://www.calligraphyguruji.dev/',
+      jobTitle: 'Software Developer',
+    },
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10"
-    >
-      {/* Top Back & Action Bar */}
-      <div className="flex items-center justify-between gap-4 mb-8">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white hover:border-black dark:hover:border-white shadow-xs hover:shadow transition-all group"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Portfolio</span>
-        </button>
+    <>
+      <PageSEO
+        title={`${project.title} | Aman Mishra — Software Developer Portfolio`}
+        description={project.tagline || project.description}
+        canonical={`https://www.calligraphyguruji.dev/projects/${project.id}`}
+        image={projectImageUrl}
+        imageAlt={`${project.title} - ${project.tagline}`}
+        type="article"
+        jsonLd={projectJsonLd}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10"
+      >
+        {/* Top Back & Action Bar */}
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <a
+            href="/projects"
+            onClick={(e) => {
+              e.preventDefault();
+              onBack();
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white hover:border-black dark:hover:border-white shadow-xs hover:shadow transition-all group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+            <span>Back to All Projects</span>
+          </a>
 
         <div className="flex items-center gap-2">
           <button
@@ -206,7 +243,11 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
             <div className="relative overflow-hidden bg-black/40">
               <img
                 src={project.thumbnail}
-                alt={`${project.title} Interface Screenshot`}
+                alt={`${project.title} - ${project.tagline}`}
+                width={1200}
+                height={675}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto object-cover object-top max-h-[620px]"
               />
             </div>
@@ -352,29 +393,42 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
           {/* Navigation between Projects */}
           <div className="pt-8 mt-8 border-t border-black/[0.06] dark:border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4">
-            <button
-              onClick={() => onSelectProject(prevProject.id)}
+            <a
+              href={`/projects/${prevProject.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectProject(prevProject.id);
+              }}
               className="inline-flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400 hover:text-[#171717] dark:hover:text-white transition-colors"
             >
               <span>&larr; Prev: {prevProject.title}</span>
-            </button>
+            </a>
 
-            <button
-              onClick={onBack}
+            <a
+              href="/projects"
+              onClick={(e) => {
+                e.preventDefault();
+                onBack();
+              }}
               className="px-6 py-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-xs font-mono font-medium uppercase tracking-wider text-[#171717] dark:text-white transition-colors"
             >
-              All Projects (6)
-            </button>
+              All Projects ({projects.length})
+            </a>
 
-            <button
-              onClick={() => onSelectProject(nextProject.id)}
+            <a
+              href={`/projects/${nextProject.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectProject(nextProject.id);
+              }}
               className="inline-flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400 hover:text-[#171717] dark:hover:text-white transition-colors"
             >
               <span>Next: {nextProject.title} &rarr;</span>
-            </button>
+            </a>
           </div>
         </div>
       </article>
     </motion.div>
+    </>
   );
 };

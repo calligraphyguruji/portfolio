@@ -35,11 +35,26 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
     return true;
   });
 
+  const getProjectHref = (id: string) => {
+    const slug = id === 'kaushal-nexus' ? 'kaushalnexus' : id;
+    return `/projects/${slug}`;
+  };
+
+  const getProjectAlt = (title: string, id: string) => {
+    if (id === 'kaushal-nexus') return 'KaushalNexus national skilling intelligence and learner analytics platform';
+    if (id === 'amazon-clone') return 'Amazon e-commerce clone web application interface and checkout workflow';
+    if (id === 'youtube-clone') return 'YouTube clone video streaming web application interface';
+    if (id === 'rock-paper-scissors') return 'Rock Paper Scissors interactive browser game interface';
+    if (id === 'leetcode-solutions') return 'LeetCode problem solutions and C++ algorithmic repository';
+    return `${title} interface screenshot and technical architecture`;
+  };
+
   const handleProjectClick = (projectId: string) => {
     if (onSelectProject) {
       onSelectProject(projectId);
     } else {
-      window.location.hash = `#/project/${projectId}`;
+      const slug = projectId === 'kaushal-nexus' ? 'kaushalnexus' : projectId;
+      window.location.hash = `#/project/${slug}`;
     }
   };
 
@@ -275,26 +290,25 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                 >
                   <div className="space-y-4">
                     {/* Visual Preview Container */}
-                    <div
-                      onClick={() => handleProjectClick(project.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleProjectClick(project.id);
-                        }
+                    <a
+                      href={getProjectHref(project.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleProjectClick(project.id);
                       }}
                       aria-label={`View case study for ${project.title}`}
-                      className="relative rounded-2xl sm:rounded-[22px] overflow-hidden aspect-[16/10] bg-neutral-950 border border-black/10 dark:border-white/10 shadow-sm group-hover:shadow-xl transition-all duration-500 cursor-pointer group/preview"
+                      className="block relative rounded-2xl sm:rounded-[22px] overflow-hidden aspect-[16/10] bg-neutral-950 border border-black/10 dark:border-white/10 shadow-sm group-hover:shadow-xl transition-all duration-500 cursor-pointer group/preview"
                     >
                       {/* Real Screenshot or Rich Mockup */}
                       {project.thumbnail ? (
                         <div className="w-full h-full relative">
                           <img
                             src={project.thumbnail}
-                            alt={`${project.title} preview`}
+                            alt={getProjectAlt(project.title, project.id)}
+                            width={800}
+                            height={500}
                             loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover/preview:scale-[1.04]"
                           />
                           {/* Soft Vignette Overlay for Crisp Contrast */}
@@ -345,16 +359,21 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                           <Github className="w-3.5 h-3.5" />
                         </a>
                       </div>
-                    </div>
+                    </a>
 
                     {/* Content Section Below Preview matching Screenshot */}
                     <div className="space-y-2 pt-1">
                       {/* Project Title - Subtitle Format */}
-                      <h3
-                        onClick={() => handleProjectClick(project.id)}
-                        className="text-lg sm:text-xl font-bold font-sans tracking-tight text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors cursor-pointer"
-                      >
-                        {project.title} - {project.tagline}
+                      <h3 className="text-lg sm:text-xl font-bold font-sans tracking-tight text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
+                        <a
+                          href={getProjectHref(project.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleProjectClick(project.id);
+                          }}
+                        >
+                          {project.title} - {project.tagline}
+                        </a>
                       </h3>
 
                       {/* Pill Tags matching Screenshot */}
