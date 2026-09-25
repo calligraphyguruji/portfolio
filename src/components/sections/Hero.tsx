@@ -67,7 +67,7 @@ export const Hero: React.FC = () => {
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </a>
               <a
-                href="/resume.pdf"
+                href="/Aman_Mishra_Resume.pdf"
                 download="Aman_Mishra_Resume.pdf"
                 className="inline-flex items-center gap-1.5 px-5 py-3 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white transition-all shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white"
                 aria-label="Download Aman Mishra Resume PDF (Aman_Mishra_Resume.pdf)"

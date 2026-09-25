@@ -171,7 +171,7 @@ export const Resume: React.FC = () => {
               <div className="pt-6 sm:pt-8 space-y-3.5">
                 {/* Primary Download CTA */}
                 <a
-                  href="/resume.pdf"
+                  href="/Aman_Mishra_Resume.pdf"
                   download="Aman_Mishra_Resume.pdf"
                   className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-md hover:shadow-lg active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white group"
                   aria-label="Download Aman Mishra Resume PDF (Aman_Mishra_Resume.pdf)"
@@ -182,7 +182,7 @@ export const Resume: React.FC = () => {
 
                 {/* Secondary View CTA */}
                 <a
-                  href="/resume.pdf"
+                  href="/Aman_Mishra_Resume.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.12] dark:border-white/[0.15] hover:border-black dark:hover:border-white text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#171717] dark:text-white transition-all duration-200 hover:shadow-xs active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white group"
