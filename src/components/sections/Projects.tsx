@@ -372,7 +372,9 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                             handleProjectClick(project.id);
                           }}
                         >
-                          {project.title} - {project.tagline}
+                          {project.id === 'leetcode-solutions'
+                            ? `${project.title} - ${leetcodeStats.totalSolved} Algorithmic Solutions in Modern C++`
+                            : `${project.title} - ${project.tagline}`}
                         </a>
                       </h3>
 
@@ -381,14 +383,21 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
                         {(project.tags && project.tags.length > 0
                           ? project.tags
                           : [project.category || 'Engineering', 'Full-Stack']
-                        ).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3.5 py-1.5 rounded-full text-xs font-medium font-sans bg-neutral-100 dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300 border border-neutral-200/70 dark:border-white/10"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                        ).map((tag) => {
+                          const displayTag =
+                            project.id === 'leetcode-solutions' && tag.includes('C++ Solved')
+                              ? `${leetcodeStats.totalSolved} C++ Solved`
+                              : tag;
+
+                          return (
+                            <span
+                              key={tag}
+                              className="px-3.5 py-1.5 rounded-full text-xs font-medium font-sans bg-neutral-100 dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300 border border-neutral-200/70 dark:border-white/10"
+                            >
+                              {displayTag}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

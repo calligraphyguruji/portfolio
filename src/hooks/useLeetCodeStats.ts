@@ -12,17 +12,17 @@ export interface LeetCodeStats {
 }
 
 const USERNAME = 'calligraphyguruji';
-const CACHE_KEY = `leetcode_stats_v2_${USERNAME}`;
-const CACHE_TIME_KEY = `leetcode_stats_time_v2_${USERNAME}`;
+const CACHE_KEY = `leetcode_stats_v3_${USERNAME}`;
+const CACHE_TIME_KEY = `leetcode_stats_time_v3_${USERNAME}`;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache to prevent rate-limiting while keeping it fresh
 
 // Fallback baseline from verified live profile as of September 2026
 const BASELINE_STATS = {
-  totalSolved: 193,
-  easySolved: 42,
-  mediumSolved: 130,
+  totalSolved: 205,
+  easySolved: 43,
+  mediumSolved: 141,
   hardSolved: 21,
-  ranking: 895616,
+  ranking: 838799,
 };
 
 export function useLeetCodeStats() {

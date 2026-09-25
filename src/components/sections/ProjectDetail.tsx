@@ -134,7 +134,9 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-black/[0.05] dark:bg-white/[0.08] text-[#171717] dark:text-white border border-black/[0.06] dark:border-white/[0.1]">
               <Sparkles className="w-3 h-3 text-indigo-500 dark:text-cyan-400" />
-              {project.badge || project.tier.toUpperCase()}
+              {project.id === 'leetcode-solutions'
+                ? `${leetcodeStats.totalSolved} PROBLEMS SOLVED`
+                : project.badge || project.tier.toUpperCase()}
             </span>
             {project.category && (
               <span className="px-3 py-1 rounded-full text-[10px] font-mono font-medium uppercase tracking-widest bg-black/[0.03] dark:bg-white/[0.04] text-[#5E5E5E] dark:text-slate-400">
@@ -148,7 +150,9 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
           </h1>
 
           <p className="text-base sm:text-xl font-medium text-[#5E5E5E] dark:text-slate-300 max-w-3xl leading-relaxed">
-            {project.tagline}
+            {project.id === 'leetcode-solutions'
+              ? `${leetcodeStats.totalSolved} C++ Algorithmic Solutions in Modern C++`
+              : project.tagline}
           </p>
 
           {/* Quick Action Links */}

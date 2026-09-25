@@ -295,14 +295,14 @@ export const projects: Project[] = [
   {
     id: 'leetcode-solutions',
     title: 'LeetCode Problem Solutions',
-    tagline: '150+ Algorithmic Solutions in Modern C++',
+    tagline: '205 C++ Algorithmic Solutions in Modern C++',
     category: 'Algorithms',
-    badge: '150+ PROBLEMS SOLVED',
+    badge: '205 PROBLEMS SOLVED',
     tier: 'core',
     projectType: 'exploration',
-    tags: ['Algorithms & DSA', '150+ C++ Solved'],
+    tags: ['Algorithms & DSA', '205 C++ Solved'],
     description:
-      'A curated repository of 150+ optimized algorithmic solutions across core Data Structures & Algorithms, featuring detailed time and space complexity breakdowns, pattern classifications, and clean modern C++ implementations.',
+      'A curated repository of 205+ optimized algorithmic solutions across core Data Structures & Algorithms, featuring detailed time and space complexity breakdowns, pattern classifications, and clean modern C++ implementations.',
     longDescription:
       'Dedicated algorithmic repository tracking continuous problem-solving practice on LeetCode. Each solution is implemented in modern C++ with an emphasis on asymptotic performance, cache locality, minimal memory allocation, and clean modular code. Topics range from linear data structures (two pointers, sliding window, monotonic stacks) to complex graph algorithms, tree traversals, and dynamic programming.',
     problemStatement:
@@ -311,7 +311,7 @@ export const projects: Project[] = [
       'Organized a structured curriculum of solutions categorized by paradigm (Dynamic Programming, Graph Theory, Trees, Greedy). Documented asymptotic complexities (Big-O time & space) and trade-offs for each approach.',
     technologies: ['C++', 'STL', 'Data Structures', 'Algorithms', 'Big-O Analysis', 'Competitive Programming'],
     features: [
-      '150+ verified solutions across Easy, Medium, and Hard difficulty levels',
+      '205+ verified solutions across Easy, Medium, and Hard difficulty levels',
       'Comprehensive topic coverage: Trees, Graphs, DP, Linked Lists, Heaps, and Backtracking',
       'Optimized asymptotic runtimes leveraging cache-efficient C++ STL containers',
       'Clear inline comments explaining key edge cases and algorithmic invariants',
@@ -324,7 +324,7 @@ export const projects: Project[] = [
       'Organization: Domain-based directory structure separating linear and non-linear patterns',
     ],
     stats: [
-      { label: 'Problems Solved', value: '150+' },
+      { label: 'Problems Solved', value: '205' },
       { label: 'Language', value: 'Modern C++' },
       { label: 'LeetCode Profile', value: 'Verified' },
       { label: 'Optimization', value: 'O(1) / O(N)' },
@@ -378,7 +378,7 @@ export const dsaRepo = {
   title: 'C++ Algorithmic Problem Solving',
   description:
     'Continuous algorithmic training in modern C++ with focus on computational efficiency and clean implementation.',
-  problemsSolved: '190+',
+  problemsSolved: '205',
   githubUrl: 'https://github.com/calligraphyguruji/LeetCode-Questions',
   leetcodeProfile: 'https://leetcode.com/u/calligraphyguruji/',
   topics: [
