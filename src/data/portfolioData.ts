@@ -407,5 +407,6 @@ export const navigationLinks = [
   { name: 'Service', href: '#services', count: '4' },
   { name: 'About', href: '#about' },
   { name: 'Experience', href: '#experience', count: 'Intern' },
+  { name: 'Resume', href: '#resume' },
   { name: 'Contact', href: '#contact' },
 ];

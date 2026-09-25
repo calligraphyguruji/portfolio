@@ -16,7 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
 
-      const sectionIds = ['hero', 'work', 'services', 'about', 'build', 'experience', 'contact'];
+      const sectionIds = ['hero', 'work', 'services', 'about', 'build', 'experience', 'resume', 'contact'];
       const scrollPos = window.scrollY + 160;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
         </a>
 
         {/* Center: Editorial Nav Links with Counts */}
-        <nav className="hidden lg:flex items-center gap-8 text-xs font-medium uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-medium uppercase tracking-wider text-[#5E5E5E] dark:text-slate-400">
           {navigationLinks.map((link) => {
             const id = link.href.substring(1);
             const isActive = activeSection === id;

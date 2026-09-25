@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { personalInfo, educationInfo } from '../../data/portfolioData';
 import { useLeetCodeStats } from '../../hooks/useLeetCodeStats';
-import { ArrowUpRight, Github, Linkedin, Code, Mail, Youtube } from 'lucide-react';
+import { ArrowUpRight, Github, Linkedin, Code, Mail, Youtube, Download } from 'lucide-react';
 
 export const Hero: React.FC = () => {
   const [imgSrc, setImgSrc] = useState('/images/potrait.png');
@@ -58,17 +58,26 @@ export const Hero: React.FC = () => {
               &ldquo;{personalInfo.summary}&rdquo;
             </p>
 
-            <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-4">
+            <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4">
               <a
                 href="#work"
-                className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95"
+                className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] dark:hover:bg-slate-200 text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white"
               >
                 <span>View My Work</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </a>
               <a
+                href="/resume.pdf"
+                download="Aman_Mishra_Resume.pdf"
+                className="inline-flex items-center gap-1.5 px-5 py-3 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-slate-200 hover:border-black dark:hover:border-white transition-all shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-white"
+                aria-label="Download Aman Mishra Resume PDF (Aman_Mishra_Resume.pdf)"
+              >
+                <Download className="w-3.5 h-3.5 text-[#171717] dark:text-white" />
+                <span>Download Resume</span>
+              </a>
+              <a
                 href="#contact"
-                className="text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white underline underline-offset-4 decoration-1 hover:opacity-75 transition-opacity"
+                className="text-xs font-semibold uppercase tracking-wider text-[#171717] dark:text-white underline underline-offset-4 decoration-1 hover:opacity-75 transition-opacity py-2"
               >
                 Let&apos;s Connect &rarr;
               </a>

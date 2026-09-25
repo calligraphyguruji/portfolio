@@ -9,6 +9,7 @@ import { Skills } from './components/sections/Skills';
 import { ProblemSolving } from './components/sections/ProblemSolving';
 import { Experience } from './components/sections/Experience';
 import { About } from './components/sections/About';
+import { Resume } from './components/sections/Resume';
 import { Contact } from './components/sections/Contact';
 import { ProjectDetail } from './components/sections/ProjectDetail';
 import { Blog } from './components/sections/Blog';
@@ -103,6 +104,7 @@ export default function App() {
           normalized === '/projects' ||
           normalized === '/about' ||
           normalized === '/experience' ||
+          normalized === '/resume' ||
           normalized === '/contact' ||
           normalized === '/services';
 
@@ -146,6 +148,8 @@ export default function App() {
       targetId = 'about';
     } else if (normalized === '/experience') {
       targetId = 'experience';
+    } else if (normalized === '/resume') {
+      targetId = 'resume';
     } else if (normalized === '/contact') {
       targetId = 'contact';
     }
@@ -193,6 +197,7 @@ export default function App() {
     cleanPath === '/projects' ||
     cleanPath === '/about' ||
     cleanPath === '/experience' ||
+    cleanPath === '/resume' ||
     cleanPath === '/contact' ||
     cleanPath === '/services';
 
@@ -233,6 +238,7 @@ export default function App() {
             <ProblemSolving />
             <Experience />
             <About />
+            <Resume />
             <Contact />
           </>
         ) : (
