@@ -42,6 +42,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
 
   const getProjectAlt = (title: string, id: string) => {
     if (id === 'kaushal-nexus') return 'KaushalNexus national skilling intelligence and learner analytics platform';
+    if (id === 'credvidhi') return 'CredVidhi enterprise loan processing and deterministic underwriting platform';
     if (id === 'amazon-clone') return 'Amazon e-commerce clone web application interface and checkout workflow';
     if (id === 'youtube-clone') return 'YouTube clone video streaming web application interface';
     if (id === 'rock-paper-scissors') return 'Rock Paper Scissors interactive browser game interface';
@@ -60,12 +61,12 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
 
   /* Bespoke fallback visual mockups for projects without a static image */
   const renderFallbackPreview = (project: Project) => {
-    if (project.id === 'internship-advisor') {
+    if (project.id === 'credvidhi') {
       return (
-        <div className="w-full h-full bg-[#0C1017] p-5 sm:p-6 flex flex-col justify-between select-none relative overflow-hidden font-mono text-xs">
+        <div className="w-full h-full bg-[#0F141C] p-5 sm:p-6 flex flex-col justify-between select-none relative overflow-hidden font-sans text-xs">
           {/* Ambient Glow */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-orange-500/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
           {/* Window Header */}
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] relative z-10">
@@ -73,29 +74,32 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
               <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-              <span className="ml-2 text-[11px] text-slate-400 font-medium">advisor_engine.py</span>
+              <span className="ml-2 text-[11px] text-slate-400 font-mono">credvidhi.vercel.app</span>
             </div>
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px]">
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-mono">
               <Sparkles className="w-2.5 h-2.5" />
-              <span>Gemini 1.5</span>
+              <span>Deterministic FSM</span>
             </div>
           </div>
 
-          {/* Terminal Content Mockup */}
-          <div className="space-y-3 py-2 relative z-10">
-            <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] text-slate-300">
-              <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Target Analysis</div>
-              <div className="text-white font-semibold text-xs sm:text-sm">Role: AI &amp; Machine Learning Intern</div>
+          {/* Content Mockup */}
+          <div className="space-y-2.5 py-2 relative z-10">
+            <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] text-slate-300 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Loan Underwriting Cockpit</div>
+                <div className="text-white font-semibold text-xs sm:text-sm">Home &amp; SME Working Capital</div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono">DTI ≤ 45% OK</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="p-2 rounded bg-white/[0.03] border border-white/[0.05]">
-                <div className="text-[10px] text-emerald-400">Validated Skills</div>
-                <div className="text-white font-medium text-[11px] mt-0.5">Python, NumPy, JSON</div>
+                <div className="text-[10px] text-orange-400">KYC Verification</div>
+                <div className="text-white font-medium text-[11px] mt-0.5">PAN &bull; Aadhaar &bull; ITR</div>
               </div>
-              <div className="p-2 rounded bg-purple-500/10 border border-purple-500/20">
-                <div className="text-[10px] text-purple-300">Target Gap</div>
-                <div className="text-white font-medium text-[11px] mt-0.5">FastAPI, Vector DB</div>
+              <div className="p-2 rounded bg-white/[0.03] border border-white/[0.05]">
+                <div className="text-[10px] text-cyan-300">Audit Trail</div>
+                <div className="text-white font-medium text-[11px] mt-0.5">Immutable Ledger</div>
               </div>
             </div>
           </div>
@@ -104,9 +108,9 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
           <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[10px] text-slate-400 relative z-10">
             <span className="flex items-center gap-1.5 text-emerald-400">
               <CheckCircle2 className="w-3 h-3" />
-              Strict JSON Output Validated
+              ACID State Machine Active
             </span>
-            <span className="text-slate-400">4-Week Study Plan Generated</span>
+            <span className="text-slate-400 font-mono">TAT &lt; 24 Hours</span>
           </div>
         </div>
       );

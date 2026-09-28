@@ -60,12 +60,13 @@ Each project includes interactive case study documentation accessible directly b
 * **Repository:** [github.com/calligraphyguruji/Kaushal-Nexus](https://github.com/calligraphyguruji/Kaushal-Nexus)
 * **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/kaushal-nexus)
 
-### 2. 🤖 [AI Internship Advisor](https://calligraphyguruji.dev/#/project/internship-advisor) — Generative AI Career Engine
-* **Badge:** `GEMINI AI ENGINE`
-* **Overview:** A command-line Python application utilizing Google Gemini API to analyze target internship roles or pasted job descriptions, diagnose missing skill gaps with priority rankings, compute required study hours, and generate custom week-by-week learning roadmaps.
-* **Tech Stack:** `Python 3`, `Google Gemini API`, `Prompt Engineering`, `JSON`, `Requests`, `python-dotenv`
-* **Repository:** [github.com/calligraphyguruji/Internship-Advisor-Mini-Project](https://github.com/calligraphyguruji/Internship-Advisor-Mini-Project)
-* **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/internship-advisor)
+### 2. 💳 [CredVidhi](https://calligraphyguruji.dev/#/project/credvidhi) — Enterprise Loan Processing & Deterministic Underwriting Platform
+* **Badge:** `LIVE ON VERCEL`
+* **Overview:** An institutional digital loan processing and deterministic credit underwriting platform featuring automated KYC verification, mathematical DTI calculations, a 6-stage finite state machine, and immutable audit compliance.
+* **Tech Stack:** `React 19`, `TypeScript`, `FastAPI`, `Python 3.11`, `PostgreSQL 16`, `Redis`, `Tailwind CSS`, `Framer Motion`, `Gemini AI`
+* **Live App:** [credvidhi.vercel.app](https://credvidhi.vercel.app/)
+* **Repository:** [github.com/calligraphyguruji/CredVidhi](https://github.com/calligraphyguruji/CredVidhi)
+* **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/credvidhi)
 
 ### 3. 🛒 [Amazon E-Commerce Clone](https://calligraphyguruji.dev/#/project/amazon-clone) — Multi-Page Architecture
 * **Badge:** `LIVE ON VERCEL`
