@@ -256,10 +256,35 @@ export const validateMessageQuality = (
     /\b(connect|introduce|reaching\s+out|interested\s+in|would\s+like\s+to|could\s+we|please\s+let\s+me\s+know|looking\s+forward)\b/i,
   ];
 
+  const messageLower = trimmedMessage.toLowerCase();
+
+  // Evaluate intent in the message body specifically (not just relying on subject line)
+  let bodyPositiveScore = 0;
+  for (const regex of intentPatterns) {
+    if (regex.test(messageLower)) {
+      bodyPositiveScore += 1;
+    }
+  }
+
   let positiveScore = 0;
   for (const regex of intentPatterns) {
     if (regex.test(fullText)) {
       positiveScore += 1;
+    }
+  }
+
+  // Detect casual social chat / small talk (e.g. "hello what are you doing?", "how are you", "kya chal raha hai")
+  const casualChatSmallTalkPatterns = [
+    /\b(what\s+(are\s+you|r\s+u|are\s+u)\s+doing)\b/i,
+    /\b(how\s+are\s+you|how\s+r\s+u|how\s+do\s+you\s+do)\b/i,
+    /\b(kya\s+kar\s+rahe\s+ho|kya\s+chal\s+raha\s+hai|kya\s+haal\s+hai)\b/i,
+    /\b(free\s+now|call\s+karo|bat\s+karo|baat\s+karo)\b/i,
+    /\b(what's\s+up|wassup|wazzup)\b/i,
+  ];
+
+  for (const regex of casualChatSmallTalkPatterns) {
+    if (regex.test(messageLower) && bodyPositiveScore === 0) {
+      return { ...genericRejection, debugReason: 'casual-social-chat' };
     }
   }
 
@@ -285,22 +310,22 @@ export const validateMessageQuality = (
     }
   }
 
-  // Rule 9A: Short message (< 15 words) with ZERO identifiable professional intent
-  // Catches vague casual greetings like "hello sir plz contact me" or "hey let us chat"
-  if (words.length < 15 && positiveScore === 0) {
-    return { ...genericRejection, debugReason: 'no-identifiable-intent' };
+  // Rule 9A: The message body itself must contain professional purpose
+  // A professional subject line cannot excuse an empty or casual message body
+  if (words.length < 20 && bodyPositiveScore === 0) {
+    return { ...genericRejection, debugReason: 'body-lacks-professional-context' };
   }
 
   // Rule 9B: Chat slang dominance
   // When casual slang count is high and meets or exceeds professional signals
   // Catches: "hey bro are u available" or "hi bhai internship hai call me asap"
-  if (negativeScore >= 2 && negativeScore >= positiveScore) {
+  if (negativeScore >= 2 && negativeScore >= bodyPositiveScore) {
     return { ...genericRejection, debugReason: 'chat-slang-dominance' };
   }
 
   // Rule 9C: Short message with casual abbreviations
   // Catches: "urgent work pls dm" or "send me ur number"
-  if (negativeScore >= 1 && words.length <= 8 && positiveScore <= 1) {
+  if (negativeScore >= 1 && words.length <= 8 && bodyPositiveScore <= 1) {
     return { ...genericRejection, debugReason: 'casual-slang-short-message' };
   }
 

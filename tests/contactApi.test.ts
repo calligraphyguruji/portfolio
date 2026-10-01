@@ -147,6 +147,8 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
       { text: '🔥🔥🔥🔥🔥🔥🔥', reason: 'emoji only' },
       { text: 'make money fast click here', reason: 'promotional spam' },
       { text: 'hi bhai internship hai call me asap', reason: 'low quality chat slang combination' },
+      { text: 'hello what are you doing?', reason: 'casual social small talk in message body' },
+      { text: 'how are you doing', reason: 'casual greeting without project substance' },
     ];
 
     for (const { text, reason } of rejectedExamples) {
@@ -159,6 +161,15 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
         );
       });
     }
+
+    test('rejects professional subject spoofing with casual small talk body', () => {
+      const evaluation = validateMessageQuality('Aman', 'project discussion', 'hello what are you doing?');
+      assert.strictEqual(evaluation.passes, false);
+      assert.strictEqual(
+        evaluation.userMessage,
+        'Please provide a clear and professional message describing your inquiry.'
+      );
+    });
 
     test('end-to-end: rejects low-quality message before EmailJS is called', async () => {
       const result = await handleContactSubmission(
