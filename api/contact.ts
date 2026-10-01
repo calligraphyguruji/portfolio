@@ -71,7 +71,7 @@ export const checkRateLimit = (
 
   const activeTimestamps = record.timestamps.filter((t) => now - t < HOURLY_LIMIT_MS);
 
-  // 1. Short burst protection (e.g. within 30 seconds)
+  // 1. Short burst protection (30 seconds)
   const lastSubmission = activeTimestamps[activeTimestamps.length - 1];
   if (lastSubmission && now - lastSubmission < BURST_LIMIT_MS) {
     const waitTime = Math.ceil((BURST_LIMIT_MS - (now - lastSubmission)) / 1000);
@@ -117,16 +117,12 @@ export const checkAndRecordDuplicate = (fingerprint: string): boolean => {
 };
 
 // ============================================================================
-// SPAM PATTERN DETECTION & INPUT VALIDATION
+// EMAIL SYNTAX VALIDATION
 // ============================================================================
 
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
-/**
- * Verifies email syntax.
- * Notice: Syntax checking does not prove email existence or ownership.
- */
 export const isValidEmailFormat = (email: string): boolean => {
   const trimmed = email.trim();
   if (!trimmed || trimmed.length < 5 || trimmed.length > 100) return false;
@@ -142,37 +138,173 @@ export const isValidEmailFormat = (email: string): boolean => {
   return true;
 };
 
+// ============================================================================
+// PROFESSIONAL MESSAGE QUALITY & CONTENT ABUSE EVALUATOR
+// ============================================================================
+
+export interface QualityValidationResult {
+  passes: boolean;
+  userMessage?: string;
+  debugReason?: string;
+}
+
 /**
- * Inspect content for spam patterns without blocking legitimate tech/internship inquiries.
+ * Evaluates message structure, tone, and intentional context.
+ * Filters low-effort chat spam, keyboard smash, repetitive gibberish,
+ * and WhatsApp-style demands while preserving legitimate conversational
+ * inquiries (including Indian English and non-native phrasing).
  */
-export const isSpamContent = (name: string, subject: string, message: string): boolean => {
+export const validateMessageQuality = (
+  name: string,
+  subject: string,
+  message: string
+): QualityValidationResult => {
+  const genericRejection = {
+    passes: false,
+    userMessage: 'Please provide a clear and professional message describing your inquiry.',
+  };
+
+  const trimmedMessage = message.trim();
   const fullText = `${name} ${subject} ${message}`.toLowerCase();
 
-  // 1. URL density check: > 3 URLs in a contact message is nearly always spam
+  // 1. Character repetition flood (e.g. aaaaaaa, hhhhhhh, !!!!!!!, ???????, ignoring spaces and markdown dividers)
+  if (/([^\s\-_=*#])\1{4,}/.test(trimmedMessage)) {
+    return { ...genericRejection, debugReason: 'character-repetition-flood' };
+  }
+
+  // 2. Excessive punctuation (> 5 exclamation/question marks and high ratio)
+  const punctuationCount = (trimmedMessage.match(/[!?]/g) || []).length;
+  if (punctuationCount > 5 && punctuationCount / trimmedMessage.length > 0.15) {
+    return { ...genericRejection, debugReason: 'excessive-punctuation' };
+  }
+
+  // 3. Excessive Emojis or Emoji-only content
+  const emojiRegex = /[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+  const emojis = trimmedMessage.match(emojiRegex) || [];
+  const textWithoutEmojis = trimmedMessage.replace(emojiRegex, '').trim();
+
+  if (emojis.length > 0) {
+    // If emoji-only or virtually no text
+    if (textWithoutEmojis.length < 5) {
+      return { ...genericRejection, debugReason: 'emoji-only' };
+    }
+    // More than 4 emojis or emojis taking up over 20% of characters
+    if (emojis.length > 4 || emojis.length / trimmedMessage.length > 0.2) {
+      return { ...genericRejection, debugReason: 'excessive-emojis' };
+    }
+  }
+
+  // 4. Excessive ALL CAPS (shouting spam, e.g. "HELLO BRO CALL ME FAST")
+  const lettersOnly = trimmedMessage.replace(/[^a-zA-Z]/g, '');
+  if (lettersOnly.length >= 15) {
+    const uppercaseCount = (trimmedMessage.match(/[A-Z]/g) || []).length;
+    if (uppercaseCount / lettersOnly.length > 0.7) {
+      return { ...genericRejection, debugReason: 'excessive-all-caps' };
+    }
+  }
+
+  // 5. Keyboard smash / consonant clusters (e.g. "asdfghjkl", "qwrtpsdfg", "zxcvbnm")
+  // 6 or more consecutive consonants within an alphabetic token
+  if (/\b[a-zA-Z]*[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{6,}[a-zA-Z]*\b/.test(trimmedMessage)) {
+    return { ...genericRejection, debugReason: 'keyboard-smash' };
+  }
+
+  // 6. Tokenize words for length, vocabulary, and repetition
+  const words = trimmedMessage
+    .toLowerCase()
+    .split(/[\s,.;:!?()"-]+/)
+    .filter((w) => w.length > 0);
+
+  // Require minimum 4 meaningful words (e.g. blocks "hi bro", "work hai bhai", "hey you")
+  if (words.length < 4) {
+    return { ...genericRejection, debugReason: 'insufficient-word-count' };
+  }
+
+  // Word repetition / loop check (e.g. "test test test test" or "hi hi hi hi")
+  const uniqueWords = new Set(words);
+  if (words.length >= 3 && uniqueWords.size <= 2) {
+    return { ...genericRejection, debugReason: 'repetitive-word-loop' };
+  }
+
+  // 7. URL density check: > 3 URLs in a contact message is typical spam
   const urlCount = (fullText.match(/https?:\/\/[^\s]+/gi) || []).length;
   if (urlCount > 3) {
-    return true;
+    return { ...genericRejection, debugReason: 'excessive-urls' };
   }
 
-  // 2. Character repetition flood (e.g. aaaaaaaaaaaaaaaaaaaa)
-  if (/(.)\1{14,}/.test(fullText)) {
-    return true;
-  }
-
-  // 3. High-confidence spam patterns (SEO links, casino, crypto pumping, mass backlink spam)
+  // 8. Unsolicited Commercial / Promotional spam keywords
   const spamKeywords = [
     /\b(buy\s+backlinks|guest\s+post\s+service|rank\s+on\s+google\s+page\s+1|seo\s+ranking\s+service)\b/i,
     /\b(crypto\s+doubler|free\s+crypto\s+airdrop|online\s+casino|slots\s+jackpot)\b/i,
-    /\b(telegram\s+pump|whatsapp\s+blast|viagra|cialis)\b/i,
+    /\b(make\s+money\s+fast|earn\s+money\s+online|passive\s+income|telegram\s+pump|whatsapp\s+blast)\b/i,
+    /\b(viagra|cialis)\b/i,
   ];
 
   for (const regex of spamKeywords) {
     if (regex.test(fullText)) {
-      return true;
+      return { ...genericRejection, debugReason: 'promotional-spam' };
     }
   }
 
-  return false;
+  // 9. COMBINED SCORING: Professional Intent vs Casual Chat / Slang Abatement
+  // High-value professional intent signals
+  const intentPatterns = [
+    /\b(intern|internship|role|opportunity|opportunities|job|hiring|hire|interview|position|candidate|opening|recruit)\b/i,
+    /\b(project|projects|collaboration|collaborate|work\s+together|contract|freelance|services|consulting)\b/i,
+    /\b(software|developer|development|engineer|engineering|frontend|backend|fullstack|react|node|python|web|app)\b/i,
+    /\b(portfolio|discuss|discussion|inquiry|inquiries|schedule|call|meeting|availability|available\s+for)\b/i,
+    /\b(connect|introduce|reaching\s+out|interested\s+in|would\s+like\s+to|could\s+we|please\s+let\s+me\s+know|looking\s+forward)\b/i,
+  ];
+
+  let positiveScore = 0;
+  for (const regex of intentPatterns) {
+    if (regex.test(fullText)) {
+      positiveScore += 1;
+    }
+  }
+
+  // Chat slang / low-effort abbreviations / demanding patterns
+  const lowQualitySlangPatterns = [
+    /\b(u)\b/i,
+    /\b(ur)\b/i,
+    /\b(bro|brah|bruh|broda)\b/i,
+    /\b(bhai|bhaiya|yaar)\b/i,
+    /\b(pls|plz)\b/i,
+    /\b(thx|ty|tnx)\b/i,
+    /\b(dm|dm\s+me|inbox\s+me)\b/i,
+    /\b(asap)\b/i,
+    /\b(call\s+me|send\s+number|send\s+me\s+ur\s+number|give\s+number|send\s+ur\s+number)\b/i,
+    /\b(urgent\s+work|work\s+hai)\b/i,
+    /\b(sup|wya|idk|hmu)\b/i,
+  ];
+
+  let negativeScore = 0;
+  for (const regex of lowQualitySlangPatterns) {
+    if (regex.test(trimmedMessage)) {
+      negativeScore += 1;
+    }
+  }
+
+  // Rule 9A: Short message (< 15 words) with ZERO identifiable professional intent
+  // Catches vague casual greetings like "hello sir plz contact me" or "hey let us chat"
+  if (words.length < 15 && positiveScore === 0) {
+    return { ...genericRejection, debugReason: 'no-identifiable-intent' };
+  }
+
+  // Rule 9B: Chat slang dominance
+  // When casual slang count is high and meets or exceeds professional signals
+  // Catches: "hey bro are u available" or "hi bhai internship hai call me asap"
+  if (negativeScore >= 2 && negativeScore >= positiveScore) {
+    return { ...genericRejection, debugReason: 'chat-slang-dominance' };
+  }
+
+  // Rule 9C: Short message with casual abbreviations
+  // Catches: "urgent work pls dm" or "send me ur number"
+  if (negativeScore >= 1 && words.length <= 8 && positiveScore <= 1) {
+    return { ...genericRejection, debugReason: 'casual-slang-short-message' };
+  }
+
+  return { passes: true };
 };
 
 // ============================================================================
@@ -202,7 +334,7 @@ export async function handleContactSubmission(
   }
 
   // --------------------------------------------------------------------------
-  // STEP 2: INPUT VALIDATION
+  // STEP 2: INPUT VALIDATION & SYNTAX CHECKS
   // --------------------------------------------------------------------------
   const name = (body.name || '').trim();
   const email = (body.email || '').trim().toLowerCase();
@@ -242,54 +374,7 @@ export async function handleContactSubmission(
   }
 
   // --------------------------------------------------------------------------
-  // STEP 3: CONTENT SPAM HEURISTICS
-  // --------------------------------------------------------------------------
-  if (isSpamContent(name, subject, message)) {
-    return {
-      status: 400,
-      data: {
-        success: false,
-        message: 'Message flagged by automated spam filter. Please revise your message.',
-      },
-    };
-  }
-
-  // --------------------------------------------------------------------------
-  // STEP 4: RATE LIMITING (IP & Email)
-  // --------------------------------------------------------------------------
-  const ipKey = `ip:${clientIp || '127.0.0.1'}`;
-  const emailKey = `email:${email}`;
-
-  const ipRateLimit = checkRateLimit(ipKey);
-  if (!ipRateLimit.allowed) {
-    return {
-      status: 429,
-      data: { success: false, message: 'Please wait before sending another message.' },
-    };
-  }
-
-  const emailRateLimit = checkRateLimit(emailKey);
-  if (!emailRateLimit.allowed) {
-    return {
-      status: 429,
-      data: { success: false, message: 'Please wait before sending another message.' },
-    };
-  }
-
-  // --------------------------------------------------------------------------
-  // STEP 5: DUPLICATE DETECTION
-  // --------------------------------------------------------------------------
-  const duplicateFingerprint = `${clientIp}:${email}:${message.toLowerCase()}`;
-  const isDuplicate = checkAndRecordDuplicate(duplicateFingerprint);
-  if (isDuplicate) {
-    return {
-      status: 429,
-      data: { success: false, message: 'Please wait before sending another message.' },
-    };
-  }
-
-  // --------------------------------------------------------------------------
-  // STEP 6: CLOUDFLARE TURNSTILE SERVER-SIDE VERIFICATION
+  // STEP 3: CLOUDFLARE TURNSTILE SERVER-SIDE VERIFICATION
   // --------------------------------------------------------------------------
   const turnstileSecret = env.TURNSTILE_SECRET_KEY;
 
@@ -338,6 +423,56 @@ export async function handleContactSubmission(
         },
       };
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // STEP 4: RATE LIMITING (IP & Email)
+  // --------------------------------------------------------------------------
+  const ipKey = `ip:${clientIp || '127.0.0.1'}`;
+  const emailKey = `email:${email}`;
+
+  const ipRateLimit = checkRateLimit(ipKey);
+  if (!ipRateLimit.allowed) {
+    return {
+      status: 429,
+      data: { success: false, message: 'Please wait before sending another message.' },
+    };
+  }
+
+  const emailRateLimit = checkRateLimit(emailKey);
+  if (!emailRateLimit.allowed) {
+    return {
+      status: 429,
+      data: { success: false, message: 'Please wait before sending another message.' },
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // STEP 5: DUPLICATE DETECTION
+  // --------------------------------------------------------------------------
+  const duplicateFingerprint = `${clientIp}:${email}:${message.toLowerCase()}`;
+  const isDuplicate = checkAndRecordDuplicate(duplicateFingerprint);
+  if (isDuplicate) {
+    return {
+      status: 429,
+      data: { success: false, message: 'Please wait before sending another message.' },
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // STEP 6: PROFESSIONAL MESSAGE QUALITY & ANTI-SPAM ANALYSIS
+  // --------------------------------------------------------------------------
+  const qualityEvaluation = validateMessageQuality(name, subject, message);
+  if (!qualityEvaluation.passes) {
+    return {
+      status: 400,
+      data: {
+        success: false,
+        message:
+          qualityEvaluation.userMessage ||
+          'Please provide a clear and professional message describing your inquiry.',
+      },
+    };
   }
 
   // --------------------------------------------------------------------------

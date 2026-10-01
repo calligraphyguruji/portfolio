@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   handleContactSubmission,
   isValidEmailFormat,
-  isSpamContent,
+  validateMessageQuality,
   checkRateLimit,
   recordSubmission,
   checkAndRecordDuplicate,
@@ -20,7 +20,6 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
 
   // Mock global fetch to intercept Turnstile & EmailJS calls
   let fetchCalls: { url: string; body: any }[] = [];
-  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     fetchCalls = [];
@@ -103,68 +102,89 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
     });
   });
 
-  describe('3. Message & Input Validation', () => {
-    test('rejects submissions with name < 2 characters', async () => {
+  describe('3. Professional Message Quality Filter (Requirements 16-19)', () => {
+    // Tests for messages that MUST BE ACCEPTED
+    test('accepts valid recruiter internship discussion', () => {
+      const msg =
+        'Hello Aman, I came across your portfolio and would like to discuss a frontend development internship opportunity. Could we schedule a call this week?';
+      assert.strictEqual(validateMessageQuality('Recruiter Jane', 'Internship Opportunity', msg).passes, true);
+    });
+
+    test('accepts web collaboration inquiry', () => {
+      const msg =
+        "Hi Aman, I'm working on a web application and would like to discuss a potential collaboration. Please let me know your availability.";
+      assert.strictEqual(validateMessageQuality('Alex Dev', 'Collaboration', msg).passes, true);
+    });
+
+    test('accepts client project services inquiry', () => {
+      const msg =
+        'Hello, I would like to know more about your software development services and discuss a potential project.';
+      assert.strictEqual(validateMessageQuality('Client Robert', 'Project Inquiry', msg).passes, true);
+    });
+
+    test('accepts concise legitimate internship inquiry', () => {
+      const msg = "Hello, I'd like to discuss an internship opportunity.";
+      assert.strictEqual(validateMessageQuality('Sarah', 'Discussion', msg).passes, true);
+    });
+
+    test('accepts natural Indian recruiter inquiry', () => {
+      const msg = 'Hi Aman, I saw your portfolio and wanted to discuss an internship opportunity.';
+      assert.strictEqual(validateMessageQuality('Pooja Sharma', 'Internship Role', msg).passes, true);
+    });
+
+    // Tests for messages that MUST BE REJECTED
+    const rejectedExamples = [
+      { text: 'hi bro', reason: 'too casual / insufficient words' },
+      { text: 'hello sir plz contact me', reason: 'no clear intent / casual plz abbreviation' },
+      { text: 'hey bro are u available', reason: 'chat slang dominance' },
+      { text: 'send me ur number', reason: 'demanding number with slang' },
+      { text: 'work hai bhai', reason: 'insufficient words / casual chat' },
+      { text: 'urgent work pls dm', reason: 'urgent chat spam' },
+      { text: 'aaaaaaaaaaaa', reason: 'character repetition flood' },
+      { text: '!!!!!!', reason: 'punctuation repetition flood' },
+      { text: 'test test test', reason: 'word loop / repetition' },
+      { text: 'asdfghjkl', reason: 'keyboard smash / consonant cluster' },
+      { text: '🔥🔥🔥🔥🔥🔥🔥', reason: 'emoji only' },
+      { text: 'make money fast click here', reason: 'promotional spam' },
+      { text: 'hi bhai internship hai call me asap', reason: 'low quality chat slang combination' },
+    ];
+
+    for (const { text, reason } of rejectedExamples) {
+      test(`rejects low-quality spam: "${text}" (${reason})`, () => {
+        const evaluation = validateMessageQuality('Spam Tester', 'Inquiry', text);
+        assert.strictEqual(evaluation.passes, false);
+        assert.strictEqual(
+          evaluation.userMessage,
+          'Please provide a clear and professional message describing your inquiry.'
+        );
+      });
+    }
+
+    test('end-to-end: rejects low-quality message before EmailJS is called', async () => {
       const result = await handleContactSubmission(
         {
-          name: 'A',
-          email: 'valid@example.com',
-          message: 'This is a legitimate message enquiry.',
+          name: 'Chat Spammer',
+          email: 'spammer@example.com',
+          message: 'hi bhai internship hai call me asap',
           turnstileToken: 'valid-turnstile-token',
         },
-        '10.0.0.1',
+        '10.0.0.99',
         mockEnv
       );
 
       assert.strictEqual(result.status, 400);
       assert.strictEqual(result.data.success, false);
-      const emailJsCalls = fetchCalls.filter((c) => c.url.includes('emailjs.com'));
-      assert.strictEqual(emailJsCalls.length, 0);
-    });
-
-    test('rejects message shorter than 10 characters', async () => {
-      const result = await handleContactSubmission(
-        {
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          message: 'Hello', // < 10 chars
-          turnstileToken: 'valid-turnstile-token',
-        },
-        '10.0.0.2',
-        mockEnv
+      assert.strictEqual(
+        result.data.message,
+        'Please provide a clear and professional message describing your inquiry.'
       );
-
-      assert.strictEqual(result.status, 400);
-      assert.strictEqual(result.data.success, false);
+      // Zero calls to EmailJS
       const emailJsCalls = fetchCalls.filter((c) => c.url.includes('emailjs.com'));
       assert.strictEqual(emailJsCalls.length, 0);
     });
   });
 
-  describe('4. Spam Heuristics Detection', () => {
-    test('flags messages with excessive URL density (> 3 links)', () => {
-      const spamMsg = 'Check out https://a.com and http://b.com and https://c.com and https://d.com';
-      assert.strictEqual(isSpamContent('Spammer', 'Links', spamMsg), true);
-    });
-
-    test('flags messages with character repetition flood', () => {
-      const repeatMsg = 'Hellooooooooooooooooooooo please answer';
-      assert.strictEqual(isSpamContent('Flooder', 'Hello', repeatMsg), true);
-    });
-
-    test('flags high-confidence spam keywords', () => {
-      assert.strictEqual(isSpamContent('Marketer', 'Backlinks', 'Buy backlinks rank on google page 1'), true);
-      assert.strictEqual(isSpamContent('Promo', 'Win', 'Free crypto airdrop double your btc'), true);
-    });
-
-    test('permits legitimate tech and internship inquiries', () => {
-      const legitMsg =
-        'Hi Aman, I saw your fullstack portfolio and projects on GitHub (https://github.com/calligraphyguruji). We have a React and TypeScript internship open at our startup. Would love to chat!';
-      assert.strictEqual(isSpamContent('Recruiter Alice', 'Internship Opportunity', legitMsg), false);
-    });
-  });
-
-  describe('5. Turnstile Bot Verification Gate', () => {
+  describe('4. Turnstile Bot Verification Gate', () => {
     test('rejects when Turnstile token is missing', async () => {
       const result = await handleContactSubmission(
         {
@@ -188,7 +208,7 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
         {
           name: 'Bot User',
           email: 'bot@example.com',
-          message: 'Valid message length for testing failure.',
+          message: 'Valid message length for testing failure in portfolio.',
           turnstileToken: 'invalid-turnstile-token',
         },
         '10.0.0.6',
@@ -202,7 +222,7 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
     });
   });
 
-  describe('6. Server-side Rate Limiting & Quota Shield', () => {
+  describe('5. Server-side Rate Limiting & Quota Shield', () => {
     test('enforces burst protection (30s) and hourly cap (3 per hour)', () => {
       const testIpKey = 'ip:198.51.100.42';
 
@@ -222,16 +242,44 @@ describe('Contact API & Anti-Spam Pipeline Test Suite', () => {
       // Immediate resubmission with identical text is flagged as duplicate
       assert.strictEqual(checkAndRecordDuplicate(fingerprint), true);
     });
+
+    test('end-to-end: rapid subsequent submission gets blocked by rate limiter with 0 extra EmailJS quota used', async () => {
+      const payload = {
+        name: 'Rapid User',
+        email: 'rapid@testcompany.org',
+        subject: 'Role Opportunity',
+        message: 'Hello Aman, we have a software engineer opportunity for you. Let us chat.',
+        turnstileToken: 'valid-turnstile-token',
+      };
+      const clientIp = '198.51.100.99';
+
+      // 1st submission passes
+      const firstResult = await handleContactSubmission(payload, clientIp, mockEnv);
+      assert.strictEqual(firstResult.status, 200);
+
+      // Immediate 2nd submission from same IP/email is blocked by rate limiter
+      const secondResult = await handleContactSubmission(
+        { ...payload, message: 'Different message text but same IP within burst window' },
+        clientIp,
+        mockEnv
+      );
+      assert.strictEqual(secondResult.status, 429);
+      assert.match(secondResult.data.message, /wait before sending/i);
+
+      // Ensure EmailJS was contacted ONLY ONCE across both attempts
+      const emailJsCalls = fetchCalls.filter((c) => c.url.includes('emailjs.com'));
+      assert.strictEqual(emailJsCalls.length, 1);
+    });
   });
 
-  describe('7. End-to-End Legitimate Flow', () => {
+  describe('6. End-to-End Legitimate Flow', () => {
     test('successful submission passes all gates and dispatches to EmailJS', async () => {
       const result = await handleContactSubmission(
         {
           name: 'Sarah Connor',
           email: 'sarah.connor@sky.net',
           subject: 'Internship Opportunity',
-          message: 'Hi Aman, loved your CredVidhi project. Would love to discuss a role with our team.',
+          message: 'Hi Aman, loved your CredVidhi project. Would love to discuss an internship role with our team.',
           company_hp: '', // Clean honeypot
           turnstileToken: 'valid-turnstile-token',
         },

@@ -54,23 +54,24 @@ To safeguard the free EmailJS sending quota (200 emails/month) against automated
          ↓
 5. Server Input & Syntax Validation (Length limits & RFC compliance)
          ↓
-6. Content Abuse Heuristics (URL flood density >3, character flood, spam patterns)
+6. Cloudflare Turnstile Cryptographic Bot Verification (Server-side siteverify)
          ↓
 7. Multi-Factor Rate Limiting (Max 3/hour per IP, Max 3/hour per Email, 30s burst check)
          ↓
 8. Duplicate Fingerprint Check (Detects identical resubmissions within 15 minutes)
          ↓
-9. Cloudflare Turnstile Cryptographic Bot Verification (Server-side siteverify)
+9. Professional Message Quality Filter (Blocks casual chat/slang spam, keyboard smash, repetitive words)
          ↓
 10. ONLY THEN: EmailJS REST API Dispatch (Isolated server credentials)
          ↓
 [ Aman's Inbox ]
 ```
 
-### Security Guarantees:
+### Security & Quality Guarantees:
 - **Zero Exposed EmailJS Credentials:** `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY` remain strictly server-side in Vercel environment variables.
-- **Quota Shielding:** A request NEVER reaches EmailJS until honeypot, syntax, content abuse, rate limits, duplicate checks, and Turnstile bot verification have ALL succeeded.
+- **Quota Shielding:** A request NEVER reaches EmailJS until honeypot, syntax, Turnstile bot verification, rate limits, duplicate checks, and message quality filters have ALL succeeded.
 - **Stealth Honeypot:** Bots filling invisible fields receive a simulated HTTP 200, believing they succeeded, while 0 emails and 0 quota are consumed.
+- **Professional Message Quality Scoring:** Rejects low-effort WhatsApp-style chat spam ("hi bro", "work hai bhai", "urgent work pls dm", "send me ur number"), keyboard smash ("asdfghjkl"), character floods ("aaaaaa"), excessive emojis ("🔥🔥🔥🔥🔥"), and all-caps shouting, while warmly accepting genuine Indian English and international inquiries ("Hello Aman, I came across your portfolio and wanted to discuss an internship opportunity").
 
 ---
 
