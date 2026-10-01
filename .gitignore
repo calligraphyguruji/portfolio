@@ -14,6 +14,8 @@ dist-ssr
 *.tsbuildinfo
 vite.config.d.ts
 vite.config.js
+api/*.js
+api/*.d.ts
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +27,10 @@ vite.config.js
 *.njsproj
 *.sln
 *.sw?
+.agents/
+.planning/
+
+# Environment files
+.env
+.env.*
+!.env.example

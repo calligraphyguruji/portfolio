@@ -64,3 +64,17 @@ export interface LearningItem {
   status: 'In Progress' | 'Deepening';
   category: string;
 }
+
+export interface ContactFormData {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  company_hp?: string; // Honeypot field - must be empty
+  turnstileToken?: string; // Cloudflare Turnstile token
+}
+
+export interface ContactResponse {
+  success: boolean;
+  message: string;
+}

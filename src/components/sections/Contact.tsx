@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { personalInfo } from '../../data/portfolioData';
-import { sendEmail } from '../../services/emailService';
+import { sendEmail, isValidEmail } from '../../services/emailService';
+import { Turnstile } from '../ui/Turnstile';
+import { ContactFormData } from '../../types';
 import {
   ArrowUpRight,
   Github,
@@ -12,26 +14,52 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Clock,
 } from 'lucide-react';
 
-interface FormData {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-}
+const COOLDOWN_SECONDS = 60;
+const STORAGE_KEY = 'portfolio_contact_last_submission';
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 export const Contact: React.FC = () => {
   const [showForm, setShowForm] = useState(true);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
     subject: '',
     message: '',
+    company_hp: '', // Honeypot field
+    turnstileToken: '',
   });
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const [turnstileResetCount, setTurnstileResetCount] = useState<number>(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+
+  // Initialize and tick down client-side submission cooldown
+  useEffect(() => {
+    const calculateRemaining = () => {
+      const lastSubmission = localStorage.getItem(STORAGE_KEY);
+      if (!lastSubmission) return 0;
+      const elapsedSeconds = Math.floor((Date.now() - parseInt(lastSubmission, 10)) / 1000);
+      const remaining = COOLDOWN_SECONDS - elapsedSeconds;
+      return remaining > 0 ? remaining : 0;
+    };
+
+    setCooldownRemaining(calculateRemaining());
+
+    const interval = setInterval(() => {
+      const remaining = calculateRemaining();
+      setCooldownRemaining(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [status]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -40,37 +68,91 @@ export const Contact: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setFormData((prev) => ({ ...prev, turnstileToken: token }));
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken('');
+    setFormData((prev) => ({ ...prev, turnstileToken: '' }));
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 1. Client-side cooldown guard
+    if (cooldownRemaining > 0) {
+      setStatus('error');
+      setStatusMessage(`Please wait ${cooldownRemaining}s before sending another message.`);
+      return;
+    }
+
+    // 2. Validate empty fields
     if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
       setStatus('error');
       setStatusMessage('Please fill in all required fields (Name, Email, and Message).');
       return;
     }
 
+    // 3. Email syntax format check
+    if (!isValidEmail(formData.email)) {
+      setStatus('error');
+      setStatusMessage('Please enter a valid email address (e.g. name@example.com).');
+      return;
+    }
+
+    // 4. Verification requirement when site key is active
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setStatus('error');
+      setStatusMessage('Please complete the verification check before sending.');
+      return;
+    }
+
     setStatus('loading');
+    setStatusMessage('');
 
     try {
-      const response = await sendEmail(formData);
+      const payload: ContactFormData = {
+        ...formData,
+        turnstileToken,
+      };
+
+      const response = await sendEmail(payload);
 
       if (response.success) {
         setStatus('success');
         setStatusMessage(response.message);
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+          company_hp: '',
+          turnstileToken: '',
+        });
+        setTurnstileToken('');
+        // Record timestamp for client-side cooldown (UX guard)
+        localStorage.setItem(STORAGE_KEY, Date.now().toString());
+        setCooldownRemaining(COOLDOWN_SECONDS);
       } else {
         setStatus('error');
         setStatusMessage(response.message || 'Unable to deliver message right now. Please try again.');
+        // Reset turnstile widget on failure
+        setTurnstileResetCount((prev) => prev + 1);
+        setTurnstileToken('');
       }
     } catch {
       setStatus('error');
-      setStatusMessage('An unexpected error occurred. Please contact via amanmishra7774@gmail.com.');
+      setStatusMessage('An unexpected error occurred. Please contact directly via amanmishra7774@gmail.com.');
+      setTurnstileResetCount((prev) => prev + 1);
+      setTurnstileToken('');
     }
   };
 
   return (
     <section id="contact" className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
-      {/* Editorial Panel matching Screenshot 5 */}
+      {/* Editorial Panel matching Screenshot */}
       <div className="editorial-panel p-8 sm:p-14 lg:p-20 text-center relative overflow-hidden">
         {/* Faint Watermark Typography */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-7xl sm:text-9xl md:text-[11rem] font-extrabold uppercase tracking-widest text-black/[0.03] dark:text-white/[0.03] select-none pointer-events-none whitespace-nowrap">
@@ -78,7 +160,7 @@ export const Contact: React.FC = () => {
         </div>
 
         <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
-          {/* Centered Availability Status Pill matching Screenshot 5 */}
+          {/* Centered Availability Status Pill */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1E1E1E] border border-black/[0.08] dark:border-[#383838] shadow-xs">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -89,7 +171,7 @@ export const Contact: React.FC = () => {
             </span>
           </div>
 
-          {/* Giant Editorial Headline matching Screenshot 5 */}
+          {/* Giant Editorial Headline */}
           <h2 className="text-4xl sm:text-6xl md:text-7xl font-sans font-extrabold uppercase tracking-tight text-[#171717] dark:text-white leading-[1.02]">
             HAVE A PROJECT OR OPPORTUNITY IN MIND?
           </h2>
@@ -110,7 +192,7 @@ export const Contact: React.FC = () => {
             </button>
           </div>
 
-          {/* Interactive Message Form (Clean in-page, zero external redirects) */}
+          {/* Interactive Message Form (Protected by Turnstile, Rate Limiting & Honeypot) */}
           {showForm && (
             <div className="pt-8 max-w-xl mx-auto text-left">
               <div className="p-6 sm:p-8 rounded-3xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] shadow-xs">
@@ -127,13 +209,33 @@ export const Contact: React.FC = () => {
                     </p>
                     <button
                       onClick={() => setStatus('idle')}
-                      className="px-5 py-2 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] text-xs font-medium uppercase tracking-wider transition-all"
+                      className="px-5 py-2 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] text-xs font-medium uppercase tracking-wider transition-all cursor-pointer"
                     >
                       Send Another
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* HONEYPOT ANTI-SPAM TRAP
+                        Legitimate human users never see or focus this field.
+                        Automated scrapers/bots will auto-fill every input, tripping the trap. */}
+                    <div
+                      className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none select-none h-0 w-0 overflow-hidden"
+                      aria-hidden="true"
+                      tabIndex={-1}
+                    >
+                      <label htmlFor="company_hp">Organization Website</label>
+                      <input
+                        type="text"
+                        id="company_hp"
+                        name="company_hp"
+                        value={formData.company_hp}
+                        onChange={handleChange}
+                        tabIndex={-1}
+                        autoComplete="off"
+                      />
+                    </div>
+
                     {status === 'error' && (
                       <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 shrink-0" />
@@ -154,6 +256,7 @@ export const Contact: React.FC = () => {
                           id="name"
                           name="name"
                           required
+                          maxLength={100}
                           value={formData.name}
                           onChange={handleChange}
                           placeholder="Your Name"
@@ -173,6 +276,7 @@ export const Contact: React.FC = () => {
                           id="email"
                           name="email"
                           required
+                          maxLength={100}
                           value={formData.email}
                           onChange={handleChange}
                           placeholder="your.email@example.com"
@@ -192,6 +296,7 @@ export const Contact: React.FC = () => {
                         type="text"
                         id="subject"
                         name="subject"
+                        maxLength={150}
                         value={formData.subject}
                         onChange={handleChange}
                         placeholder="Project or Internship Discussion"
@@ -211,6 +316,7 @@ export const Contact: React.FC = () => {
                         name="message"
                         required
                         rows={3}
+                        maxLength={3000}
                         value={formData.message}
                         onChange={handleChange}
                         placeholder="Tell me about your project, timeline, or open role..."
@@ -218,15 +324,30 @@ export const Contact: React.FC = () => {
                       />
                     </div>
 
+                    {/* Cloudflare Turnstile Bot Protection Widget */}
+                    {TURNSTILE_SITE_KEY && (
+                      <Turnstile
+                        siteKey={TURNSTILE_SITE_KEY}
+                        onVerify={handleTurnstileVerify}
+                        onExpire={handleTurnstileExpire}
+                        resetTrigger={turnstileResetCount}
+                      />
+                    )}
+
                     <button
                       type="submit"
-                      disabled={status === 'loading'}
+                      disabled={status === 'loading' || cooldownRemaining > 0}
                       className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#171717] hover:bg-[#2A2A2A] dark:bg-white dark:hover:bg-slate-200 text-white dark:text-black font-semibold text-xs uppercase tracking-wider transition-all shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
                     >
                       {status === 'loading' ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           <span>Sending...</span>
+                        </>
+                      ) : cooldownRemaining > 0 ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Wait {cooldownRemaining}s</span>
                         </>
                       ) : (
                         <>
@@ -241,7 +362,7 @@ export const Contact: React.FC = () => {
             </div>
           )}
 
-          {/* Bottom Row of Pill Links matching Screenshot 5 */}
+          {/* Bottom Row of Pill Links */}
           <div className="pt-10 flex flex-wrap items-center justify-center gap-3">
             {/* Avatar Pill */}
             <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#171717] text-white dark:bg-white dark:text-[#171717] shadow-sm">

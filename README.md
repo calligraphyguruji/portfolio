@@ -30,8 +30,47 @@ A high-performance personal developer portfolio engineered with an editorial aes
 - **Interactive Cursor Spotlight Color Reveal:** The centerpiece portrait remains grayscale by default and dynamically reveals vibrant natural color strictly within the circular cursor spotlight on hover.
 - **Dedicated Project Case Study Routing:** Clicking any project preview image seamlessly routes to a deep-dive case study page (`#/project/<id>`) detailing the problem statement, engineered solution, system architecture, key metrics, and technology stack.
 - **Zero-Dependency Routing:** Powered by native browser hash routing and history APIs (following Ponytail minimal principles) for zero bundle bloat and instant page transitions.
-- **In-Page Contact Integration:** Working contact form connected with EmailJS and client-side validation.
+- **Hardened Anti-Spam Contact Architecture:** Production-grade security pipeline defending against bot spam and EmailJS quota exhaustion via Cloudflare Turnstile, invisible honeypot traps, client/server sliding-window rate limiting, and serverless isolation (`/api/contact`).
 - **Live Analytics:** Integrated with `@vercel/analytics` for privacy-first performance monitoring.
+
+---
+
+## 🛡️ Contact Form Hardening & Anti-Spam Architecture
+
+To safeguard the free EmailJS sending quota (200 emails/month) against automated bot spam and malicious submission floods, the contact flow is decoupled from client-side direct EmailJS calls and routed through a hardened serverless pipeline:
+
+```
+[ Visitor / Client Form ]
+         ↓
+1. Client Honeypot Check (Silently drops bots if hidden trap field is populated)
+         ↓
+2. Client Cooldown (60s timer in localStorage to prevent rapid accidental clicks)
+         ↓
+3. Client Syntax Validation (Catches typos & malformed emails before network dispatch)
+         ↓
+[ POST /api/contact ] (Vercel Serverless Function)
+         ↓
+4. Server Honeypot Verification (Silently returns HTTP 200 without calling EmailJS)
+         ↓
+5. Server Input & Syntax Validation (Length limits & RFC compliance)
+         ↓
+6. Content Abuse Heuristics (URL flood density >3, character flood, spam patterns)
+         ↓
+7. Multi-Factor Rate Limiting (Max 3/hour per IP, Max 3/hour per Email, 30s burst check)
+         ↓
+8. Duplicate Fingerprint Check (Detects identical resubmissions within 15 minutes)
+         ↓
+9. Cloudflare Turnstile Cryptographic Bot Verification (Server-side siteverify)
+         ↓
+10. ONLY THEN: EmailJS REST API Dispatch (Isolated server credentials)
+         ↓
+[ Aman's Inbox ]
+```
+
+### Security Guarantees:
+- **Zero Exposed EmailJS Credentials:** `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY` remain strictly server-side in Vercel environment variables.
+- **Quota Shielding:** A request NEVER reaches EmailJS until honeypot, syntax, content abuse, rate limits, duplicate checks, and Turnstile bot verification have ALL succeeded.
+- **Stealth Honeypot:** Bots filling invisible fields receive a simulated HTTP 200, believing they succeeded, while 0 emails and 0 quota are consumed.
 
 ---
 
@@ -113,13 +152,20 @@ cd portfolio
 # 2. Install dependencies
 npm install
 
-# 3. Start local development server
+# 3. Configure environment variables (.env)
+cp .env.example .env
+# Set VITE_TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, and EMAILJS_* credentials
+
+# 4. Run automated anti-spam & API tests
+npm test
+
+# 5. Start local development server
 npm run dev
 
-# 4. Create production build
+# 6. Create production build
 npm run build
 
-# 5. Preview production build locally
+# 7. Preview production build locally
 npm run preview
 ```
 
