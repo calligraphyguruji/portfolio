@@ -314,7 +314,8 @@ export const validateMessageQuality = (
 export async function handleContactSubmission(
   body: ContactRequestBody,
   clientIp: string,
-  envOverrides?: Record<string, string | undefined>
+  envOverrides?: Record<string, string | undefined>,
+  incomingOrigin?: string
 ): Promise<ContactHandlerResult> {
   const env = envOverrides || process.env;
 
@@ -490,17 +491,34 @@ export async function handleContactSubmission(
       data: {
         success: false,
         message:
-          'Email service is temporarily unavailable. Please reach out directly at amanmishra7774@gmail.com.',
+          'Email service is temporarily unavailable. Please configure EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY in Vercel.',
+      },
+    };
+  }
+
+  // Detect unconfigured placeholder values
+  if (
+    serviceId.includes('your_') ||
+    templateId.includes('your_') ||
+    publicKey.includes('your_')
+  ) {
+    return {
+      status: 503,
+      data: {
+        success: false,
+        message:
+          'Email service keys are still set to placeholders. Please add your real EmailJS keys to Vercel Environment Variables.',
       },
     };
   }
 
   try {
+    const hasValidPrivateKey = Boolean(privateKey && !privateKey.includes('your_') && privateKey.trim() !== '');
     const emailJsBody = {
       service_id: serviceId,
       template_id: templateId,
       user_id: publicKey,
-      ...(privateKey ? { accessToken: privateKey } : {}),
+      ...(hasValidPrivateKey ? { accessToken: privateKey } : {}),
       template_params: {
         name,
         from_name: name,
@@ -513,11 +531,17 @@ export async function handleContactSubmission(
       },
     };
 
+    const originHeader =
+      incomingOrigin && (incomingOrigin.includes('calligraphyguruji.dev') || incomingOrigin.includes('localhost') || incomingOrigin.includes('vercel.app'))
+        ? incomingOrigin
+        : 'https://calligraphyguruji.dev';
+
     const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'AmanMishra-Portfolio/1.0',
+        'Origin': originHeader,
       },
       body: JSON.stringify(emailJsBody),
     });
@@ -539,12 +563,14 @@ export async function handleContactSubmission(
     }
 
     console.error('EmailJS dispatch failed:', emailResponse.status, emailResponseText);
+    const cleanError = emailResponseText.trim().replace(/<[^>]*>?/gm, '');
     return {
       status: 502,
       data: {
         success: false,
-        message:
-          'Unable to deliver message right now. Please try again later or reach out via amanmishra7774@gmail.com.',
+        message: cleanError
+          ? `Email delivery error: ${cleanError}`
+          : 'Unable to deliver message right now. Please try again later or reach out via amanmishra7774@gmail.com.',
       },
     };
   } catch (err) {
@@ -554,7 +580,7 @@ export async function handleContactSubmission(
       data: {
         success: false,
         message:
-          'An unexpected error occurred. Please contact directly via amanmishra7774@gmail.com.',
+          'An unexpected error occurred while delivering your email. Please contact directly via amanmishra7774@gmail.com.',
       },
     };
   }
@@ -625,7 +651,7 @@ export default async function handler(req: any, res?: any) {
     }
   }
 
-  const result = await handleContactSubmission(body, clientIp);
+  const result = await handleContactSubmission(body, clientIp, undefined, origin);
 
   if (res?.status) {
     return res.status(result.status).json(result.data);
