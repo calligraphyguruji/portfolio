@@ -31,6 +31,7 @@ A high-performance personal developer portfolio engineered with an editorial aes
 - **Dedicated Project Case Study Routing:** Clicking any project preview image seamlessly routes to a deep-dive case study page (`#/project/<id>`) detailing the problem statement, engineered solution, system architecture, key metrics, and technology stack.
 - **Zero-Dependency Routing:** Powered by native browser hash routing and history APIs (following Ponytail minimal principles) for zero bundle bloat and instant page transitions.
 - **Hardened Anti-Spam Contact Architecture:** Production-grade security pipeline defending against bot spam and EmailJS quota exhaustion via Cloudflare Turnstile, invisible honeypot traps, client/server sliding-window rate limiting, and serverless isolation (`/api/contact`).
+- **Modern SVG Vector Branding:** High-resolution, zero-loss AM monogram SVG favicon with dark background harmony, full W3C web manifest integration, and crisp cross-browser scaling.
 - **Live Analytics:** Integrated with `@vercel/analytics` for privacy-first performance monitoring.
 
 ---
