@@ -45,7 +45,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onSelectProject }) => {
     if (id === 'credvidhi') return 'CredVidhi enterprise loan processing and deterministic underwriting platform';
     if (id === 'amazon-clone') return 'Amazon e-commerce clone web application interface and checkout workflow';
     if (id === 'youtube-clone') return 'YouTube clone video streaming web application interface';
-    if (id === 'rock-paper-scissors') return 'Rock Paper Scissors interactive browser game interface';
+    if (id === 'gemini-ai-chatbot') return 'Gemini AI Chatbot conversational assistant interface and reasoning workspace';
     if (id === 'leetcode-solutions') return 'LeetCode problem solutions and C++ algorithmic repository';
     return `${title} interface screenshot and technical architecture`;
   };

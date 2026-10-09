@@ -117,13 +117,13 @@ Each project includes interactive case study documentation accessible directly b
 * **Repository:** [github.com/calligraphyguruji/amazon-clone](https://github.com/calligraphyguruji/amazon-clone)
 * **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/amazon-clone)
 
-### 4. 🎮 [Rock Paper Scissors Game](https://calligraphyguruji.dev/#/project/rock-paper-scissors) — Interactive State Engine
+### 4. 🤖 [Gemini AI Chatbot](https://calligraphyguruji.dev/#/project/gemini-ai-chatbot) — Production Conversational AI Assistant
 * **Badge:** `LIVE ON VERCEL`
-* **Overview:** A classic browser game with player vs computer mechanics, randomized decision engine, instant win/loss/draw detection, dynamic score tracking, and clean tactile animations.
-* **Tech Stack:** `JavaScript`, `HTML5`, `CSS3`, `DOM Events`, `Vercel`
-* **Live Demo:** [rock-paper-scissors-game-seven-tawny.vercel.app](https://rock-paper-scissors-game-seven-tawny.vercel.app/)
-* **Repository:** [github.com/calligraphyguruji/rock-paper-scissors-game](https://github.com/calligraphyguruji/rock-paper-scissors-game)
-* **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/rock-paper-scissors)
+* **Overview:** A full-stack, production-grade conversational AI assistant powered by Google Gemini API, featuring ultra-low-latency streaming responses, multi-format document analysis (PDF, DOCX, TXT), deep thinking reasoning mode, persistent multi-user chat sessions, and an accessible mobile-first interface.
+* **Tech Stack:** `React 19`, `JavaScript (ES6+)`, `Google Gemini API`, `Express.js`, `Vite`, `PostgreSQL`, `KaTeX / Markdown`, `Vercel`
+* **Live Demo:** [bodhi-sakha-phi.vercel.app](https://bodhi-sakha-phi.vercel.app/)
+* **Repository:** [github.com/calligraphyguruji/bodhi-sakha](https://github.com/calligraphyguruji/bodhi-sakha)
+* **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/gemini-ai-chatbot)
 
 ### 5. 🧩 [LeetCode Problem Solutions](https://calligraphyguruji.dev/#/project/leetcode-solutions) — 150+ C++ Solutions
 * **Badge:** `150+ PROBLEMS SOLVED`

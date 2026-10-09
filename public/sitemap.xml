@@ -69,10 +69,10 @@
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://www.calligraphyguruji.dev/projects/rock-paper-scissors</loc>
-    <lastmod>2026-09-25</lastmod>
+    <loc>https://www.calligraphyguruji.dev/projects/gemini-ai-chatbot</loc>
+    <lastmod>2026-10-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
+    <priority>0.80</priority>
   </url>
   <url>
     <loc>https://www.calligraphyguruji.dev/projects/leetcode-solutions</loc>
