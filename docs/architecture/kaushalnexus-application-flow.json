@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "KaushalNexus Application Lifecycle FSM",
+    "output": "docs/architecture/kaushalnexus-application-flow.html",
+    "viewBox": [1080, 680],
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "placement-rail",
+        "label": "Placement Happy Path",
+        "focus": ["registered", "enrolled", "assessed", "matched", "placed"],
+        "note": "Follow candidate progression from registration through BKT assessment to confirmed placement."
+      },
+      {
+        "id": "remedial-gap",
+        "label": "Remedial Skill Gap",
+        "focus": ["assessed", "remediation", "rejected"],
+        "note": "Low readiness scores trigger AI remedial roadmaps before re-assessment."
+      },
+      {
+        "id": "terminal-exits",
+        "label": "Terminal Exits",
+        "focus": ["assessed", "rejected", "matched", "placed"],
+        "note": "Terminal states REJECTED and PLACED lock candidate state."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "main", "label": "Candidate Journey" },
+    { "id": "waiting", "label": "AI Remediation Loop" },
+    { "id": "terminal", "label": "Terminal Outcomes" }
+  ],
+  "states": [
+    { "id": "registered", "type": "start", "label": "Registered", "sublabel": "Candidate Intake", "lane": "main", "col": 0, "step": "01", "tag": "Learner" },
+    { "id": "enrolled", "type": "active", "label": "Enrolled", "sublabel": "Training Track", "lane": "main", "col": 1, "step": "02", "tag": "Provider" },
+    { "id": "assessed", "type": "decision", "label": "Assessed", "sublabel": "BKT Evaluated", "lane": "main", "col": 2, "step": "03", "tag": "Evaluator" },
+    { "id": "matched", "type": "active", "label": "Matched", "sublabel": "Mandate Ranked", "lane": "main", "col": 3, "step": "04", "tag": "Employer" },
+    { "id": "placed", "type": "success", "label": "Placed", "sublabel": "Offer Accepted", "lane": "main", "col": 4, "step": "05", "tag": "MSDE" },
+    { "id": "remediation", "type": "waiting", "label": "Remediation", "sublabel": "Gemini Roadmap", "lane": "waiting", "col": 0, "tag": "Learner" },
+    { "id": "rejected", "type": "failure", "label": "Rejected", "sublabel": "Mandate Unmet", "lane": "terminal", "col": 0, "tag": "Terminal" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "assessed", "to": "remediation", "variant": "security", "route": "straight", "fromSide": "bottom", "toSide": "top" },
+    { "id": "t2", "from": "remediation", "to": "rejected", "variant": "security", "route": "straight", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Longitudinal Milestones",
+      "items": [
+        "Tracks learners from basic registration to 3-, 6-, and 12-month post-placement retention",
+        "Closes loop between training completion and formal employment conversion",
+        "State transitions audited with institutional actor IDs in PostgreSQL"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Adaptive Interventions",
+      "items": [
+        "Candidates failing benchmark BKT skill thresholds enter AI remediation",
+        "Gemini generates customized micro-courses and project recommendations",
+        "Terminal rejection occurs only if all mandate requirements remain unsatisfied"
+      ]
+    }
+  ]
+}

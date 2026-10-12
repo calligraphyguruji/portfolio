@@ -96,6 +96,7 @@ Each project includes interactive case study documentation accessible directly b
 ### 1. 💼 [KaushalNexus](https://calligraphyguruji.dev/#/project/kaushal-nexus) — Employment & Skilling Outcomes Platform
 * **Badge:** `SIH 2026 FLAGSHIP`
 * **Overview:** A national-scale skilling intelligence platform engineered for Smart India Hackathon 2026 (Problem Statement 135). Features longitudinal learner tracking, AI skill gap diagnostics via Google Gemini, district analytics, and ML job matching.
+* **Architecture Experience:** Features an interactive Archify-powered multi-view architecture experience with SVG diagrams, component trust boundary inspection, Bayesian Knowledge Tracing (BKT) engine pipeline trace, and multi-signal matching sequence.
 * **Tech Stack:** `React 19`, `FastAPI`, `PostgreSQL`, `Redis`, `Gemini AI`, `Tailwind CSS`, `TypeScript`
 * **Live App:** [kaushal-nexus.vercel.app](https://kaushal-nexus.vercel.app/)
 * **Repository:** [github.com/calligraphyguruji/Kaushal-Nexus](https://github.com/calligraphyguruji/Kaushal-Nexus)

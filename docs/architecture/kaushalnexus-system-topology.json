@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "KaushalNexus System Architecture",
+    "output": "docs/architecture/kaushalnexus-system-topology.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "skilling-intake",
+        "label": "Learner Intake & Matching Path",
+        "focus": ["users", "web-app", "api-gateway", "matching-engine", "data-tier"],
+        "note": "Follow learner skill profiles into multi-signal candidate matching and durable PostgreSQL storage."
+      },
+      {
+        "id": "intelligence-engine",
+        "label": "ML Inference & BKT Assessment",
+        "focus": ["api-gateway", "bkt-engine", "ai-diagnostics", "cache-queue"],
+        "note": "Inspect Bayesian Knowledge Tracing (BKT) skill updates and Gemini gap diagnostics."
+      },
+      {
+        "id": "auth-and-audit",
+        "label": "RBAC & Impact Pipeline",
+        "focus": ["auth-guard", "api-gateway", "data-tier"],
+        "note": "Verify OAuth2 JWT institutional role enforcement and longitudinal retention tracking."
+      }
+    ]
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Learners & MSDE", "sublabel": "Browser / Portal", "pos": [40, 300], "size": [120, 60] },
+    { "id": "web-app", "type": "frontend", "label": "Client Dashboard", "sublabel": "React 19 + Vite", "brand": "react", "pos": [260, 300], "size": [150, 64], "tag": "Tailwind v4" },
+    { "id": "auth-guard", "type": "security", "label": "RBAC & JWT Guard", "sublabel": "OAuth2 Bearer Check", "pos": [500, 130], "size": [150, 64], "tag": "MSDE Roles" },
+    { "id": "api-gateway", "type": "backend", "label": "FastAPI Core", "sublabel": "Async REST Router", "brand": "fastapi", "pos": [500, 300], "size": [150, 64], "tag": "Port 8000" },
+    { "id": "bkt-engine", "type": "cloud", "label": "BKT Model Engine", "sublabel": "Latent Skill Mastery", "pos": [500, 470], "size": [150, 64], "tag": "Bayesian Math" },
+    { "id": "ai-diagnostics", "type": "backend", "label": "Gemini Diagnostics", "sublabel": "Domain Gap Analysis", "pos": [740, 130], "size": [150, 64], "tag": "Flash 3.7" },
+    { "id": "matching-engine", "type": "backend", "label": "Matching Engine", "sublabel": "Multi-Signal Scoring", "pos": [740, 300], "size": [150, 64], "tag": "Weights: 50/30/20" },
+    { "id": "cache-queue", "type": "database", "label": "Redis 7 & Celery", "sublabel": "Token & Task Queue", "brand": "redis", "pos": [740, 470], "size": [150, 64], "tag": "In-Memory" },
+    { "id": "data-tier", "type": "database", "label": "PostgreSQL Core", "sublabel": "Learner 360 & Outcomes", "brand": "postgresql", "pos": [980, 220], "size": [160, 64], "tag": "ACID Schema" }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "KaushalNexus National Cloud Boundary",
+      "wraps": ["auth-guard", "api-gateway", "bkt-engine", "ai-diagnostics", "matching-engine", "cache-queue", "data-tier"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Zero-Trust Skilling Intelligence Zone",
+      "wraps": ["api-gateway", "ai-diagnostics", "matching-engine"]
+    }
+  ],
+  "connections": [
+    { "id": "users-to-web", "from": "users", "to": "web-app", "label": "HTTPS :443", "variant": "emphasis" },
+    { "id": "web-to-api", "from": "web-app", "to": "api-gateway", "label": "REST / JSON", "variant": "emphasis" },
+    { "id": "api-to-auth", "from": "api-gateway", "to": "auth-guard", "label": "verify role", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-to-bkt", "from": "api-gateway", "to": "bkt-engine", "label": "update mastery", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 35 },
+    { "id": "auth-to-ai", "from": "auth-guard", "to": "ai-diagnostics", "label": "authorized", "fromSide": "right", "toSide": "left" },
+    { "id": "api-to-matching", "from": "api-gateway", "to": "matching-engine", "label": "rank internships", "fromSide": "right", "toSide": "left" },
+    { "id": "api-to-cache", "from": "api-gateway", "to": "cache-queue", "label": "queue task", "fromSide": "right", "toSide": "left" },
+    { "id": "ai-to-db", "from": "ai-diagnostics", "to": "data-tier", "label": "persist gap roadmap", "fromSide": "right", "toSide": "top" },
+    { "id": "matching-to-db", "from": "matching-engine", "to": "data-tier", "label": "store match record", "fromSide": "right", "toSide": "bottom" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Presentation & Dashboards",
+      "items": [
+        "React 19 dashboard with Recharts regional metrics and Learner 360 profile",
+        "National internship directory with live vacancy counters and domain filtering",
+        "Sub-second candidate search and employer mandate discovery"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Intelligence & ML Engines",
+      "items": [
+        "Bayesian Knowledge Tracing (BKT) evaluating latent skill probabilities P(L_t)",
+        "Multi-signal matching algorithm: 0.50 Skill + 0.30 Location + 0.20 Readiness",
+        "Google Gemini Flash integration with PII sanitization and phased roadmaps"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security & Storage",
+      "items": [
+        "Granular RBAC for MSDE officers, state admins, employers, and learners",
+        "Relational PostgreSQL schema tracking longitudinal retention checkpoints",
+        "Redis session cache and Celery background queue for batch inferences"
+      ]
+    }
+  ]
+}

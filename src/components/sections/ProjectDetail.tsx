@@ -16,7 +16,9 @@ import {
   Share2,
   Terminal,
 } from 'lucide-react';
-import { CredVidhiArchitectureExperience } from './CredVidhiArchitectureExperience';
+import { ArchitectureExplorer } from './ArchitectureExplorer';
+import { credvidhiArchitecture } from '../../data/credvidhiArchitectureData';
+import { kaushalnexusArchitecture } from '../../data/kaushalnexusArchitectureData';
 
 interface ProjectDetailProps {
   project: Project;
@@ -360,7 +362,9 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
           {/* Architecture Breakdown */}
           {project.id === 'credvidhi' ? (
-            <CredVidhiArchitectureExperience />
+            <ArchitectureExplorer dataset={credvidhiArchitecture} />
+          ) : project.id === 'kaushal-nexus' ? (
+            <ArchitectureExplorer dataset={kaushalnexusArchitecture} />
           ) : (
             project.architecture && project.architecture.length > 0 && (
               <section className="space-y-4 pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">

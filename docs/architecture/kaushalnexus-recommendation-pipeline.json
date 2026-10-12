@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "KaushalNexus Recommendation Data Pipeline",
+    "output": "docs/architecture/kaushalnexus-recommendation-pipeline.html",
+    "viewBox": [1080, 720],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "intake-and-eval",
+        "label": "Assessment & Latent BKT",
+        "focus": ["learner", "dashboard", "fastapi", "bkt-model"],
+        "note": "Trace quiz response submission and Bayesian Knowledge Tracing skill mastery updates."
+      },
+      {
+        "id": "scoring-and-matching",
+        "label": "Multi-Signal Matching",
+        "focus": ["fastapi", "matching", "postgres"],
+        "note": "Score internship opportunities via 0.50 Skill + 0.30 Location + 0.20 Readiness weights."
+      },
+      {
+        "id": "diagnostics-and-ai",
+        "label": "Gemini Diagnostics",
+        "focus": ["fastapi", "gemini", "dashboard"],
+        "note": "Generate gap rationales and learning roadmaps via Google Gemini Flash."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "learner", "type": "external", "label": "Learner", "sublabel": "Candidate Portal" },
+    { "id": "dashboard", "type": "frontend", "label": "React UI", "sublabel": "Learner 360" },
+    { "id": "fastapi", "type": "backend", "label": "FastAPI Core", "sublabel": "Matching API" },
+    { "id": "bkt-model", "type": "cloud", "label": "BKT Engine", "sublabel": "P(L_t) Mastery" },
+    { "id": "matching", "type": "backend", "label": "Match Engine", "sublabel": "Multi-Signal" },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL 16", "sublabel": "Mandate Store" },
+    { "id": "gemini", "type": "external", "label": "Google Gemini", "sublabel": "Flash Diagnostics" }
+  ],
+  "segments": [
+    { "from": 150, "to": 310, "label": "1. Competency Assessment & BKT" },
+    { "from": 320, "to": 490, "label": "2. Multi-Signal Internship Scoring" },
+    { "from": 500, "to": 630, "label": "3. AI Gap Diagnostics & Roadmaps" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "learner", "to": "dashboard", "y": 165, "label": "Submit assessment answers", "variant": "default" },
+    { "id": "m2", "from": "dashboard", "to": "fastapi", "y": 200, "label": "POST /api/v1/assessments/submit", "variant": "emphasis" },
+    { "id": "m3", "from": "fastapi", "to": "bkt-model", "y": 235, "label": "update_mastery(p_trans, p_guess, p_slip)", "variant": "emphasis" },
+    { "id": "m4", "from": "bkt-model", "to": "fastapi", "y": 270, "label": "updated skill mastery P(L_t)", "variant": "return" },
+    { "id": "m5", "from": "fastapi", "to": "matching", "y": 338, "label": "calculate_learner_job_matches(learner_id)", "variant": "emphasis" },
+    { "id": "m6", "from": "matching", "to": "postgres", "y": 372, "label": "SELECT active hiring mandates & skills", "variant": "default" },
+    { "id": "m7", "from": "postgres", "to": "matching", "y": 408, "label": "active mandates + wage benchmarks", "variant": "return" },
+    { "id": "m8", "from": "matching", "to": "fastapi", "y": 444, "label": "weighted match score (50/30/20)", "variant": "return" },
+    { "id": "m9", "from": "fastapi", "to": "gemini", "y": 520, "label": "generate_skill_gap_analysis(sanitized_profile)", "variant": "dashed" },
+    { "id": "m10", "from": "gemini", "to": "fastapi", "y": 555, "label": "structured JSON gap roadmap", "variant": "return" },
+    { "id": "m11", "from": "fastapi", "to": "dashboard", "y": 590, "label": "200 OK ranked matches & AI recommendations", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "dashboard", "from": 165, "to": 596, "type": "frontend" },
+    { "participant": "fastapi", "from": 200, "to": 592, "type": "backend" },
+    { "participant": "bkt-model", "from": 235, "to": 274, "type": "cloud" },
+    { "participant": "matching", "from": 338, "to": 448, "type": "backend" },
+    { "participant": "postgres", "from": 372, "to": 412, "type": "database" },
+    { "participant": "gemini", "from": 520, "to": 558, "type": "external" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "BKT Assessment Science",
+      "items": [
+        "Models latent learner mastery as a hidden Markov process",
+        "Updates probabilities using transition, guess, and slip parameters",
+        "Prevents false confidence from single correct guesses"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Multi-Signal Matching Formula",
+      "items": [
+        "Score = 0.50 * SkillAlignment + 0.30 * LocationFit + 0.20 * Readiness",
+        "Matches against real employer hiring mandates and NSQF levels",
+        "Identifies missing competencies per open internship role"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Privacy & AI Grounding",
+      "items": [
+        "Learner profile is sanitized of all PII before Gemini inference",
+        "Fallback deterministic rules generate roadmaps if LLM times out",
+        "AI output is purely diagnostic and does not alter verified credentials"
+      ]
+    }
+  ]
+}
