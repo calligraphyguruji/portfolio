@@ -104,7 +104,8 @@ Each project includes interactive case study documentation accessible directly b
 ### 2. 💳 [CredVidhi](https://calligraphyguruji.dev/#/project/credvidhi) — Enterprise Loan Processing & Deterministic Underwriting Platform
 * **Badge:** `LIVE ON VERCEL`
 * **Overview:** An institutional digital loan processing and deterministic credit underwriting platform featuring automated KYC verification, mathematical DTI calculations, a 6-stage finite state machine, and immutable audit compliance.
-* **Tech Stack:** `React 19`, `TypeScript`, `FastAPI`, `Python 3.11`, `PostgreSQL 16`, `Redis`, `Tailwind CSS`, `Framer Motion`, `Gemini AI`
+* **Architecture Experience:** Features an interactive Archify-powered multi-view architecture experience with SVG diagrams, component trust boundary inspection, ACID transaction sequence trace, and forward-only FSM matrix analysis.
+* **Tech Stack:** `React 19`, `TypeScript`, `FastAPI`, `Python 3.11`, `PostgreSQL 16`, `Redis 7`, `Tailwind CSS`, `Framer Motion`, `Google Gemini`
 * **Live App:** [credvidhi.vercel.app](https://credvidhi.vercel.app/)
 * **Repository:** [github.com/calligraphyguruji/CredVidhi](https://github.com/calligraphyguruji/CredVidhi)
 * **Interactive Case Study:** [View on Portfolio](https://calligraphyguruji.dev/#/project/credvidhi)

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "CredVidhi Loan Submission Request Sequence",
+    "output": "docs/architecture/credvidhi-submission-sequence.html",
+    "viewBox": [1080, 720],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "ingress-auth",
+        "label": "Ingress & Authentication",
+        "focus": ["borrower", "react-ui", "fastapi", "auth-guard", "redis"],
+        "note": "Verify client submission, bearer token decode, and Redis JTI revocation status."
+      },
+      {
+        "id": "fsm-and-ledger",
+        "label": "FSM & Atomic Ledger",
+        "focus": ["fastapi", "fsm", "postgres"],
+        "note": "Execute forward-only DRAFT to SUBMITTED state mutation and append audit log atomically in PostgreSQL."
+      },
+      {
+        "id": "advisory-isolation",
+        "label": "Advisory AI Isolation",
+        "focus": ["react-ui", "fastapi", "gemini"],
+        "note": "Google Gemini support chat executes strictly out-of-band and never gates loan approval transitions."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "borrower", "type": "external", "label": "Borrower", "sublabel": "Portal Client" },
+    { "id": "react-ui", "type": "frontend", "label": "React Client", "sublabel": "Form & MIME" },
+    { "id": "fastapi", "type": "backend", "label": "FastAPI Core", "sublabel": "Pydantic API" },
+    { "id": "auth-guard", "type": "security", "label": "RBAC Guard", "sublabel": "JWT & Owner" },
+    { "id": "redis", "type": "database", "label": "Redis Cache", "sublabel": "JTI Blacklist" },
+    { "id": "fsm", "type": "backend", "label": "FSM Engine", "sublabel": "Transition Rule" },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL 16", "sublabel": "ACID Ledger" },
+    { "id": "gemini", "type": "external", "label": "Google Gemini", "sublabel": "Advisory Only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 310, "label": "1. Ingress & Auth Guard" },
+    { "from": 320, "to": 490, "label": "2. Precondition & ACID FSM Ledger" },
+    { "from": 500, "to": 630, "label": "3. Out-of-Band Advisory" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "borrower", "to": "react-ui", "y": 165, "label": "Submit Application Form", "variant": "default" },
+    { "id": "m2", "from": "react-ui", "to": "fastapi", "y": 200, "label": "POST /api/v1/applications/{id}/submit", "variant": "emphasis" },
+    { "id": "m3", "from": "fastapi", "to": "auth-guard", "y": 235, "label": "decode Bearer JWT (get_current_user)", "variant": "security" },
+    { "id": "m4", "from": "auth-guard", "to": "redis", "y": 268, "label": "is_token_revoked(jti)", "variant": "default" },
+    { "id": "m5", "from": "redis", "to": "auth-guard", "y": 300, "label": "token valid (fallback memory check)", "variant": "return" },
+    { "id": "m6", "from": "fastapi", "to": "fsm", "y": 338, "label": "execute_transition(DRAFT -> SUBMITTED)", "variant": "emphasis" },
+    { "id": "m7", "from": "fsm", "to": "postgres", "y": 372, "label": "BEGIN: update status & ref number", "variant": "default" },
+    { "id": "m8", "from": "fsm", "to": "postgres", "y": 408, "label": "INSERT audit_logs (prior/subsequent JSON)", "variant": "emphasis" },
+    { "id": "m9", "from": "postgres", "to": "fsm", "y": 444, "label": "COMMIT transaction envelope", "variant": "return" },
+    { "id": "m10", "from": "fastapi", "to": "react-ui", "y": 476, "label": "200 OK ApplicationDetailResponse", "variant": "return" },
+    { "id": "m11", "from": "react-ui", "to": "fastapi", "y": 516, "label": "POST /api/v1/chat (advisory query)", "variant": "dashed" },
+    { "id": "m12", "from": "fastapi", "to": "gemini", "y": 550, "label": "domain guardrail -> LLM completion", "variant": "dashed" },
+    { "id": "m13", "from": "gemini", "to": "react-ui", "y": 585, "label": "advisory reply (zero underwriting authority)", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "react-ui", "from": 165, "to": 592, "type": "frontend" },
+    { "participant": "fastapi", "from": 200, "to": 482, "type": "backend" },
+    { "participant": "auth-guard", "from": 235, "to": 305, "type": "security" },
+    { "participant": "redis", "from": 268, "to": 302, "type": "database" },
+    { "participant": "fsm", "from": 338, "to": 448, "type": "backend" },
+    { "participant": "postgres", "from": 372, "to": 446, "type": "database" },
+    { "participant": "gemini", "from": 550, "to": 588, "type": "external" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "ACID Ingress & Ledger",
+      "items": [
+        "Pre-condition checks verify borrower ownership and DRAFT status",
+        "Application status update and audit_logs JSON record commit in single PostgreSQL transaction",
+        "Failure rolls back both state change and audit event cleanly"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security & Token Defense",
+      "items": [
+        "Bearer tokens checked against Redis JTI blacklist with automatic in-memory dict fallback",
+        "Role-based matrix verifies caller is authorized for targeted lifecycle transition",
+        "Rejections enforce mandatory audit justification strings"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Strict AI Isolation",
+      "items": [
+        "Google Gemini queries are routed through a domain firewall pre-check",
+        "AI output is purely informative and cannot approve loans or mutate state",
+        "LLM timeouts and failures do not interrupt core lending operations"
+      ]
+    }
+  ]
+}

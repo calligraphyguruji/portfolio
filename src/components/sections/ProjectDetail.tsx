@@ -16,6 +16,7 @@ import {
   Share2,
   Terminal,
 } from 'lucide-react';
+import { CredVidhiArchitectureExperience } from './CredVidhiArchitectureExperience';
 
 interface ProjectDetailProps {
   project: Project;
@@ -358,24 +359,28 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
           )}
 
           {/* Architecture Breakdown */}
-          {project.architecture && project.architecture.length > 0 && (
-            <section className="space-y-4 pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
-              <h2 className="text-xs font-mono font-bold tracking-widest uppercase text-[#8E8E93] dark:text-slate-400 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" />
-                /SYSTEM ARCHITECTURE &amp; DATA FLOW
-              </h2>
-              <div className="space-y-2.5">
-                {project.architecture.map((arch) => (
-                  <div
-                    key={arch}
-                    className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.06] text-xs sm:text-sm text-[#171717] dark:text-slate-300 font-mono flex items-start gap-3"
-                  >
-                    <Cpu className="w-4 h-4 text-indigo-500 dark:text-cyan-400 shrink-0 mt-0.5" />
-                    <span>{arch}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
+          {project.id === 'credvidhi' ? (
+            <CredVidhiArchitectureExperience />
+          ) : (
+            project.architecture && project.architecture.length > 0 && (
+              <section className="space-y-4 pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
+                <h2 className="text-xs font-mono font-bold tracking-widest uppercase text-[#8E8E93] dark:text-slate-400 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  /SYSTEM ARCHITECTURE &amp; DATA FLOW
+                </h2>
+                <div className="space-y-2.5">
+                  {project.architecture.map((arch) => (
+                    <div
+                      key={arch}
+                      className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.06] text-xs sm:text-sm text-[#171717] dark:text-slate-300 font-mono flex items-start gap-3"
+                    >
+                      <Cpu className="w-4 h-4 text-indigo-500 dark:text-cyan-400 shrink-0 mt-0.5" />
+                      <span>{arch}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
           )}
 
           {/* Full Tech Stack Pills */}

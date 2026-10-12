@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "CredVidhi Loan Application Lifecycle FSM",
+    "output": "docs/architecture/credvidhi-state-machine.html",
+    "viewBox": [1080, 680],
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "origination-rail",
+        "label": "Origination Happy Path",
+        "focus": ["draft", "submitted", "under_review", "approved", "disbursed"],
+        "note": "Follow the forward-only 5-stage lifecycle from applicant submission to fund disbursement."
+      },
+      {
+        "id": "approval-gate",
+        "label": "Document Verification Gate",
+        "focus": ["under_review", "docs_pending", "rejected"],
+        "note": "Discrepancies trigger a waiting state until documents are remediated, or branch to rejection."
+      },
+      {
+        "id": "terminal-rejections",
+        "label": "Terminal Outcomes",
+        "focus": ["under_review", "rejected", "approved", "disbursed"],
+        "note": "Terminal states REJECTED and DISBURSED have zero outbound transitions."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "main", "label": "Lifecycle Phases" },
+    { "id": "waiting", "label": "Document Remediation" },
+    { "id": "terminal", "label": "Terminal Exits" }
+  ],
+  "states": [
+    { "id": "draft", "type": "start", "label": "Draft", "sublabel": "Applicant Intake", "lane": "main", "col": 0, "step": "01", "tag": "Applicant" },
+    { "id": "submitted", "type": "active", "label": "Submitted", "sublabel": "Reference Assigned", "lane": "main", "col": 1, "step": "02", "tag": "Applicant" },
+    { "id": "under_review", "type": "decision", "label": "Under Review", "sublabel": "KYC & Risk Triage", "lane": "main", "col": 2, "step": "03", "tag": "Officer" },
+    { "id": "approved", "type": "active", "label": "Approved", "sublabel": "Sanctioned in ₹", "lane": "main", "col": 3, "step": "04", "tag": "Analyst" },
+    { "id": "disbursed", "type": "success", "label": "Disbursed", "sublabel": "Funds Released", "lane": "main", "col": 4, "step": "05", "tag": "Operations" },
+    { "id": "docs_pending", "type": "waiting", "label": "Docs Pending", "sublabel": "Discrepancy Wait", "lane": "waiting", "col": 0, "tag": "Applicant" },
+    { "id": "rejected", "type": "failure", "label": "Rejected", "sublabel": "Mandatory Reason", "lane": "terminal", "col": 0, "tag": "Terminal" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "under_review", "to": "docs_pending", "variant": "security", "route": "straight", "fromSide": "bottom", "toSide": "top" },
+    { "id": "t2", "from": "docs_pending", "to": "rejected", "variant": "security", "route": "straight", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Deterministic Progression",
+      "items": [
+        "Transitions are strictly forward-only: terminal states REJECTED and DISBURSED have empty outgoing transition sets",
+        "Role-Based Access Control (RBAC) validates whether the actor role is authorized for the target lifecycle phase",
+        "Every execution appends an atomic JSON audit record to PostgreSQL inside the same ACID transaction"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Rejection & Compliance Invariants",
+      "items": [
+        "A non-empty string reason is strictly required when transitioning an application to REJECTED",
+        "Transitions attempted outside ALLOWED_TRANSITIONS raise IllegalStateTransitionError and roll back",
+        "Frontend UI status reflects authoritative backend database state; client cannot unilaterally transition"
+      ]
+    }
+  ]
+}
