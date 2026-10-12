@@ -19,6 +19,7 @@ import {
 import { ArchitectureExplorer } from './ArchitectureExplorer';
 import { credvidhiArchitecture } from '../../data/credvidhiArchitectureData';
 import { kaushalnexusArchitecture } from '../../data/kaushalnexusArchitectureData';
+import { bodhisakhaArchitecture } from '../../data/bodhisakhaArchitectureData';
 
 interface ProjectDetailProps {
   project: Project;
@@ -365,6 +366,8 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
             <ArchitectureExplorer dataset={credvidhiArchitecture} />
           ) : project.id === 'kaushal-nexus' ? (
             <ArchitectureExplorer dataset={kaushalnexusArchitecture} />
+          ) : project.id === 'gemini-ai-chatbot' ? (
+            <ArchitectureExplorer dataset={bodhisakhaArchitecture} />
           ) : (
             project.architecture && project.architecture.length > 0 && (
               <section className="space-y-4 pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "BodhiSakha Prompt & Document Processing Lifecycle",
+    "output": "docs/architecture/bodhisakha-multimodal-pipeline.html",
+    "viewBox": [1080, 680],
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "direct-stream-rail",
+        "label": "Prompt Streaming Happy Path",
+        "focus": ["received", "classified", "grounded", "streaming", "persisted"],
+        "note": "Follow client prompt from ingestion and intent routing to live chunk streaming and persistence."
+      },
+      {
+        "id": "document-parsing-rail",
+        "label": "Document Parsing Flow",
+        "focus": ["received", "doc_extracted", "grounded", "streaming"],
+        "note": "Multi-format document parsing (unpdf/mammoth) prior to prompt context synthesis."
+      },
+      {
+        "id": "model-fallback-rail",
+        "label": "Model Fallback Cascade",
+        "focus": ["grounded", "streaming", "failed", "persisted"],
+        "note": "Cascades across Gemini 2.5-Flash -> 2.5-Pro -> Flash-Latest with transient retries."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "main", "label": "Prompt Ingestion & Stream Pipeline" },
+    { "id": "waiting", "label": "Document Extraction Loop" },
+    { "id": "terminal", "label": "Terminal Outcomes" }
+  ],
+  "states": [
+    { "id": "received", "type": "start", "label": "Received", "sublabel": "CORS & Length Gate", "lane": "main", "col": 0, "step": "01", "tag": "Express" },
+    { "id": "classified", "type": "active", "label": "Classified", "sublabel": "Intent & Mode Router", "lane": "main", "col": 1, "step": "02", "tag": "Intent Engine" },
+    { "id": "grounded", "type": "decision", "label": "Grounded", "sublabel": "RAG & Context Ready", "lane": "main", "col": 2, "step": "03", "tag": "Context" },
+    { "id": "streaming", "type": "active", "label": "Streaming", "sublabel": "res.write Chunk Stream", "lane": "main", "col": 3, "step": "04", "tag": "Gemini SDK" },
+    { "id": "persisted", "type": "success", "label": "Persisted", "sublabel": "DB Turn & Memory", "lane": "main", "col": 4, "step": "05", "tag": "Postgres/JSON" },
+    { "id": "doc_extracted", "type": "waiting", "label": "Doc Extracted", "sublabel": "unpdf / mammoth", "lane": "waiting", "col": 0, "tag": "Parser" },
+    { "id": "failed", "type": "failure", "label": "Unavailable", "sublabel": "503 Graceful Notice", "lane": "terminal", "col": 0, "tag": "Terminal" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "grounded", "to": "doc_extracted", "variant": "security", "route": "straight", "fromSide": "bottom", "toSide": "top" },
+    { "id": "t2", "from": "doc_extracted", "to": "failed", "variant": "security", "route": "straight", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Model Resilience Cascade",
+      "items": [
+        "Candidate cascade: gemini-2.5-flash -> gemini-2.5-pro -> gemini-flash-latest",
+        "Two attempts per model with transient backoff before cascading",
+        "Graceful 503 fallback response if upstream Google AI quotas are exhausted"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Sanitization & Thought Token Pruning",
+      "items": [
+        "cleanAssistantOutput() regex filter strips leaked internal drafting tags",
+        "Filters out <thought>, <thinking>, and scratchpad lines before res.write()",
+        "Preserves clean LaTeX math formatting ($...$ and $$...$$)"
+      ]
+    }
+  ]
+}

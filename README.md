@@ -122,6 +122,7 @@ Each project includes interactive case study documentation accessible directly b
 ### 4. 🤖 [Gemini AI Chatbot](https://calligraphyguruji.dev/#/project/gemini-ai-chatbot) — Production Conversational AI Assistant
 * **Badge:** `LIVE ON VERCEL`
 * **Overview:** A full-stack, production-grade conversational AI assistant powered by Google Gemini API, featuring ultra-low-latency streaming responses, multi-format document analysis (PDF, DOCX, TXT), deep thinking reasoning mode, persistent multi-user chat sessions, and an accessible mobile-first interface.
+* **Architecture Experience:** Features an interactive Archify-powered multi-view architecture experience with SVG diagrams, serverless Express streaming router trace, in-memory STEM RAG grounding, and model fallback cascade lifecycle.
 * **Tech Stack:** `React 19`, `JavaScript (ES6+)`, `Google Gemini API`, `Express.js`, `Vite`, `PostgreSQL`, `KaTeX / Markdown`, `Vercel`
 * **Live Demo:** [bodhi-sakha-phi.vercel.app](https://bodhi-sakha-phi.vercel.app/)
 * **Repository:** [github.com/calligraphyguruji/bodhi-sakha](https://github.com/calligraphyguruji/bodhi-sakha)

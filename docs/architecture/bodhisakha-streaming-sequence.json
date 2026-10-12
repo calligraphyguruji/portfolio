@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "BodhiSakha Streaming & Reasoning Execution Trace",
+    "output": "docs/architecture/bodhisakha-streaming-sequence.html",
+    "viewBox": [1080, 720],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "intent-and-context",
+        "label": "Intent & Context Assembly",
+        "focus": ["user", "react-ui", "express-server", "rag-store"],
+        "note": "Classify intent, assemble recent turn history, and retrieve high-yield RAG STEM formulas."
+      },
+      {
+        "id": "streaming-pipeline",
+        "label": "Chunk Streaming & Fallback",
+        "focus": ["express-server", "gemini-api", "react-ui"],
+        "note": "Immediate chunk forwarding via res.write() with model fallback cascade."
+      },
+      {
+        "id": "async-memory-persist",
+        "label": "Async Memory & Persistence",
+        "focus": ["express-server", "memory-worker", "db-tier"],
+        "note": "Extract user facts in the background and commit conversation messages to database."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "User / Student", "sublabel": "Browser Client" },
+    { "id": "react-ui", "type": "frontend", "label": "React 19 UI", "sublabel": "Stream Decoder" },
+    { "id": "express-server", "type": "backend", "label": "Express 5 Backend", "sublabel": "Streaming Proxy" },
+    { "id": "rag-store", "type": "cloud", "label": "In-Memory RAG", "sublabel": "STEM Knowledge" },
+    { "id": "gemini-api", "type": "external", "label": "Google Gemini", "sublabel": "2.5-Flash / Pro" },
+    { "id": "memory-worker", "type": "cloud", "label": "Memory Extractor", "sublabel": "Async Worker" },
+    { "id": "db-tier", "type": "database", "label": "PostgreSQL / JSON", "sublabel": "Message Store" }
+  ],
+  "segments": [
+    { "from": 150, "to": 310, "label": "1. Request Intake & Context Assembly" },
+    { "from": 320, "to": 490, "label": "2. Real-Time Chunk Streaming (res.write)" },
+    { "from": 500, "to": 630, "label": "3. Message Commitment & Memory Extraction" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "user", "to": "react-ui", "y": 165, "label": "Submit prompt + optional file/mode", "variant": "default" },
+    { "id": "m2", "from": "react-ui", "to": "express-server", "y": 200, "label": "POST /api/chat { message, stream: true }", "variant": "emphasis" },
+    { "id": "m3", "from": "express-server", "to": "rag-store", "y": 235, "label": "classifyIntent() & retrieveKnowledge()", "variant": "emphasis" },
+    { "id": "m4", "from": "rag-store", "to": "express-server", "y": 270, "label": "curated formulas & domain context", "variant": "return" },
+    { "id": "m5", "from": "express-server", "to": "gemini-api", "y": 338, "label": "sendMessageStream(promptWithContext)", "variant": "emphasis" },
+    { "id": "m6", "from": "gemini-api", "to": "express-server", "y": 372, "label": "streamResult.stream chunk [TTFT < 800ms]", "variant": "default" },
+    { "id": "m7", "from": "express-server", "to": "react-ui", "y": 408, "label": "res.write(chunkText) [HTTP Chunked]", "variant": "emphasis" },
+    { "id": "m8", "from": "express-server", "to": "react-ui", "y": 444, "label": "res.end() [Stream Complete]", "variant": "return" },
+    { "id": "m9", "from": "express-server", "to": "db-tier", "y": 520, "label": "createMessage(user & model turns)", "variant": "emphasis" },
+    { "id": "m10", "from": "express-server", "to": "memory-worker", "y": 555, "label": "extractMemoriesFromConversation() [async]", "variant": "dashed" },
+    { "id": "m11", "from": "memory-worker", "to": "db-tier", "y": 590, "label": "setMemory(key, value, importance)", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "react-ui", "from": 165, "to": 446, "type": "frontend" },
+    { "participant": "express-server", "from": 200, "to": 558, "type": "backend" },
+    { "participant": "gemini-api", "from": 338, "to": 374, "type": "external" },
+    { "participant": "db-tier", "from": 520, "to": 594, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Sub-Second TTFT Pipeline",
+      "items": [
+        "First token piped directly to client without waiting for full generation",
+        "Direct res.write() chunk piping eliminates buffer latency",
+        "Stream decoder dynamically parses Markdown and KaTeX math"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Dynamic Context Synthesis",
+      "items": [
+        "Recent 12-turn dialogue window with deduplicated roles",
+        "Heuristic memory injection personalizes answers organically",
+        "Sub-millisecond RAG formulas attached for STEM and exam questions"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Non-Blocking Memory Extraction",
+      "items": [
+        "Background worker uses regex heuristics before calling LLM",
+        "Zero added latency to user chat stream response",
+        "User facts stored with importance scores and key deduplication"
+      ]
+    }
+  ]
+}

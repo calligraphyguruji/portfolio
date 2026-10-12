@@ -68,6 +68,8 @@ export const ArchitectureExplorer: React.FC<ArchitectureExplorerProps> = ({ data
   const projectSvgMap =
     dataset.projectId === 'credvidhi'
       ? ARCHIFY_SVGS.credvidhi
+      : dataset.projectId === 'gemini-ai-chatbot' || dataset.projectId === 'bodhisakha'
+      ? ARCHIFY_SVGS.bodhisakha
       : ARCHIFY_SVGS.kaushalnexus;
 
   const currentSvgHtml =

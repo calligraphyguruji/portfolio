@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "BodhiSakha System Architecture",
+    "output": "docs/architecture/bodhisakha-system-topology.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "conversational-core",
+        "label": "Client Dialogue & Stream Core",
+        "focus": ["users", "client-app", "express-api", "gemini-cascade", "data-store"],
+        "note": "Trace client prompt submission into Express 5 streaming router and Google Gemini SDK execution."
+      },
+      {
+        "id": "intelligence-rag",
+        "label": "RAG & Grounding Pipeline",
+        "focus": ["express-api", "rag-engine", "doc-extractor", "gemini-cascade"],
+        "note": "Inspect in-memory STEM knowledge retrieval, serverless document parsing (unpdf/mammoth), and live tools."
+      },
+      {
+        "id": "memory-and-auth",
+        "label": "Memory Extraction & Auth Security",
+        "focus": ["jwt-auth", "express-api", "memory-extractor", "data-store"],
+        "note": "Verify bcrypt/JWT user isolation, async dialogue fact extraction, and dual PostgreSQL/local JSON persistence."
+      }
+    ]
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Learners & Users", "sublabel": "Web Client", "pos": [40, 300], "size": [120, 60] },
+    { "id": "client-app", "type": "frontend", "label": "React 19 Frontend", "sublabel": "Vite + KaTeX", "brand": "react", "pos": [260, 300], "size": [150, 64], "tag": "Chunk Decoder" },
+    { "id": "jwt-auth", "type": "security", "label": "Auth & IDOR Guard", "sublabel": "JWT + bcryptjs", "pos": [500, 130], "size": [150, 64], "tag": "User Isolation" },
+    { "id": "express-api", "type": "backend", "label": "Express 5 Backend", "sublabel": "Serverless API", "brand": "node", "pos": [500, 300], "size": [150, 64], "tag": "Streaming Router" },
+    { "id": "doc-extractor", "type": "backend", "label": "Document Parser", "sublabel": "unpdf & mammoth", "pos": [500, 470], "size": [150, 64], "tag": "PDF/DOCX 15MB" },
+    { "id": "rag-engine", "type": "cloud", "label": "In-Memory RAG Engine", "sublabel": "Curated STEM Base", "pos": [740, 130], "size": [150, 64], "tag": "Sub-millisecond" },
+    { "id": "gemini-cascade", "type": "backend", "label": "Google Gemini SDK", "sublabel": "Model Cascade", "brand": "google-cloud", "pos": [740, 300], "size": [150, 64], "tag": "2.5-Flash / Pro" },
+    { "id": "live-tools", "type": "external", "label": "Live Weather & Web", "sublabel": "wttr.in & Search", "pos": [740, 470], "size": [150, 64], "tag": "Real-Time Facts" },
+    { "id": "memory-extractor", "type": "cloud", "label": "Memory Engine", "sublabel": "Async Worker", "pos": [980, 130], "size": [150, 64], "tag": "Fact Extractor" },
+    { "id": "data-store", "type": "database", "label": "Persistence Tier", "sublabel": "PostgreSQL & JSON", "brand": "postgresql", "pos": [980, 300], "size": [160, 64], "tag": "Dual Storage" }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "BodhiSakha Serverless Execution Realm",
+      "wraps": ["jwt-auth", "express-api", "doc-extractor", "rag-engine", "gemini-cascade", "memory-extractor", "data-store"]
+    },
+    {
+      "kind": "security-group",
+      "label": "AI Context & Inference Core",
+      "wraps": ["rag-engine", "gemini-cascade"]
+    }
+  ],
+  "connections": [
+    { "id": "users-to-client", "from": "users", "to": "client-app", "label": "HTTPS :443", "variant": "emphasis" },
+    { "id": "client-to-api", "from": "client-app", "to": "express-api", "label": "POST /api/chat", "variant": "emphasis", "labelDy": -20 },
+    { "id": "api-to-auth", "from": "express-api", "to": "jwt-auth", "label": "verify jwt token", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-to-docs", "from": "express-api", "to": "doc-extractor", "label": "parse document", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 35 },
+    { "id": "auth-to-rag", "from": "jwt-auth", "to": "rag-engine", "label": "authorized", "fromSide": "right", "toSide": "left" },
+    { "id": "api-to-gemini", "from": "express-api", "to": "gemini-cascade", "label": "stream prompt", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "api-to-tools", "from": "express-api", "to": "live-tools", "label": "live fetch", "fromSide": "right", "toSide": "left" },
+    { "id": "rag-to-memory", "from": "rag-engine", "to": "memory-extractor", "label": "enrich context", "fromSide": "right", "toSide": "left" },
+    { "id": "gemini-to-db", "from": "gemini-cascade", "to": "data-store", "label": "persist messages", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "memory-to-db", "from": "memory-extractor", "to": "data-store", "label": "commit facts", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Sub-Second TTFT Streaming",
+      "items": [
+        "Direct res.write() forwarding on first chunk",
+        "GenAI client caching eliminates SSL handshake penalties",
+        "Adaptive token scaling matches question complexity"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Multimodal Document Intelligence",
+      "items": [
+        "Serverless-native unpdf and mammoth parsing up to 15MB",
+        "Direct text indexing passed as ground truth prompt context",
+        "Supports PDF, DOCX, TXT, CSV, JSON, and images"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Dual-Mode Zero-Config Persistence",
+      "items": [
+        "Direct PostgreSQL connection pool when DATABASE_URL is set",
+        "Atomic zero-dependency JSON fallback (.data/db.json) in local environments",
+        "Strict IDOR isolation ensures complete cross-user conversation privacy"
+      ]
+    }
+  ]
+}

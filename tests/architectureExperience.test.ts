@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { credvidhiArchitecture } from '../src/data/credvidhiArchitectureData.ts';
 import { kaushalnexusArchitecture } from '../src/data/kaushalnexusArchitectureData.ts';
+import { bodhisakhaArchitecture } from '../src/data/bodhisakhaArchitectureData.ts';
 import { ARCHIFY_SVGS } from '../src/data/architectureSvgs.ts';
 
 describe('System Architecture Experience & Regression Test Suite', () => {
@@ -51,8 +52,30 @@ describe('System Architecture Experience & Regression Test Suite', () => {
     }
   });
 
+  it('BodhiSakha architecture dataset has distinct project-specific components, views, and SVGs', () => {
+    assert.strictEqual(bodhisakhaArchitecture.projectId, 'gemini-ai-chatbot');
+    assert.ok(bodhisakhaArchitecture.views.length >= 3, 'BodhiSakha must have at least 3 views');
+    assert.ok(Object.keys(bodhisakhaArchitecture.components).length >= 8, 'Must have all core components');
+
+    // Verify distinct components
+    assert.ok(bodhisakhaArchitecture.components['rag-engine'], 'Must have RAG engine');
+    assert.ok(bodhisakhaArchitecture.components['doc-extractor'], 'Must have document parser');
+    assert.ok(bodhisakhaArchitecture.components['memory-extractor'], 'Must have memory extractor');
+    assert.strictEqual(credvidhiArchitecture.components['rag-engine'], undefined, 'CredVidhi must not have RAG engine');
+    assert.strictEqual(kaushalnexusArchitecture.components['doc-extractor'], undefined, 'KaushalNexus must not have doc extractor');
+
+    // Verify all BodhiSakha view svgKeys resolve to valid SVGs
+    for (const view of bodhisakhaArchitecture.views) {
+      const svg = (ARCHIFY_SVGS.bodhisakha as Record<string, string>)[view.svgKey];
+      assert.ok(svg, `BodhiSakha SVG for key '${view.svgKey}' must exist`);
+      assert.ok(svg.startsWith('<svg'), 'SVG string must begin with <svg');
+      assert.ok(svg.includes('</svg>'), 'SVG string must end with </svg>');
+      assert.ok(svg.length > 5000, 'SVG must not be empty or truncated');
+    }
+  });
+
   it('Every component references unique node IDs and valid source paths', () => {
-    [credvidhiArchitecture, kaushalnexusArchitecture].forEach((dataset) => {
+    [credvidhiArchitecture, kaushalnexusArchitecture, bodhisakhaArchitecture].forEach((dataset) => {
       for (const [id, comp] of Object.entries(dataset.components)) {
         assert.strictEqual(id, comp.id, 'Dictionary key must match component ID');
         assert.ok(comp.name.length > 0, 'Component must have a name');
@@ -66,7 +89,7 @@ describe('System Architecture Experience & Regression Test Suite', () => {
   });
 
   it('Every engineering decision has valid architectural rationale and evidence', () => {
-    [credvidhiArchitecture, kaushalnexusArchitecture].forEach((dataset) => {
+    [credvidhiArchitecture, kaushalnexusArchitecture, bodhisakhaArchitecture].forEach((dataset) => {
       assert.ok(dataset.decisions.length >= 5, 'Dataset must have at least 5 architectural decisions');
       for (const dec of dataset.decisions) {
         assert.ok(dec.title.length > 0);
@@ -78,3 +101,4 @@ describe('System Architecture Experience & Regression Test Suite', () => {
     });
   });
 });
+
