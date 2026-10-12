@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test tests/contactApi.test.ts tests/architectureExperience.test.ts"
+    "test": "node --experimental-strip-types --test tests/contactApi.test.ts tests/architectureExperience.test.ts tests/seoRouting.test.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

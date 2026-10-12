@@ -92,7 +92,7 @@ export const Footer: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#8E8E93] dark:text-slate-500">
           <span>Featured:</span>
-          <a href="/projects/kaushalnexus" className="hover:text-[#171717] dark:hover:text-slate-300 underline underline-offset-2">
+          <a href="/projects/kaushal-nexus" className="hover:text-[#171717] dark:hover:text-slate-300 underline underline-offset-2">
             KaushalNexus
           </a>
           <a href="/projects/youtube-clone" className="hover:text-[#171717] dark:hover:text-slate-300 underline underline-offset-2">

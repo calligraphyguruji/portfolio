@@ -28,8 +28,9 @@ A high-performance personal developer portfolio engineered with an editorial aes
 ### ✨ Standout Features
 - **Editorial Single-Line Typography:** Bold headline with outlined stroke (`AMAN`) and filled typography (`MISHRA`) matching minimalist editorial systems.
 - **Interactive Cursor Spotlight Color Reveal:** The centerpiece portrait remains grayscale by default and dynamically reveals vibrant natural color strictly within the circular cursor spotlight on hover.
-- **Dedicated Project Case Study Routing:** Clicking any project preview image seamlessly routes to a deep-dive case study page (`#/project/<id>`) detailing the problem statement, engineered solution, system architecture, key metrics, and technology stack.
-- **Zero-Dependency Routing:** Powered by native browser hash routing and history APIs (following Ponytail minimal principles) for zero bundle bloat and instant page transitions.
+- **Dedicated Project Case Study Routing:** Direct navigation to clean URLs (`/projects/<id>`) detailing the problem statement, engineered solution, system architecture, key metrics, and technology stack.
+- **Zero-Dependency SPA Routing & Vercel Clean URLs:** Powered by native browser history APIs and Vercel edge rewrite/redirect configuration (`vercel.json`), providing direct URL access, refresh handling, and permanent 301 redirects without server-side 404 errors.
+- **Production Technical SEO & Structured Data:** Full Google Search Console compliance with XML sitemap (`/sitemap.xml`), robots.txt, dynamic OpenGraph/Twitter meta tags, and schema.org JSON-LD structured data (`Person`, `WebSite`, `SoftwareSourceCode`).
 - **Hardened Anti-Spam Contact Architecture:** Production-grade security pipeline defending against bot spam and EmailJS quota exhaustion via Cloudflare Turnstile, invisible honeypot traps, client/server sliding-window rate limiting, and serverless isolation (`/api/contact`).
 - **Modern SVG Vector Branding:** High-resolution, zero-loss AM monogram SVG favicon with dark background harmony, full W3C web manifest integration, and crisp cross-browser scaling.
 - **Live Analytics:** Integrated with `@vercel/analytics` for privacy-first performance monitoring.

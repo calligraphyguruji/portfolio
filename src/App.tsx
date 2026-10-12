@@ -230,9 +230,37 @@ export default function App() {
         ) : isHomeRoute ? (
           <>
             <PageSEO
-              title="Aman Mishra | Software Developer | C++ • React • AI/ML"
-              description="Aman Mishra is a software developer specializing in C++, Data Structures & Algorithms, React, full-stack systems, and AI/ML integrations."
-              canonical="https://www.calligraphyguruji.dev/"
+              title={
+                cleanPath === '/experience'
+                  ? 'Experience & Career | Aman Mishra — Software Developer'
+                  : cleanPath === '/projects'
+                  ? 'Engineering Projects | Aman Mishra — Software Developer'
+                  : cleanPath === '/about'
+                  ? 'About Aman Mishra | Software Developer & Background'
+                  : cleanPath === '/resume'
+                  ? 'Resume & Technical Credentials | Aman Mishra'
+                  : cleanPath === '/contact'
+                  ? 'Contact Aman Mishra | Software Developer Inquiries'
+                  : 'Aman Mishra (Calligraphy Guruji) | Software Developer | C++ • React • AI/ML'
+              }
+              description={
+                cleanPath === '/experience'
+                  ? 'Professional software engineering experience, AI/ML internship at Codomax Digital Solutions, technical leadership, and production delivery.'
+                  : cleanPath === '/projects'
+                  ? 'Explore flagship and production software engineering projects by Aman Mishra across full-stack systems, deterministic underwriting, and AI integrations.'
+                  : cleanPath === '/about'
+                  ? 'Background, core technical competencies, and engineering philosophies of Aman Mishra (Calligraphy Guruji).'
+                  : cleanPath === '/resume'
+                  ? 'Official resume, technical skill summary, academic credentials, and project history for Aman Mishra.'
+                  : cleanPath === '/contact'
+                  ? 'Get in touch with Aman Mishra for software engineering opportunities, collaborations, and technical discussions.'
+                  : 'Aman Mishra (Calligraphy Guruji) is a software developer specializing in C++, Data Structures & Algorithms, React, full-stack systems, and AI/ML integrations.'
+              }
+              canonical={
+                cleanPath === '/'
+                  ? 'https://www.calligraphyguruji.dev/'
+                  : `https://www.calligraphyguruji.dev${cleanPath}`
+              }
             />
             <Hero />
             <Projects onSelectProject={(id) => navigate(`/projects/${id}`)} />

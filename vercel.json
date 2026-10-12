@@ -1,10 +1,22 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/projects/rock-paper-scissors",
+      "destination": "/projects/gemini-ai-chatbot",
+      "permanent": true
+    },
+    {
+      "source": "/projects/kaushalnexus",
+      "destination": "/projects/kaushal-nexus",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "headers": [
