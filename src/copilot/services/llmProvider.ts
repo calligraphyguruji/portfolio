@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import type { RetrievalResult, NLPAnalysis } from '../types.ts';
 
 export interface LLMProvider {
@@ -13,40 +12,49 @@ export interface LLMProvider {
 }
 
 /**
- * Official Google Gemini Provider implementation
+ * Native, Zero-Dependency Google Gemini Provider
+ * Calls official Google Gemini REST API directly using global fetch without heavy SDK dependencies.
  */
 export class GeminiProvider implements LLMProvider {
-  private client: GoogleGenAI | null = null;
+  private apiKey: string | null = null;
   private modelName: string;
-  private embeddingModelName: string;
 
-  constructor(apiKey?: string, modelName = 'gemini-2.5-flash', embeddingModel = 'text-embedding-004') {
+  constructor(apiKey?: string, modelName = 'gemini-2.5-flash') {
     this.modelName = modelName;
-    this.embeddingModelName = embeddingModel;
-    if (apiKey) {
-      this.client = new GoogleGenAI({ apiKey });
+    if (apiKey && apiKey.trim().length > 0) {
+      this.apiKey = apiKey.trim();
     }
   }
 
   public isConfigured(): boolean {
-    return this.client !== null;
+    return this.apiKey !== null;
   }
 
   public async generateEmbeddings(texts: string[]): Promise<number[][]> {
-    if (!this.client) {
+    if (!this.apiKey) {
       throw new Error('Gemini API key is not configured.');
     }
 
     try {
-      // Generate embeddings via official SDK
       const embeddings: number[][] = [];
       for (const text of texts) {
-        const response = await this.client.models.embedContent({
-          model: this.embeddingModelName,
-          contents: text,
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${this.apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'models/text-embedding-004',
+            content: { parts: [{ text }] },
+          }),
         });
-        const values = response.embeddings?.[0]?.values;
-        if (values) {
+
+        if (!res.ok) {
+          throw new Error(`Gemini embedding failed with status ${res.status}`);
+        }
+
+        const data = await res.json();
+        const values = data.embedding?.values;
+        if (values && Array.isArray(values)) {
           embeddings.push(values);
         } else {
           embeddings.push(new Array(768).fill(0));
@@ -65,7 +73,7 @@ export class GeminiProvider implements LLMProvider {
     analysis: NLPAnalysis,
     history: Array<{ role: string; content: string }> = []
   ): Promise<string> {
-    if (!this.client) {
+    if (!this.apiKey) {
       throw new Error('Gemini API key is not configured.');
     }
 
@@ -101,7 +109,7 @@ GROUNDING & TRUTHFULNESS RULES:
    - Never output raw unformatted markdown tokens or placeholder ellipses.
 `;
 
-    const prompt = `
+    const promptText = `
 USER QUERY: ${query}
 DETECTED INTENT: ${analysis.intent}
 TARGET PROJECT: ${analysis.targetProject || 'None specified'}
@@ -115,18 +123,39 @@ ${history.map((h) => `${h.role.toUpperCase()}: ${h.content}`).join('\n')}
 Provide an accurate, grounded, helpful response:
 `;
 
-    try {
-      const response = await this.client.models.generateContent({
-        model: this.modelName,
-        contents: prompt,
-        config: {
-          systemInstruction,
-          temperature: 0.2, // Low temperature for factual grounding
-          maxOutputTokens: 1024,
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
+
+    const requestBody = {
+      systemInstruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: promptText }],
         },
+      ],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 1024,
+      },
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
       });
 
-      return response.text || 'Unable to generate response from Gemini model.';
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Gemini API error (HTTP ${response.status}): ${errorData}`);
+      }
+
+      const data = await response.json();
+      const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return candidateText || 'Unable to generate response from Gemini model.';
     } catch (err: unknown) {
       console.error('[GeminiProvider] Completion generation error:', err);
       throw err;
