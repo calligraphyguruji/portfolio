@@ -14,8 +14,12 @@ dist-ssr
 *.tsbuildinfo
 vite.config.d.ts
 vite.config.js
+api/**/*.js
+api/**/*.d.ts
 api/*.js
 api/*.d.ts
+src/**/*.js
+src/**/*.d.ts
 
 # Editor directories and files
 .vscode/*
