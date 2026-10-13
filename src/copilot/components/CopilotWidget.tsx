@@ -141,7 +141,19 @@ export const CopilotWidget: React.FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`API returned HTTP ${res.status}`);
+        let errData: any = {};
+        try {
+          errData = await res.json();
+        } catch {}
+        
+        if (res.status === 429) {
+          throw new Error('RATE_LIMIT');
+        } else if (res.status === 504) {
+          throw new Error('TIMEOUT');
+        } else if (errData?.error) {
+          throw new Error(errData.error);
+        }
+        throw new Error(`HTTP_${res.status}`);
       }
 
       const data = (await res.json()) as unknown as CopilotChatResponse;
@@ -158,15 +170,21 @@ export const CopilotWidget: React.FC = () => {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Mantri UI] Error:', err);
+      let errorText = "I encountered a temporary connection issue. You can explore Aman's verified projects directly via the **Projects** section or re-try your question.";
+      if (err?.message === 'RATE_LIMIT') {
+        errorText = "Mantri is receiving too many requests right now. Please wait a moment and try again.";
+      } else if (err?.message === 'TIMEOUT') {
+        errorText = "Mantri took too long to respond. Please try your question again.";
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: `error-${Date.now()}`,
           role: 'assistant',
-          content:
-            "I encountered a temporary connection issue. You can explore Aman's verified projects directly via the **Projects** section or re-try your question.",
+          content: errorText,
           timestamp: Date.now(),
           isError: true,
         },
