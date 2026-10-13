@@ -1,7 +1,9 @@
-# AI Portfolio Copilot Architecture
+# Mantri — AI Portfolio Guide Architecture
 
 ## 1. Overview
-The **AI Portfolio Copilot** is a production-grade, grounded retrieval-augmented generation (RAG) assistant integrated natively into Aman Mishra's portfolio (`calligraphyguruji.dev`). It acts as an interactive technical representative capable of explaining system architectures, analyzing engineering trade-offs, synthesizing recruiter qualifications, and providing verified source citations.
+**Mantri** is the official AI advisor and grounded retrieval-augmented generation (RAG) assistant integrated natively into Aman Mishra's portfolio (`calligraphyguruji.dev`). It acts as an interactive technical representative capable of explaining system architectures, analyzing engineering trade-offs, synthesizing recruiter qualifications, rendering rich LaTeX mathematics and code blocks, and providing verified source citations.
+
+*Tagline:* **Your AI guide to Aman Mishra's engineering work.**
 
 ---
 
@@ -9,8 +11,8 @@ The **AI Portfolio Copilot** is a production-grade, grounded retrieval-augmented
 
 ```mermaid
 graph TD
-  User([Portfolio Visitor / Recruiter]) -->|Questions / Prompts| Widget[Copilot Floating Widget (React 19)]
-  Widget -->|POST /api/copilot/chat| Gateway[Vercel Serverless Function]
+  User([Portfolio Visitor / Recruiter]) -->|Questions / Prompts| Widget[Mantri Floating Widget (React 19)]
+  Widget -->|POST /api/copilot| Gateway[Vercel Serverless Function]
 
   subgraph Serverless Edge Execution
     Gateway --> RateLimit[Sliding Window Rate Limiter]
@@ -32,8 +34,8 @@ graph TD
     LLM --> Fallback[Deterministic Grounded Fallback]
   end
 
-  Gemini -->|Structured Response| Widget
-  Fallback -->|Structured Response| Widget
+  Gemini -->|Structured Response with LaTeX & Markdown| Widget
+  Fallback -->|Structured Response with LaTeX & Markdown| Widget
 ```
 
 ---
@@ -44,14 +46,14 @@ graph TD
 sequenceDiagram
   autonumber
   actor Visitor as Portfolio Visitor
-  participant UI as CopilotWidget (React 19)
-  participant API as /api/copilot/chat (Serverless)
+  participant UI as Mantri Widget (React 19)
+  participant API as /api/copilot (Serverless)
   participant NLP as NLP & Security Guard
   participant RAG as Hybrid Retriever (RRF)
   participant LLM as Google Gemini / Fallback
   
   Visitor->>UI: Types query or clicks suggested prompt
-  UI->>API: POST /api/copilot/chat { messages }
+  UI->>API: POST /api/copilot { messages }
   API->>NLP: Normalize query, extract entities & detect intent
   NLP->>NLP: Check adversarial prompt injection patterns
   alt Prompt Injection Detected

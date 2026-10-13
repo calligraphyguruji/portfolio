@@ -85,7 +85,7 @@ export class CopilotOrchestrator {
     if (nlpAnalysis.isInappropriateOrInjection) {
       return {
         answer:
-          "I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified portfolio and engineering work?",
+          "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?",
         intent: 'PROMPT_INJECTION',
         citations: [],
         metadata: {
