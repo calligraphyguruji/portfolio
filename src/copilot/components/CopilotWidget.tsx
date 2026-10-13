@@ -235,9 +235,10 @@ export const CopilotWidget: React.FC = () => {
                     <h3 className="text-xs font-bold text-[#171717] dark:text-white uppercase tracking-wider font-mono">
                       Mantri
                     </h3>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold">
-                      v1.0
-                    </span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Portfolio knowledge connected</span>
+                    </div>
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans truncate max-w-[260px] sm:max-w-[320px]">
                     Your AI guide to Aman Mishra's engineering work.
