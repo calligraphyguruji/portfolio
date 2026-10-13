@@ -16,6 +16,7 @@ import { Blog } from './components/sections/Blog';
 import { NotFound } from './components/sections/NotFound';
 import { PageSEO } from './components/common/PageSEO';
 import { projects } from './data/portfolioData';
+import { CopilotWidget } from './copilot/components/CopilotWidget';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -279,6 +280,7 @@ export default function App() {
           />
         )}
       </main>
+      <CopilotWidget />
       <Footer />
       <Analytics />
     </div>

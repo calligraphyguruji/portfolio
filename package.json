@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test tests/contactApi.test.ts tests/architectureExperience.test.ts tests/seoRouting.test.ts"
+    "test": "node --experimental-strip-types --test tests/contactApi.test.ts tests/architectureExperience.test.ts tests/seoRouting.test.ts tests/copilotRag.test.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@google/genai": "^2.29.1",
     "@vercel/analytics": "^2.0.1",
     "lucide-react": "^0.475.0",
     "motion": "^13.4.0",

@@ -28,6 +28,7 @@ A high-performance personal developer portfolio engineered with an editorial aes
 ### ✨ Standout Features
 - **Editorial Single-Line Typography:** Bold headline with outlined stroke (`AMAN`) and filled typography (`MISHRA`) matching minimalist editorial systems.
 - **Interactive Cursor Spotlight Color Reveal:** The centerpiece portrait remains grayscale by default and dynamically reveals vibrant natural color strictly within the circular cursor spotlight on hover.
+- **AI Portfolio Copilot (RAG & NLP Assistant):** Production-grade technical assistant integrated natively into the portfolio, powered by hybrid retrieval (BM25 + vector similarity via Reciprocal Rank Fusion), official Google Gemini API SDK (`@google/genai`), prompt injection defenses, Recruiter Evaluation mode, and verified source citations.
 - **Dedicated Project Case Study Routing:** Direct navigation to clean URLs (`/projects/<id>`) detailing the problem statement, engineered solution, system architecture, key metrics, and technology stack.
 - **Zero-Dependency SPA Routing & Vercel Clean URLs:** Powered by native browser history APIs and Vercel edge rewrite/redirect configuration (`vercel.json`), providing direct URL access, refresh handling, and permanent 301 redirects without server-side 404 errors.
 - **Production Technical SEO & Structured Data:** Full Google Search Console compliance with XML sitemap (`/sitemap.xml`), robots.txt, dynamic OpenGraph/Twitter meta tags, and schema.org JSON-LD structured data (`Person`, `WebSite`, `SoftwareSourceCode`).
