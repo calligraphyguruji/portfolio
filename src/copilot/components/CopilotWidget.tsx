@@ -63,8 +63,8 @@ export const CopilotWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Call serverless /api/copilot/chat
-      const res = await fetch('/api/copilot/chat', {
+      // Call serverless /api/copilot
+      const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
