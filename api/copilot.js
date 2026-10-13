@@ -1,31 +1,39 @@
-var __defProp = Object.defineProperty;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-};
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-
 // src/copilot/data/verifiedKnowledge.ts
-var VERIFIED_KNOWLEDGE_DOCUMENTS;
-var init_verifiedKnowledge = __esm({
-  "src/copilot/data/verifiedKnowledge.ts"() {
-    "use strict";
-    VERIFIED_KNOWLEDGE_DOCUMENTS = [
-      // 1. BIOGRAPHY & PROFESSIONAL POSITIONING
-      {
-        id: "bio-identity",
-        title: "Aman Mishra - Professional Identity & Background",
-        category: "skills",
-        url: "https://www.calligraphyguruji.dev/#about",
-        metadata: {
-          updatedAt: "2026-10-13",
-          roleAlignment: ["Frontend Engineer", "Full-Stack Developer", "Software Development Engineer (SDE) Intern"],
-          status: "implemented"
-        },
-        content: `
+var VERIFIED_KNOWLEDGE_DOCUMENTS = [
+  // 0. MANTRI AI ASSISTANT IDENTITY & CREATOR METADATA
+  {
+    id: "mantri-identity",
+    title: "Mantri - AI Portfolio Assistant Identity & Creator",
+    category: "skills",
+    url: "https://www.calligraphyguruji.dev/",
+    metadata: {
+      updatedAt: "2026-10-13",
+      roleAlignment: ["AI Assistant", "Engineering Guide"],
+      status: "implemented"
+    },
+    content: `
+Assistant Name: Mantri
+Assistant Type: AI portfolio assistant
+Portfolio Owner: Aman Mishra
+Creator: Aman Mishra
+Developer: Aman Mishra
+Tagline: Your AI guide to Aman Mishra's engineering work.
+Purpose: Help visitors explore Aman Mishra's engineering portfolio, projects, technical skills, system architectures, and experience.
+Description: Aman Mishra built Mantri as the interactive technical guide for his portfolio (https://www.calligraphyguruji.dev). Mantri answers questions about Aman's projects (CredVidhi, KaushalNexus, Bodhi Sakha, LeetCode), evaluates candidate fit for recruiters, and explains system architectures.
+`
+  },
+  // 1. BIOGRAPHY & PROFESSIONAL POSITIONING
+  {
+    id: "bio-identity",
+    title: "Aman Mishra - Professional Identity & Background",
+    category: "skills",
+    url: "https://www.calligraphyguruji.dev/#about",
+    metadata: {
+      updatedAt: "2026-10-13",
+      roleAlignment: ["Frontend Engineer", "Full-Stack Developer", "Software Development Engineer (SDE) Intern"],
+      status: "implemented"
+    },
+    content: `
 Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (B.Tech 2025\u20132029, current CGPA: 9.38).
 Based in Greater Noida, Uttar Pradesh, India.
 Primary technical focus:
@@ -39,20 +47,20 @@ LinkedIn: https://www.linkedin.com/in/calligraphygurji/
 LeetCode: https://leetcode.com/u/calligraphyguruji/
 Portfolio: https://www.calligraphyguruji.dev/
 `
-      },
-      // 2. WORK EXPERIENCE
-      {
-        id: "exp-codomax",
-        title: "AI & ML Internship at Codomax Digital Solutions",
-        category: "experience",
-        url: "https://www.calligraphyguruji.dev/#experience",
-        metadata: {
-          updatedAt: "2026-10-13",
-          technologies: ["Python", "Google Gemini AI", "Machine Learning", "Data Pipelines", "Prompt Engineering"],
-          roleAlignment: ["AI/ML Engineer", "Python Developer", "Data Engineer"],
-          status: "implemented"
-        },
-        content: `
+  },
+  // 2. WORK EXPERIENCE
+  {
+    id: "exp-codomax",
+    title: "AI & ML Internship at Codomax Digital Solutions",
+    category: "experience",
+    url: "https://www.calligraphyguruji.dev/#experience",
+    metadata: {
+      updatedAt: "2026-10-13",
+      technologies: ["Python", "Google Gemini AI", "Machine Learning", "Data Pipelines", "Prompt Engineering"],
+      roleAlignment: ["AI/ML Engineer", "Python Developer", "Data Engineer"],
+      status: "implemented"
+    },
+    content: `
 Organization: Codomax Digital Solutions
 Role: AI & ML Intern
 Duration: 12 July 2026 \u2013 12 August 2026 (1 month)
@@ -62,19 +70,19 @@ Key Responsibilities & Deliverables:
 - Implemented structured output validation to guarantee deterministic JSON schemas from generative models.
 - Collaborated on prompt engineering techniques and system instructions to minimize model hallucinations.
 `
-      },
-      // 3. CORE TECHNICAL SKILLS
-      {
-        id: "skills-matrix",
-        title: "Verified Technical Skills & Tooling",
-        category: "skills",
-        url: "https://www.calligraphyguruji.dev/#skills",
-        metadata: {
-          updatedAt: "2026-10-13",
-          roleAlignment: ["Frontend Engineer", "Backend Engineer", "SDE Intern", "Full Stack Developer"],
-          status: "implemented"
-        },
-        content: `
+  },
+  // 3. CORE TECHNICAL SKILLS
+  {
+    id: "skills-matrix",
+    title: "Verified Technical Skills & Tooling",
+    category: "skills",
+    url: "https://www.calligraphyguruji.dev/#skills",
+    metadata: {
+      updatedAt: "2026-10-13",
+      roleAlignment: ["Frontend Engineer", "Backend Engineer", "SDE Intern", "Full Stack Developer"],
+      status: "implemented"
+    },
+    content: `
 Aman Mishra's verified technical skillset:
 - Languages: C++, C, Java, Python, JavaScript, TypeScript, SQL, HTML5, CSS3.
 - Frontend: React 18/19, Vite, Redux Toolkit, Tailwind CSS, Framer Motion, HTML5 Semantic Elements, CSS3 Grid/Flexbox, WCAG 2.1 Accessibility.
@@ -83,22 +91,22 @@ Aman Mishra's verified technical skillset:
 - AI/ML & NLP: Google Gemini SDK, Generative AI integration, Retrieval-Augmented Generation (RAG), Scikit-Learn, Prompt Engineering, NumPy, Pandas, OpenCV.
 - Developer Tools & Infrastructure: Git, GitHub, Docker, Postman, Linux (bash/zsh), Vercel, Cloudflare Turnstile, Vite tooling.
 `
-      },
-      // 4. CREDVIDHI
-      {
-        id: "project-credvidhi",
-        title: "CredVidhi - Enterprise Loan Processing & Deterministic Underwriting Platform",
-        category: "project",
-        projectId: "credvidhi",
-        repository: "CredVidhi",
-        url: "https://www.calligraphyguruji.dev/projects/credvidhi",
-        metadata: {
-          technologies: ["React 19", "TypeScript", "FastAPI", "Python 3.11", "PostgreSQL 16", "Redis 7", "Tailwind CSS", "Google Gemini"],
-          roleAlignment: ["Full-Stack Developer", "Fintech Engineer", "Backend Architect"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 4. CREDVIDHI
+  {
+    id: "project-credvidhi",
+    title: "CredVidhi - Enterprise Loan Processing & Deterministic Underwriting Platform",
+    category: "project",
+    projectId: "credvidhi",
+    repository: "CredVidhi",
+    url: "https://www.calligraphyguruji.dev/projects/credvidhi",
+    metadata: {
+      technologies: ["React 19", "TypeScript", "FastAPI", "Python 3.11", "PostgreSQL 16", "Redis 7", "Tailwind CSS", "Google Gemini"],
+      roleAlignment: ["Full-Stack Developer", "Fintech Engineer", "Backend Architect"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 Project Name: CredVidhi
 Live URL: https://credvidhi.vercel.app/
 Repository: https://github.com/calligraphyguruji/CredVidhi
@@ -118,23 +126,23 @@ Architecture:
 - Database: PostgreSQL 16 append-only ledger schema.
 - Cache: Redis 7 in-memory store.
 `
-      },
-      // 5. CREDVIDHI ARCHITECTURE DEEP DIVE
-      {
-        id: "credvidhi-architecture-details",
-        title: "CredVidhi Architectural Decisions & Security Boundaries",
-        category: "architecture",
-        projectId: "credvidhi",
-        repository: "CredVidhi",
-        url: "https://www.calligraphyguruji.dev/projects/credvidhi",
-        filePath: "docs/architecture/credvidhi-system-topology.json",
-        metadata: {
-          technologies: ["FastAPI", "PostgreSQL 16", "Redis 7", "Google Gemini", "Pydantic v2"],
-          roleAlignment: ["Backend Engineer", "Systems Architect", "Security Engineer"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 5. CREDVIDHI ARCHITECTURE DEEP DIVE
+  {
+    id: "credvidhi-architecture-details",
+    title: "CredVidhi Architectural Decisions & Security Boundaries",
+    category: "architecture",
+    projectId: "credvidhi",
+    repository: "CredVidhi",
+    url: "https://www.calligraphyguruji.dev/projects/credvidhi",
+    filePath: "docs/architecture/credvidhi-system-topology.json",
+    metadata: {
+      technologies: ["FastAPI", "PostgreSQL 16", "Redis 7", "Google Gemini", "Pydantic v2"],
+      roleAlignment: ["Backend Engineer", "Systems Architect", "Security Engineer"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 CredVidhi Architecture Deep Dive:
 1. Request Lifecycle & Authentication:
    - Client sends JSON payload to FastAPI API Gateway.
@@ -155,22 +163,22 @@ CredVidhi Architecture Deep Dive:
    - Sandboxed behind input sanitizers and domain boundary checks; cannot mutate underwriting states or approve loans.
    - Circuit breaker falls back to deterministic static FAQs if Gemini API times out (> 4000ms).
 `
-      },
-      // 6. KAUSHALNEXUS
-      {
-        id: "project-kaushalnexus",
-        title: "KaushalNexus - Employment & Skilling Intelligence Platform",
-        category: "project",
-        projectId: "kaushal-nexus",
-        repository: "Kaushal-Nexus",
-        url: "https://www.calligraphyguruji.dev/projects/kaushal-nexus",
-        metadata: {
-          technologies: ["React 19", "FastAPI", "PostgreSQL", "Redis", "Google Gemini AI", "Tailwind CSS", "TypeScript"],
-          roleAlignment: ["Full-Stack Developer", "AI Engineer", "Product Engineer"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 6. KAUSHALNEXUS
+  {
+    id: "project-kaushalnexus",
+    title: "KaushalNexus - Employment & Skilling Intelligence Platform",
+    category: "project",
+    projectId: "kaushal-nexus",
+    repository: "Kaushal-Nexus",
+    url: "https://www.calligraphyguruji.dev/projects/kaushal-nexus",
+    metadata: {
+      technologies: ["React 19", "FastAPI", "PostgreSQL", "Redis", "Google Gemini AI", "Tailwind CSS", "TypeScript"],
+      roleAlignment: ["Full-Stack Developer", "AI Engineer", "Product Engineer"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 Project Name: KaushalNexus
 Live URL: https://kaushal-nexus.vercel.app/
 Repository: https://github.com/calligraphyguruji/Kaushal-Nexus
@@ -184,22 +192,22 @@ Engineered Solution:
 4. ML Opportunity Matching: Algorithmic matching between learner technical competency vectors and available internships/jobs.
 5. High-Throughput Microservice: Asynchronous Python FastAPI backend with Pydantic validation, Redis caching for district metrics, and relational PostgreSQL schemas.
 `
-      },
-      // 7. BODHI SAKHA (GEMINI AI CHATBOT)
-      {
-        id: "project-bodhisakha",
-        title: "Bodhi Sakha (\u092C\u094B\u0927\u093F\u0938\u0916\u093E) - Full-Stack Conversational AI Assistant",
-        category: "project",
-        projectId: "gemini-ai-chatbot",
-        repository: "bodhi-sakha",
-        url: "https://www.calligraphyguruji.dev/projects/gemini-ai-chatbot",
-        metadata: {
-          technologies: ["React 19", "JavaScript (ES6+)", "Google Gemini API", "Express.js", "Vite", "PostgreSQL", "KaTeX", "Markdown"],
-          roleAlignment: ["AI Engineer", "Frontend Engineer", "Full-Stack Developer"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 7. BODHI SAKHA (GEMINI AI CHATBOT)
+  {
+    id: "project-bodhisakha",
+    title: "Bodhi Sakha (\u092C\u094B\u0927\u093F\u0938\u0916\u093E) - Full-Stack Conversational AI Assistant",
+    category: "project",
+    projectId: "gemini-ai-chatbot",
+    repository: "bodhi-sakha",
+    url: "https://www.calligraphyguruji.dev/projects/gemini-ai-chatbot",
+    metadata: {
+      technologies: ["React 19", "JavaScript (ES6+)", "Google Gemini API", "Express.js", "Vite", "PostgreSQL", "KaTeX", "Markdown"],
+      roleAlignment: ["AI Engineer", "Frontend Engineer", "Full-Stack Developer"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 Project Name: Bodhi Sakha (\u092C\u094B\u0927\u093F\u0938\u0916\u093E)
 Live URL: https://bodhi-sakha-phi.vercel.app/
 Repository: https://github.com/calligraphyguruji/bodhi-sakha.git
@@ -211,22 +219,22 @@ Core Capabilities:
 5. Persistent Multi-User Sessions: Session and message storage in PostgreSQL with local persistence fallback.
 6. Cultural UI Design: Saffron-accented, accessible responsive interface designed for both mobile and desktop screens.
 `
-      },
-      // 8. LEETCODE & PROBLEM SOLVING
-      {
-        id: "leetcode-portfolio",
-        title: "LeetCode Problem Solving & Algorithmic Foundations",
-        category: "dsa",
-        projectId: "leetcode-solutions",
-        repository: "LeetCode-Questions",
-        url: "https://www.calligraphyguruji.dev/projects/leetcode-solutions",
-        metadata: {
-          technologies: ["Modern C++", "STL", "Dynamic Programming", "Graph Theory", "Trees", "Big-O Analysis"],
-          roleAlignment: ["SDE Intern", "Core Software Engineer", "Algorithms Engineer"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 8. LEETCODE & PROBLEM SOLVING
+  {
+    id: "leetcode-portfolio",
+    title: "LeetCode Problem Solving & Algorithmic Foundations",
+    category: "dsa",
+    projectId: "leetcode-solutions",
+    repository: "LeetCode-Questions",
+    url: "https://www.calligraphyguruji.dev/projects/leetcode-solutions",
+    metadata: {
+      technologies: ["Modern C++", "STL", "Dynamic Programming", "Graph Theory", "Trees", "Big-O Analysis"],
+      roleAlignment: ["SDE Intern", "Core Software Engineer", "Algorithms Engineer"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 LeetCode & Algorithmic Problem Solving:
 LeetCode Profile: https://leetcode.com/u/calligraphyguruji/
 GitHub Repository: https://github.com/calligraphyguruji/LeetCode-Questions
@@ -241,20 +249,20 @@ Key Metrics & Foundations:
   * Strict quantification of asymptotic time complexity O(N) and space complexity O(1)/O(N).
   * Direct utilization of C++ Standard Template Library (std::vector, std::unordered_map, std::priority_queue) for cache locality and minimal dynamic allocation.
 `
-      },
-      // 9. AMAZON & YOUTUBE CLONES
-      {
-        id: "project-clones",
-        title: "Frontend Architecture Clones - Amazon & YouTube Web Apps",
-        category: "project",
-        url: "https://www.calligraphyguruji.dev/projects/amazon-clone",
-        metadata: {
-          technologies: ["JavaScript (ES6+)", "HTML5", "CSS3 Grid & Flexbox", "DOM APIs", "Responsive Design"],
-          roleAlignment: ["Frontend Engineer", "UI Developer"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 9. AMAZON & YOUTUBE CLONES
+  {
+    id: "project-clones",
+    title: "Frontend Architecture Clones - Amazon & YouTube Web Apps",
+    category: "project",
+    url: "https://www.calligraphyguruji.dev/projects/amazon-clone",
+    metadata: {
+      technologies: ["JavaScript (ES6+)", "HTML5", "CSS3 Grid & Flexbox", "DOM APIs", "Responsive Design"],
+      roleAlignment: ["Frontend Engineer", "UI Developer"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 1. Amazon E-Commerce Clone:
    - Live URL: https://myecommerce-project-clone.vercel.app/
    - GitHub: https://github.com/calligraphyguruji/amazon-clone
@@ -265,19 +273,19 @@ Key Metrics & Foundations:
    - Stack: HTML5, CSS3, JavaScript, Responsive Grid.
    - Highlights: High-fidelity layout engineering replicating YouTube's complex navigation sidebar, responsive video grid auto-fit columns, sticky header, and video detail view.
 `
-      },
-      // 10. RECRUITER GUIDANCE & EVALUATION
-      {
-        id: "recruiter-guide",
-        title: "Recruiter Assessment & Candidate Evaluation Guide for Aman Mishra",
-        category: "recruiter",
-        url: "https://www.calligraphyguruji.dev/resume",
-        metadata: {
-          roleAlignment: ["SDE Intern", "Frontend Developer", "Full-Stack Developer", "AI/ML Intern"],
-          status: "implemented",
-          updatedAt: "2026-10-13"
-        },
-        content: `
+  },
+  // 10. RECRUITER GUIDANCE & EVALUATION
+  {
+    id: "recruiter-guide",
+    title: "Recruiter Assessment & Candidate Evaluation Guide for Aman Mishra",
+    category: "recruiter",
+    url: "https://www.calligraphyguruji.dev/resume",
+    metadata: {
+      roleAlignment: ["SDE Intern", "Frontend Developer", "Full-Stack Developer", "AI/ML Intern"],
+      status: "implemented",
+      updatedAt: "2026-10-13"
+    },
+    content: `
 Recruiter Assessment & Match Synthesis:
 Target Roles:
 1. Software Development Engineer (SDE) Intern:
@@ -293,10 +301,8 @@ Key Hiring Attributes:
 - Real production deployments: All primary projects are deployed live on Vercel with verified GitHub source repositories.
 - Transparent limitations: Current student (Graduating 2029); seeking internships, co-ops, and junior developer opportunities rather than senior/staff positions.
 `
-      }
-    ];
   }
-});
+];
 
 // src/copilot/services/chunkingService.ts
 import crypto from "node:crypto";
@@ -350,13 +356,68 @@ ${rawText}`;
   flushBuffer();
   return chunks;
 }
-var init_chunkingService = __esm({
-  "src/copilot/services/chunkingService.ts"() {
-    "use strict";
-  }
-});
 
 // src/copilot/nlp/nlpProcessor.ts
+var PROJECT_ALIASES = {
+  credvidhi: "credvidhi",
+  "cred vidhi": "credvidhi",
+  loan: "credvidhi",
+  lending: "credvidhi",
+  underwriting: "credvidhi",
+  kaushalnexus: "kaushal-nexus",
+  "kaushal-nexus": "kaushal-nexus",
+  kaushal: "kaushal-nexus",
+  internship: "kaushal-nexus",
+  skilling: "kaushal-nexus",
+  sih: "kaushal-nexus",
+  bodhisakha: "gemini-ai-chatbot",
+  "bodhi sakha": "gemini-ai-chatbot",
+  chatbot: "gemini-ai-chatbot",
+  bodhi: "gemini-ai-chatbot",
+  leetcode: "leetcode-solutions",
+  dsa: "leetcode-solutions",
+  algorithms: "leetcode-solutions",
+  "amazon-clone": "amazon-clone",
+  amazon: "amazon-clone",
+  ecommerce: "amazon-clone",
+  youtube: "youtube-clone",
+  "youtube-clone": "youtube-clone"
+};
+var TECH_ENTITIES = [
+  "react",
+  "react 19",
+  "react 18",
+  "typescript",
+  "javascript",
+  "c++",
+  "python",
+  "fastapi",
+  "express",
+  "express.js",
+  "postgresql",
+  "redis",
+  "gemini",
+  "gemini ai",
+  "tailwind",
+  "tailwind css",
+  "framer motion",
+  "motion",
+  "vite",
+  "docker",
+  "linux",
+  "git",
+  "rag"
+];
+var PROMPT_INJECTION_PATTERNS = [
+  /ignore\s+(all\s+)?(previous|above|all)\s*(instructions|rules)/i,
+  /system\s+prompt/i,
+  /you\s+are\s+now\s+in\s+dan\s+mode/i,
+  /bypass\s+all\s+rules/i,
+  /(reveal|print|show|dump)\s+(api\s+key|secret|password|token)/i,
+  /delete\s+all\s+database/i,
+  /sudo\s+rm\s+-rf/i,
+  /jailbreak/i
+];
 function normalizeQuery(query) {
   return query.trim().replace(/\s+/g, " ").replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 }
@@ -408,10 +469,41 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     }
   }
   let intent = "UNKNOWN";
+  const isCreatorIdentity = /\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
+    lowerQuery
+  ) || /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
+    lowerQuery
+  ) || /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery);
+  const isOwnerIdentity = /\b(who\s*(is|are)?\s*(owns|owner\s*of|maintains|maintainer\s*of)\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+    lowerQuery
+  ) || /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+    lowerQuery
+  ) || /\b(owner\s+of\s+mantri)\b/i.test(lowerQuery);
+  const isDeveloperIdentity = /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
+    lowerQuery
+  );
+  const isPortfolioIdentity = /\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+    lowerQuery
+  ) || /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
+    lowerQuery
+  );
+  const isAboutAman = /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?)\b/i.test(
+    lowerQuery
+  );
   const isRecruiter = /\b(hire|recruiter|interview|internship|resume|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
     lowerQuery
   );
-  if (isRecruiter) {
+  if (isCreatorIdentity) {
+    intent = "CREATOR_IDENTITY";
+  } else if (isOwnerIdentity) {
+    intent = "OWNER_IDENTITY";
+  } else if (isDeveloperIdentity) {
+    intent = "DEVELOPER_IDENTITY";
+  } else if (isPortfolioIdentity) {
+    intent = "PORTFOLIO_IDENTITY";
+  } else if (isAboutAman) {
+    intent = "ABOUT_AMAN";
+  } else if (isRecruiter) {
     intent = "RECRUITER_EVALUATION";
   } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
     intent = "PROJECT_ARCHITECTURE";
@@ -459,72 +551,6 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     isInappropriateOrInjection: false
   };
 }
-var PROJECT_ALIASES, TECH_ENTITIES, PROMPT_INJECTION_PATTERNS;
-var init_nlpProcessor = __esm({
-  "src/copilot/nlp/nlpProcessor.ts"() {
-    "use strict";
-    PROJECT_ALIASES = {
-      credvidhi: "credvidhi",
-      "cred vidhi": "credvidhi",
-      loan: "credvidhi",
-      lending: "credvidhi",
-      underwriting: "credvidhi",
-      kaushalnexus: "kaushal-nexus",
-      "kaushal-nexus": "kaushal-nexus",
-      kaushal: "kaushal-nexus",
-      internship: "kaushal-nexus",
-      skilling: "kaushal-nexus",
-      sih: "kaushal-nexus",
-      bodhisakha: "gemini-ai-chatbot",
-      "bodhi sakha": "gemini-ai-chatbot",
-      chatbot: "gemini-ai-chatbot",
-      bodhi: "gemini-ai-chatbot",
-      leetcode: "leetcode-solutions",
-      dsa: "leetcode-solutions",
-      algorithms: "leetcode-solutions",
-      "amazon-clone": "amazon-clone",
-      amazon: "amazon-clone",
-      ecommerce: "amazon-clone",
-      youtube: "youtube-clone",
-      "youtube-clone": "youtube-clone"
-    };
-    TECH_ENTITIES = [
-      "react",
-      "react 19",
-      "react 18",
-      "typescript",
-      "javascript",
-      "c++",
-      "python",
-      "fastapi",
-      "express",
-      "express.js",
-      "postgresql",
-      "redis",
-      "gemini",
-      "gemini ai",
-      "tailwind",
-      "tailwind css",
-      "framer motion",
-      "motion",
-      "vite",
-      "docker",
-      "linux",
-      "git",
-      "rag"
-    ];
-    PROMPT_INJECTION_PATTERNS = [
-      /ignore\s+(all\s+)?(previous|above|all)\s*(instructions|rules)/i,
-      /system\s+prompt/i,
-      /you\s+are\s+now\s+in\s+dan\s+mode/i,
-      /bypass\s+all\s+rules/i,
-      /(reveal|print|show|dump)\s+(api\s+key|secret|password|token)/i,
-      /delete\s+all\s+database/i,
-      /sudo\s+rm\s+-rf/i,
-      /jailbreak/i
-    ];
-  }
-});
 
 // src/copilot/services/retrievalService.ts
 function calculateLexicalScore(query, chunk) {
@@ -573,140 +599,152 @@ function reciprocalRankFusion(lexicalRankings, semanticRankings, k = 60) {
   });
   return scores;
 }
-var HybridRetriever;
-var init_retrievalService = __esm({
-  "src/copilot/services/retrievalService.ts"() {
-    "use strict";
-    HybridRetriever = class {
-      chunks = [];
-      constructor(chunks = []) {
-        this.chunks = chunks;
-      }
-      setChunks(chunks) {
-        this.chunks = chunks;
-      }
-      retrieve(analysis, queryEmbedding, limit = 5) {
-        const query = analysis.expandedTerms.join(" ");
-        const scoredLexical = this.chunks.map((chunk) => {
-          let score = calculateLexicalScore(query, chunk);
-          if (analysis.targetProject && chunk.projectId === analysis.targetProject) {
-            score *= 1.8;
-          }
-          return { chunk, score };
-        }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
-        const lexicalChunks = scoredLexical.map((item) => item.chunk);
-        let semanticChunks = [];
-        if (queryEmbedding && queryEmbedding.length > 0) {
-          semanticChunks = this.chunks.filter((c) => c.embedding && c.embedding.length > 0).map((chunk) => {
-            const sim = cosineSimilarity(queryEmbedding, chunk.embedding);
-            return { chunk, score: sim };
-          }).sort((a, b) => b.score - a.score).map((item) => item.chunk);
-        }
-        const rrfScores = reciprocalRankFusion(lexicalChunks, semanticChunks);
-        const results = this.chunks.map((chunk) => {
-          const rrf = rrfScores.get(chunk.chunkId) || 0;
-          const lexItem = scoredLexical.find((l) => l.chunk.chunkId === chunk.chunkId);
-          const lexScore = lexItem ? lexItem.score : 0;
-          const combinedScore = rrf * 10 + lexScore * 0.1;
-          return {
-            chunk,
-            score: combinedScore,
-            lexicalScore: lexScore
-          };
-        }).filter((res) => res.score > 0.05).sort((a, b) => b.score - a.score).slice(0, limit);
-        return results;
-      }
-      generateCitations(results) {
-        const seen = /* @__PURE__ */ new Set();
-        const citations = [];
-        for (const res of results) {
-          const key = `${res.chunk.documentId}-${res.chunk.section}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            citations.push({
-              sourceId: res.chunk.chunkId,
-              title: res.chunk.title,
-              section: res.chunk.section,
-              projectId: res.chunk.projectId,
-              url: res.chunk.url,
-              filePath: res.chunk.filePath,
-              relevanceScore: Math.round(res.score * 100) / 100
-            });
-          }
-        }
-        return citations;
-      }
-    };
+var HybridRetriever = class {
+  chunks = [];
+  constructor(chunks = []) {
+    this.chunks = chunks;
   }
-});
+  setChunks(chunks) {
+    this.chunks = chunks;
+  }
+  retrieve(analysis, queryEmbedding, limit = 5) {
+    const query = analysis.expandedTerms.join(" ");
+    const scoredLexical = this.chunks.map((chunk) => {
+      let score = calculateLexicalScore(query, chunk);
+      if (analysis.targetProject && chunk.projectId === analysis.targetProject) {
+        score *= 1.8;
+      }
+      const isIdentityQuery = [
+        "CREATOR_IDENTITY",
+        "OWNER_IDENTITY",
+        "DEVELOPER_IDENTITY",
+        "PORTFOLIO_IDENTITY"
+      ].includes(analysis.intent);
+      if (isIdentityQuery) {
+        if (chunk.documentId === "mantri-identity" || chunk.documentId === "bio-identity") {
+          score += 15;
+        } else {
+          score *= 0.1;
+        }
+      } else if (analysis.intent === "ABOUT_AMAN") {
+        if (chunk.documentId === "bio-identity" || chunk.documentId === "recruiter-guide") {
+          score += 10;
+        }
+      }
+      return { chunk, score };
+    }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
+    const lexicalChunks = scoredLexical.map((item) => item.chunk);
+    let semanticChunks = [];
+    if (queryEmbedding && queryEmbedding.length > 0) {
+      semanticChunks = this.chunks.filter((c) => c.embedding && c.embedding.length > 0).map((chunk) => {
+        const sim = cosineSimilarity(queryEmbedding, chunk.embedding);
+        return { chunk, score: sim };
+      }).sort((a, b) => b.score - a.score).map((item) => item.chunk);
+    }
+    const rrfScores = reciprocalRankFusion(lexicalChunks, semanticChunks);
+    const results = this.chunks.map((chunk) => {
+      const rrf = rrfScores.get(chunk.chunkId) || 0;
+      const lexItem = scoredLexical.find((l) => l.chunk.chunkId === chunk.chunkId);
+      const lexScore = lexItem ? lexItem.score : 0;
+      const combinedScore = rrf * 10 + lexScore * 0.1;
+      return {
+        chunk,
+        score: combinedScore,
+        lexicalScore: lexScore
+      };
+    }).filter((res) => res.score > 0.05).sort((a, b) => b.score - a.score).slice(0, limit);
+    return results;
+  }
+  generateCitations(results) {
+    const seen = /* @__PURE__ */ new Set();
+    const citations = [];
+    for (const res of results) {
+      const key = `${res.chunk.documentId}-${res.chunk.section}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        citations.push({
+          sourceId: res.chunk.chunkId,
+          title: res.chunk.title,
+          section: res.chunk.section,
+          projectId: res.chunk.projectId,
+          url: res.chunk.url,
+          filePath: res.chunk.filePath,
+          relevanceScore: Math.round(res.score * 100) / 100
+        });
+      }
+    }
+    return citations;
+  }
+};
 
 // src/copilot/services/llmProvider.ts
-var GeminiProvider, DeterministicFallbackProvider;
-var init_llmProvider = __esm({
-  "src/copilot/services/llmProvider.ts"() {
-    "use strict";
-    GeminiProvider = class {
-      apiKey = null;
-      modelName;
-      constructor(apiKey, modelName = "gemini-2.5-flash") {
-        this.modelName = modelName;
-        if (apiKey && apiKey.trim().length > 0) {
-          this.apiKey = apiKey.trim();
-        }
-      }
-      isConfigured() {
-        return this.apiKey !== null;
-      }
-      async generateEmbeddings(texts) {
-        if (!this.apiKey) {
-          throw new Error("Gemini API key is not configured.");
-        }
-        try {
-          const embeddings = [];
-          for (const text of texts) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${this.apiKey}`;
-            const res = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                model: "models/text-embedding-004",
-                content: { parts: [{ text }] }
-              })
-            });
-            if (!res.ok) {
-              throw new Error(`Gemini embedding failed with status ${res.status}`);
-            }
-            const data = await res.json();
-            const values = data.embedding?.values;
-            if (values && Array.isArray(values)) {
-              embeddings.push(values);
-            } else {
-              embeddings.push(new Array(768).fill(0));
-            }
-          }
-          return embeddings;
-        } catch (err) {
-          console.error("[GeminiProvider] Embedding error:", err);
-          throw err;
-        }
-      }
-      async generateResponse(query, retrievedResults, analysis, history = []) {
-        if (!this.apiKey) {
-          throw new Error("Gemini API key is not configured.");
-        }
-        const contextBlocks = retrievedResults.map((r, idx) => {
-          return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]
-${r.chunk.content}`;
+var GeminiProvider = class {
+  apiKey = null;
+  modelName;
+  constructor(apiKey, modelName = "gemini-2.5-flash") {
+    this.modelName = modelName;
+    if (apiKey && apiKey.trim().length > 0) {
+      this.apiKey = apiKey.trim();
+    }
+  }
+  isConfigured() {
+    return this.apiKey !== null;
+  }
+  async generateEmbeddings(texts) {
+    if (!this.apiKey) {
+      throw new Error("Gemini API key is not configured.");
+    }
+    try {
+      const embeddings = [];
+      for (const text of texts) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${this.apiKey}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "models/text-embedding-004",
+            content: { parts: [{ text }] }
+          })
         });
-        const contextText = contextBlocks.join("\n\n---\n\n");
-        const systemInstruction = `
+        if (!res.ok) {
+          throw new Error(`Gemini embedding failed with status ${res.status}`);
+        }
+        const data = await res.json();
+        const values = data.embedding?.values;
+        if (values && Array.isArray(values)) {
+          embeddings.push(values);
+        } else {
+          embeddings.push(new Array(768).fill(0));
+        }
+      }
+      return embeddings;
+    } catch (err) {
+      console.error("[GeminiProvider] Embedding error:", err);
+      throw err;
+    }
+  }
+  async generateResponse(query, retrievedResults, analysis, history = []) {
+    if (!this.apiKey) {
+      throw new Error("Gemini API key is not configured.");
+    }
+    const contextBlocks = retrievedResults.map((r, idx) => {
+      return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]
+${r.chunk.content}`;
+    });
+    const contextText = contextBlocks.join("\n\n---\n\n");
+    const systemInstruction = `
 You are Mantri, the official AI advisor and technical guide for Aman Mishra's developer portfolio (https://www.calligraphyguruji.dev).
 Your role is to represent Aman's technical skills, engineering projects, architecture, and background with 100% technical accuracy, calm clarity, and intellectual depth.
 
-IDENTITY & TAGLINE:
-- Name: Mantri
-- Tagline: Your AI guide to Aman Mishra's engineering work.
-- Persona: Intelligent, technically precise, professional, calm, helpful, concise by default, detailed on demand.
+IDENTITY & CREATOR RULES:
+- Your name is Mantri.
+- You are the official AI assistant and engineering guide for Aman Mishra's portfolio (https://www.calligraphyguruji.dev).
+- Aman Mishra is your creator, developer, and the portfolio owner.
+- If asked who built, created, developed, made, or owns you or this portfolio/website, explicitly identify Aman Mishra directly.
+- For short casual questions like "who built you?", answer concisely: "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work."
+- For questions asking what you can do alongside who built you, state that Aman Mishra built you, then explain your capabilities (exploring CredVidhi, KaushalNexus, LeetCode, DSA, system architectures).
+- NEVER substitute an unrelated project name, repository, technology stack (such as Amazon clone or e-commerce clone), or portfolio entry for the creator's name.
+- NEVER invent another creator or owner. Aman Mishra is your developer and portfolio owner.
 
 GROUNDING & TRUTHFULNESS RULES:
 1. ONLY make factual statements grounded in the retrieved sources below.
@@ -723,7 +761,7 @@ GROUNDING & TRUTHFULNESS RULES:
    - When providing code snippets, always specify the language identifier (e.g., \`\`\`cpp, \`\`\`typescript, \`\`\`python) and write idiomatic, clean code.
    - Never output raw unformatted markdown tokens or placeholder ellipses.
 `;
-        const promptText = `
+    const promptText = `
 USER QUERY: ${query}
 DETECTED INTENT: ${analysis.intent}
 TARGET PROJECT: ${analysis.targetProject || "None specified"}
@@ -736,63 +774,69 @@ ${history.map((h) => `${h.role.toUpperCase()}: ${h.content}`).join("\n")}
 
 Provide an accurate, grounded, helpful response:
 `;
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
-        const requestBody = {
-          systemInstruction: {
-            parts: [{ text: systemInstruction }]
-          },
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: promptText }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1024
-          }
-        };
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody)
-          });
-          if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(`Gemini API error (HTTP ${response.status}): ${errorData}`);
-          }
-          const data = await response.json();
-          const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          return candidateText || "Unable to generate response from Gemini model.";
-        } catch (err) {
-          console.error("[GeminiProvider] Completion generation error:", err);
-          throw err;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
+    const requestBody = {
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: promptText }]
         }
+      ],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 1024
       }
     };
-    DeterministicFallbackProvider = class {
-      async generateEmbeddings(texts) {
-        return texts.map((t) => {
-          const vec = new Array(64).fill(0);
-          for (let i = 0; i < t.length; i++) {
-            vec[i % 64] += t.charCodeAt(i) / 1e3;
-          }
-          return vec;
-        });
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody)
+      });
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Gemini API error (HTTP ${response.status}): ${errorData}`);
       }
-      async generateResponse(query, retrievedResults, analysis) {
-        if (analysis.intent === "PROMPT_INJECTION") {
-          return "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?";
-        }
-        if (retrievedResults.length === 0) {
-          return `I searched Aman Mishra's verified portfolio and project repositories, but did not find documentation regarding "${query}". 
+      const data = await response.json();
+      const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return candidateText || "Unable to generate response from Gemini model.";
+    } catch (err) {
+      console.error("[GeminiProvider] Completion generation error:", err);
+      throw err;
+    }
+  }
+};
+var DeterministicFallbackProvider = class {
+  async generateEmbeddings(texts) {
+    return texts.map((t) => {
+      const vec = new Array(64).fill(0);
+      for (let i = 0; i < t.length; i++) {
+        vec[i % 64] += t.charCodeAt(i) / 1e3;
+      }
+      return vec;
+    });
+  }
+  async generateResponse(query, retrievedResults, analysis) {
+    if (analysis.intent === "PROMPT_INJECTION") {
+      return "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?";
+    }
+    if (retrievedResults.length === 0) {
+      return `I searched Aman Mishra's verified portfolio and project repositories, but did not find documentation regarding "${query}". 
 
 Aman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
-        }
-        const topChunk = retrievedResults[0].chunk;
-        if (analysis.intent === "RECRUITER_EVALUATION") {
-          return `### Candidate Evaluation: Aman Mishra
+    }
+    const topChunk = retrievedResults[0].chunk;
+    if (analysis.intent === "CREATOR_IDENTITY" || analysis.intent === "OWNER_IDENTITY" || analysis.intent === "DEVELOPER_IDENTITY" || analysis.intent === "PORTFOLIO_IDENTITY") {
+      return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work.";
+    }
+    if (analysis.intent === "ABOUT_AMAN") {
+      return "Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (CGPA: 9.38, Batch 2025\u20132029). He specializes in modern C++, Data Structures & Algorithms (205+ LeetCode problems), React 19/TypeScript frontend systems, and full-stack AI architectures.";
+    }
+    if (analysis.intent === "RECRUITER_EVALUATION") {
+      return `### Candidate Evaluation: Aman Mishra
 
 **Candidate Profile & Fit Summary:**
 - **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.
@@ -804,9 +848,9 @@ Aman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Re
   * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.
 
 *Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
-        }
-        if (analysis.intent === "PROJECT_ARCHITECTURE" && analysis.targetProject === "credvidhi") {
-          return `### CredVidhi System Architecture & Data Flow
+    }
+    if (analysis.intent === "PROJECT_ARCHITECTURE" && analysis.targetProject === "credvidhi") {
+      return `### CredVidhi System Architecture & Data Flow
 
 CredVidhi is an institutional loan origination and deterministic credit underwriting platform:
 
@@ -816,159 +860,142 @@ CredVidhi is an institutional loan origination and deterministic credit underwri
 4. **Audit Trail:** Append-only cryptographic ledger recording every state change and actor UUID.
 5. **Caching & Rate Limiting:** Redis 7 sliding-window rate limits and session token management.
 6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with offline fallback.`;
-        }
-        return `Based on Aman Mishra's verified portfolio documentation:
+    }
+    return `Based on Aman Mishra's verified portfolio documentation:
 
 ${topChunk.content.replace(/^\[.*?\]\n/, "")}
 
 *For further details, explore the dedicated case study at ${topChunk.url}.*`;
+  }
+};
+
+// src/copilot/services/copilotOrchestrator.ts
+var CopilotOrchestrator = class {
+  chunks = [];
+  retriever;
+  llmProvider;
+  isGeminiActive = false;
+  startTime = Date.now();
+  constructor() {
+    this.retriever = new HybridRetriever();
+    this.initializeKnowledgeBase();
+    const apiKey = typeof process !== "undefined" && process.env?.GEMINI_API_KEY || typeof process !== "undefined" && process.env?.GOOGLE_API_KEY || "";
+    const modelName = typeof process !== "undefined" && process.env?.GEMINI_MODEL || "gemini-2.5-flash";
+    if (apiKey) {
+      this.llmProvider = new GeminiProvider(apiKey, modelName);
+      this.isGeminiActive = true;
+    } else {
+      this.llmProvider = new DeterministicFallbackProvider();
+      this.isGeminiActive = false;
+    }
+  }
+  initializeKnowledgeBase() {
+    const allChunks = [];
+    for (const doc of VERIFIED_KNOWLEDGE_DOCUMENTS) {
+      const docChunks = chunkKnowledgeDocument(doc);
+      allChunks.push(...docChunks);
+    }
+    this.chunks = allChunks;
+    this.retriever.setChunks(this.chunks);
+  }
+  getHealth() {
+    return {
+      status: "healthy",
+      version: "1.0.0",
+      uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1e3),
+      llmConfigured: this.isGeminiActive,
+      indexedChunks: this.chunks.length,
+      features: {
+        hybridRetrieval: true,
+        recruiterMode: true,
+        streaming: false,
+        antiInjection: true
       }
     };
   }
-});
-
-// src/copilot/services/copilotOrchestrator.ts
-var copilotOrchestrator_exports = {};
-__export(copilotOrchestrator_exports, {
-  CopilotOrchestrator: () => CopilotOrchestrator,
-  copilotOrchestrator: () => copilotOrchestrator
-});
-var CopilotOrchestrator, copilotOrchestrator;
-var init_copilotOrchestrator = __esm({
-  "src/copilot/services/copilotOrchestrator.ts"() {
-    "use strict";
-    init_verifiedKnowledge();
-    init_chunkingService();
-    init_nlpProcessor();
-    init_retrievalService();
-    init_llmProvider();
-    CopilotOrchestrator = class {
-      chunks = [];
-      retriever;
-      llmProvider;
-      isGeminiActive = false;
-      startTime = Date.now();
-      constructor() {
-        this.retriever = new HybridRetriever();
-        this.initializeKnowledgeBase();
-        const apiKey = typeof process !== "undefined" && process.env?.GEMINI_API_KEY || typeof process !== "undefined" && process.env?.GOOGLE_API_KEY || "";
-        const modelName = typeof process !== "undefined" && process.env?.GEMINI_MODEL || "gemini-2.5-flash";
-        if (apiKey) {
-          this.llmProvider = new GeminiProvider(apiKey, modelName);
-          this.isGeminiActive = true;
-        } else {
-          this.llmProvider = new DeterministicFallbackProvider();
-          this.isGeminiActive = false;
+  async handleChat(request) {
+    const startTs = Date.now();
+    const lastUserMessage = request.messages.filter((m) => m.role === "user").slice(-1)[0]?.content || "";
+    const nlpAnalysis = analyzeQuery(
+      lastUserMessage,
+      request.messages.slice(0, -1)
+    );
+    if (nlpAnalysis.isInappropriateOrInjection) {
+      return {
+        answer: "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?",
+        intent: "PROMPT_INJECTION",
+        citations: [],
+        metadata: {
+          model: "security-guard",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 0
         }
-      }
-      initializeKnowledgeBase() {
-        const allChunks = [];
-        for (const doc of VERIFIED_KNOWLEDGE_DOCUMENTS) {
-          const docChunks = chunkKnowledgeDocument(doc);
-          allChunks.push(...docChunks);
-        }
-        this.chunks = allChunks;
-        this.retriever.setChunks(this.chunks);
-      }
-      getHealth() {
-        return {
-          status: "healthy",
-          version: "1.0.0",
-          uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1e3),
-          llmConfigured: this.isGeminiActive,
-          indexedChunks: this.chunks.length,
-          features: {
-            hybridRetrieval: true,
-            recruiterMode: true,
-            streaming: false,
-            antiInjection: true
-          }
-        };
-      }
-      async handleChat(request) {
-        const startTs = Date.now();
-        const lastUserMessage = request.messages.filter((m) => m.role === "user").slice(-1)[0]?.content || "";
-        const nlpAnalysis = analyzeQuery(
-          lastUserMessage,
-          request.messages.slice(0, -1)
-        );
-        if (nlpAnalysis.isInappropriateOrInjection) {
-          return {
-            answer: "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?",
-            intent: "PROMPT_INJECTION",
-            citations: [],
-            metadata: {
-              model: "security-guard",
-              retrievalLatencyMs: 0,
-              totalLatencyMs: Date.now() - startTs,
-              retrievedCount: 0
-            }
-          };
-        }
-        const retrievalStart = Date.now();
-        const retrievedResults = this.retriever.retrieve(nlpAnalysis, void 0, 4);
-        const retrievalLatency = Date.now() - retrievalStart;
-        const citations = this.retriever.generateCitations(retrievedResults);
-        let answer = "";
-        try {
-          answer = await this.llmProvider.generateResponse(
-            lastUserMessage,
-            retrievedResults,
-            nlpAnalysis,
-            request.messages
-          );
-        } catch (err) {
-          console.warn("[CopilotOrchestrator] Primary LLM failed, using deterministic fallback:", err);
-          const fallback = new DeterministicFallbackProvider();
-          answer = await fallback.generateResponse(
-            lastUserMessage,
-            retrievedResults,
-            nlpAnalysis
-          );
-        }
-        let recruiterAlignment = void 0;
-        if (nlpAnalysis.isRecruiterMode) {
-          recruiterAlignment = {
-            suitableRoles: ["SDE Intern", "Frontend Developer", "Full-Stack Developer"],
-            keyStrengths: [
-              "205+ LeetCode problems solved with C++ STL asymptotic performance",
-              "Production-grade React 19 / TypeScript / Vite frontend systems",
-              "FastAPI & PostgreSQL backend architecture with immutable state transitions"
-            ],
-            suggestedProjects: ["CredVidhi", "KaushalNexus", "Bodhi Sakha"],
-            caveats: ["Candidate is an undergraduate student (Batch 2025\u20132029) seeking internship/co-op positions."]
-          };
-        }
-        let mermaidDiagram = void 0;
-        if (nlpAnalysis.intent === "PROJECT_ARCHITECTURE" && nlpAnalysis.targetProject === "credvidhi") {
-          mermaidDiagram = `graph TD
+      };
+    }
+    const retrievalStart = Date.now();
+    const retrievedResults = this.retriever.retrieve(nlpAnalysis, void 0, 4);
+    const retrievalLatency = Date.now() - retrievalStart;
+    const citations = this.retriever.generateCitations(retrievedResults);
+    let answer = "";
+    try {
+      answer = await this.llmProvider.generateResponse(
+        lastUserMessage,
+        retrievedResults,
+        nlpAnalysis,
+        request.messages
+      );
+    } catch (err) {
+      console.warn("[CopilotOrchestrator] Primary LLM failed, using deterministic fallback:", err);
+      const fallback = new DeterministicFallbackProvider();
+      answer = await fallback.generateResponse(
+        lastUserMessage,
+        retrievedResults,
+        nlpAnalysis
+      );
+    }
+    let recruiterAlignment = void 0;
+    if (nlpAnalysis.isRecruiterMode) {
+      recruiterAlignment = {
+        suitableRoles: ["SDE Intern", "Frontend Developer", "Full-Stack Developer"],
+        keyStrengths: [
+          "205+ LeetCode problems solved with C++ STL asymptotic performance",
+          "Production-grade React 19 / TypeScript / Vite frontend systems",
+          "FastAPI & PostgreSQL backend architecture with immutable state transitions"
+        ],
+        suggestedProjects: ["CredVidhi", "KaushalNexus", "Bodhi Sakha"],
+        caveats: ["Candidate is an undergraduate student (Batch 2025\u20132029) seeking internship/co-op positions."]
+      };
+    }
+    let mermaidDiagram = void 0;
+    if (nlpAnalysis.intent === "PROJECT_ARCHITECTURE" && nlpAnalysis.targetProject === "credvidhi") {
+      mermaidDiagram = `graph TD
   Client[React 19 Client] -->|HTTPS / REST| Gateway[FastAPI Gateway]
   Gateway -->|Schema Validation| Pydantic[Pydantic v2 Contract]
   Gateway -->|Rate Limit Check| Redis[(Redis 7)]
   Gateway -->|ACID State Transition| FSM[Finite State Machine]
   FSM -->|Append-Only Audit| Postgres[(PostgreSQL 16 Ledger)]
   Gateway -->|Guarded FAQ| Gemini[Google Gemini AI]`;
-        }
-        return {
-          answer,
-          intent: nlpAnalysis.intent,
-          citations,
-          recruiterAlignment,
-          mermaidDiagram,
-          metadata: {
-            model: this.isGeminiActive ? "gemini-2.5-flash" : "deterministic-fallback",
-            retrievalLatencyMs: retrievalLatency,
-            totalLatencyMs: Date.now() - startTs,
-            retrievedCount: retrievedResults.length
-          }
-        };
+    }
+    return {
+      answer,
+      intent: nlpAnalysis.intent,
+      targetProject: nlpAnalysis.targetProject,
+      citations,
+      recruiterAlignment,
+      mermaidDiagram,
+      metadata: {
+        model: this.isGeminiActive ? "gemini-2.5-flash" : "deterministic-fallback",
+        retrievalLatencyMs: retrievalLatency,
+        totalLatencyMs: Date.now() - startTs,
+        retrievedCount: retrievedResults.length
       }
     };
-    copilotOrchestrator = new CopilotOrchestrator();
   }
-});
+};
+var copilotOrchestrator = new CopilotOrchestrator();
 
-// api/copilot.ts
+// api/copilot.server.ts
 var rateLimitMap = /* @__PURE__ */ new Map();
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -994,9 +1021,8 @@ async function handler(req, res) {
     return res.status(204).end();
   }
   try {
-    const { copilotOrchestrator: copilotOrchestrator2 } = await Promise.resolve().then(() => (init_copilotOrchestrator(), copilotOrchestrator_exports));
     if (req.method === "GET") {
-      const health = copilotOrchestrator2.getHealth();
+      const health = copilotOrchestrator.getHealth();
       return res.status(200).json(health);
     }
     if (req.method !== "POST") {
@@ -1028,7 +1054,7 @@ async function handler(req, res) {
     if (lastMsg.content.length > 800) {
       lastMsg.content = lastMsg.content.slice(0, 800);
     }
-    const response = await copilotOrchestrator2.handleChat(body);
+    const response = await copilotOrchestrator.handleChat(body);
     return res.status(200).json(response);
   } catch (err) {
     console.error("[Mantri API Error]:", err);

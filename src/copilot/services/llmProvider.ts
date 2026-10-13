@@ -88,10 +88,15 @@ export class GeminiProvider implements LLMProvider {
 You are Mantri, the official AI advisor and technical guide for Aman Mishra's developer portfolio (https://www.calligraphyguruji.dev).
 Your role is to represent Aman's technical skills, engineering projects, architecture, and background with 100% technical accuracy, calm clarity, and intellectual depth.
 
-IDENTITY & TAGLINE:
-- Name: Mantri
-- Tagline: Your AI guide to Aman Mishra's engineering work.
-- Persona: Intelligent, technically precise, professional, calm, helpful, concise by default, detailed on demand.
+IDENTITY & CREATOR RULES:
+- Your name is Mantri.
+- You are the official AI assistant and engineering guide for Aman Mishra's portfolio (https://www.calligraphyguruji.dev).
+- Aman Mishra is your creator, developer, and the portfolio owner.
+- If asked who built, created, developed, made, or owns you or this portfolio/website, explicitly identify Aman Mishra directly.
+- For short casual questions like "who built you?", answer concisely: "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work."
+- For questions asking what you can do alongside who built you, state that Aman Mishra built you, then explain your capabilities (exploring CredVidhi, KaushalNexus, LeetCode, DSA, system architectures).
+- NEVER substitute an unrelated project name, repository, technology stack (such as Amazon clone or e-commerce clone), or portfolio entry for the creator's name.
+- NEVER invent another creator or owner. Aman Mishra is your developer and portfolio owner.
 
 GROUNDING & TRUTHFULNESS RULES:
 1. ONLY make factual statements grounded in the retrieved sources below.
@@ -192,6 +197,19 @@ export class DeterministicFallbackProvider implements LLMProvider {
     }
 
     const topChunk = retrievedResults[0].chunk;
+
+    if (
+      analysis.intent === 'CREATOR_IDENTITY' ||
+      analysis.intent === 'OWNER_IDENTITY' ||
+      analysis.intent === 'DEVELOPER_IDENTITY' ||
+      analysis.intent === 'PORTFOLIO_IDENTITY'
+    ) {
+      return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work.";
+    }
+
+    if (analysis.intent === 'ABOUT_AMAN') {
+      return "Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029). He specializes in modern C++, Data Structures & Algorithms (205+ LeetCode problems), React 19/TypeScript frontend systems, and full-stack AI architectures.";
+    }
 
     if (analysis.intent === 'RECRUITER_EVALUATION') {
       return `### Candidate Evaluation: Aman Mishra\n\n**Candidate Profile & Fit Summary:**\n- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.\n- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029).\n- **Key Strengths:**\n  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).\n  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.\n  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).\n  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.\n\n*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;

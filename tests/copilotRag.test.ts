@@ -104,5 +104,43 @@ describe('AI Portfolio Copilot - NLP, RAG & Security Test Suite', () => {
     assert.strictEqual(injectionResp.intent, 'PROMPT_INJECTION');
     assert.ok(injectionResp.answer.includes('cannot fulfill requests'));
     assert.strictEqual(injectionResp.citations.length, 0);
+
+    // Creator / Owner identity questions
+    const creatorResp1 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'who build you?' }],
+    });
+    assert.ok(
+      ['CREATOR_IDENTITY', 'OWNER_IDENTITY', 'DEVELOPER_IDENTITY', 'PORTFOLIO_IDENTITY'].includes(
+        creatorResp1.intent
+      ),
+      `Expected creator intent but got ${creatorResp1.intent}`
+    );
+    assert.ok(
+      creatorResp1.answer.includes('Aman Mishra'),
+      'Must identify Aman Mishra as the creator'
+    );
+    assert.strictEqual(
+      creatorResp1.answer.toLowerCase().includes('amazon clone'),
+      false,
+      'Must not answer with Amazon clone'
+    );
+
+    const creatorResp2 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Who created Mantri?' }],
+    });
+    assert.ok(creatorResp2.answer.includes('Aman Mishra'));
+    assert.strictEqual(creatorResp2.answer.toLowerCase().includes('amazon clone'), false);
+
+    const creatorResp3 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Who owns this portfolio?' }],
+    });
+    assert.ok(creatorResp3.answer.includes('Aman Mishra'));
+
+    // Distinguish explicit project inquiry from creator inquiry
+    const amazonResp = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Tell me about the Amazon clone project' }],
+    });
+    assert.strictEqual(amazonResp.targetProject, 'amazon-clone');
+    assert.ok(amazonResp.answer.toLowerCase().includes('amazon'));
   });
 });

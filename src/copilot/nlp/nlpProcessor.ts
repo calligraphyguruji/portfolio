@@ -144,12 +144,60 @@ export function analyzeQuery(
 
   // 3. Classify Intent
   let intent: QueryIntent = 'UNKNOWN';
+
+  // High-Priority: Creator, Developer & Ownership Identity Patterns (with typo-tolerance)
+  const isCreatorIdentity =
+    /\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
+      lowerQuery
+    ) ||
+    /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
+      lowerQuery
+    ) ||
+    /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery);
+
+  const isOwnerIdentity =
+    /\b(who\s*(is|are)?\s*(owns|owner\s*of|maintains|maintainer\s*of)\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+      lowerQuery
+    ) ||
+    /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+      lowerQuery
+    ) ||
+    /\b(owner\s+of\s+mantri)\b/i.test(lowerQuery);
+
+  const isDeveloperIdentity =
+    /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
+      lowerQuery
+    );
+
+  const isPortfolioIdentity =
+    /\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+      lowerQuery
+    ) ||
+    /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
+      lowerQuery
+    );
+
+  const isAboutAman =
+    /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?)\b/i.test(
+      lowerQuery
+    );
+
   const isRecruiter =
     /\b(hire|recruiter|interview|internship|resume|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
       lowerQuery
     );
 
-  if (isRecruiter) {
+  if (isCreatorIdentity) {
+    intent = 'CREATOR_IDENTITY';
+  } else if (isOwnerIdentity) {
+    intent = 'OWNER_IDENTITY';
+  } else if (isDeveloperIdentity) {
+    intent = 'DEVELOPER_IDENTITY';
+  } else if (isPortfolioIdentity) {
+    intent = 'PORTFOLIO_IDENTITY';
+  } else if (isAboutAman) {
+    intent = 'ABOUT_AMAN';
+  } else if (isRecruiter) {
     intent = 'RECRUITER_EVALUATION';
   } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
     intent = 'PROJECT_ARCHITECTURE';

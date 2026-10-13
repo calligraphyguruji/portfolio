@@ -3,6 +3,11 @@
  */
 
 export type QueryIntent =
+  | 'CREATOR_IDENTITY'
+  | 'OWNER_IDENTITY'
+  | 'DEVELOPER_IDENTITY'
+  | 'PORTFOLIO_IDENTITY'
+  | 'ABOUT_AMAN'
   | 'PROJECT_OVERVIEW'
   | 'PROJECT_ARCHITECTURE'
   | 'TECH_STACK'
@@ -115,6 +120,7 @@ export interface CopilotChatRequest {
 export interface CopilotChatResponse {
   answer: string;
   intent: QueryIntent;
+  targetProject?: string;
   citations: CitationReference[];
   recruiterAlignment?: {
     suitableRoles: string[];

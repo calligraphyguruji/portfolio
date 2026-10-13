@@ -104,10 +104,33 @@ export class HybridRetriever {
     const scoredLexical = this.chunks
       .map((chunk) => {
         let score = calculateLexicalScore(query, chunk);
+
         // Boost if matches targetProject detected by NLP
         if (analysis.targetProject && chunk.projectId === analysis.targetProject) {
           score *= 1.8;
         }
+
+        // Heavy boost for assistant identity and creator queries
+        const isIdentityQuery = [
+          'CREATOR_IDENTITY',
+          'OWNER_IDENTITY',
+          'DEVELOPER_IDENTITY',
+          'PORTFOLIO_IDENTITY',
+        ].includes(analysis.intent);
+
+        if (isIdentityQuery) {
+          if (chunk.documentId === 'mantri-identity' || chunk.documentId === 'bio-identity') {
+            score += 15.0;
+          } else {
+            // Penalize unrelated project chunks for creator identity questions
+            score *= 0.1;
+          }
+        } else if (analysis.intent === 'ABOUT_AMAN') {
+          if (chunk.documentId === 'bio-identity' || chunk.documentId === 'recruiter-guide') {
+            score += 10.0;
+          }
+        }
+
         return { chunk, score };
       })
       .filter((item) => item.score > 0)

@@ -154,6 +154,7 @@ export class CopilotOrchestrator {
     return {
       answer,
       intent: nlpAnalysis.intent,
+      targetProject: nlpAnalysis.targetProject,
       citations,
       recruiterAlignment,
       mermaidDiagram,
