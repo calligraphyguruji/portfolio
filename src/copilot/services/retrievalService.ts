@@ -117,6 +117,7 @@ export class HybridRetriever {
           'OWNER_IDENTITY',
           'DEVELOPER_IDENTITY',
           'PORTFOLIO_IDENTITY',
+          'ASSISTANT_PURPOSE',
         ].includes(analysis.intent);
 
         if (analysis.intent === 'RESUME_REQUEST') {
@@ -132,7 +133,7 @@ export class HybridRetriever {
             // Penalize unrelated project chunks for creator identity questions
             score *= 0.1;
           }
-        } else if (analysis.intent === 'ABOUT_AMAN') {
+        } else if (analysis.intent === 'ABOUT_AMAN' || analysis.intent === 'CONTACT_QUERY') {
           if (chunk.documentId === 'bio-identity' || chunk.documentId === 'recruiter-guide') {
             score += 10.0;
           }

@@ -181,34 +181,51 @@ export function analyzeQuery(
     );
 
   // High-Priority: Creator, Developer & Ownership Identity Patterns (with typo-tolerance)
+  // Ensure "Who are the users of CredVidhi" or "What technologies did Aman use to build Mantri"
+  // are NOT falsely matched as owner identity queries.
   const isCreatorIdentity =
-    /\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
+    !targetProject &&
+    !/\b(technolog(y|ies)|stack|how\s+does|how\s+to|how\s+mantri\s+works|detailed\s+technical)\b/i.test(lowerQuery) &&
+    (/\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
       lowerQuery
     ) ||
-    /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
-      lowerQuery
-    ) ||
-    /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery);
+      /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
+        lowerQuery
+      ) ||
+      /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery));
 
   const isOwnerIdentity =
-    /\b(who\s*(is|are)?\s*(owns|owner\s*of|maintains|maintainer\s*of)\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+    !targetProject &&
+    !/\b(users|clients|borrowers|customers)\s+of\b/i.test(lowerQuery) &&
+    (/\b(who\s*(is|are)?\s*(the\s+)?(owner|maintainer)(\s*(of\s*(this\s*)?(portfolio|website|site|project|mantri|it)?)?)?)\b/i.test(
       lowerQuery
     ) ||
-    /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
-      lowerQuery
-    ) ||
-    /\b(owner\s+of\s+mantri)\b/i.test(lowerQuery);
+      /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site|this)?)\b/i.test(
+        lowerQuery
+      ) ||
+      /\b(owner\s+of\s+(this\s+)?(portfolio|website|site|mantri))\b/i.test(lowerQuery) ||
+      /\b(who\s*(is|are)?\s*(behind\s+mantri|behind\s+this\s*(website|portfolio|site)))\b/i.test(
+        lowerQuery
+      ));
 
   const isDeveloperIdentity =
+    !targetProject &&
+    !/\b(technolog(y|ies)|stack)\b/i.test(lowerQuery) &&
     /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
       lowerQuery
     );
 
   const isPortfolioIdentity =
-    /\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+    !targetProject &&
+    (/\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
       lowerQuery
     ) ||
-    /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
+      /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
+        lowerQuery
+      ));
+
+  const isAssistantPurpose =
+    /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission)|what\s*(can|do)\s*you\s*do|why\s*were\s*you\s*(built|created|made))\b/i.test(
       lowerQuery
     );
 
@@ -232,11 +249,13 @@ export function analyzeQuery(
     intent = 'DEVELOPER_IDENTITY';
   } else if (isPortfolioIdentity) {
     intent = 'PORTFOLIO_IDENTITY';
+  } else if (isAssistantPurpose) {
+    intent = 'ASSISTANT_PURPOSE';
   } else if (isAboutAman) {
     intent = 'ABOUT_AMAN';
   } else if (isRecruiter) {
     intent = 'RECRUITER_EVALUATION';
-  } else if (/\b(contact|email|phone|reach out|message|get in touch)\b/i.test(lowerQuery)) {
+  } else if (/\b(contact|email|phone|reach out|message|get in touch|who should i contact)\b/i.test(lowerQuery)) {
     intent = 'CONTACT_QUERY';
   } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
     intent = 'PROJECT_ARCHITECTURE';

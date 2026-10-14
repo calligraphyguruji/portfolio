@@ -187,5 +187,81 @@ describe('AI Portfolio Copilot - NLP, RAG & Security Test Suite', () => {
 
     const resumeNegative3 = analyzeQuery('Build a resume builder in React');
     assert.notStrictEqual(resumeNegative3.intent, 'RESUME_REQUEST');
+
+    // TEST 1 & 2: "Who built you?" & "Who created Mantri?"
+    const test1 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Who built you?' }],
+    });
+    assert.ok(test1.answer.includes('Aman Mishra built me'));
+    assert.strictEqual(test1.answer.includes('Assistant Name:'), false);
+
+    const test2 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Who created Mantri?' }],
+    });
+    assert.ok(test2.answer.includes('Aman Mishra built me'));
+    assert.strictEqual(test2.answer.includes('Portfolio Owner:'), false);
+
+    // TEST 3: "Who is the owner?" & "Who owns this portfolio?"
+    const test3a = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Who is the owner?' }],
+    });
+    assert.strictEqual(test3a.intent, 'OWNER_IDENTITY');
+    assert.ok(test3a.answer.includes('Aman Mishra owns this portfolio'));
+    assert.strictEqual(test3a.answer.includes('Assistant Name:'), false);
+
+    const test3b = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Who owns this portfolio?' }],
+    });
+    assert.strictEqual(test3b.intent, 'OWNER_IDENTITY');
+    assert.ok(test3b.answer.includes('Aman Mishra owns this portfolio'));
+
+    // TEST 4: "What is your purpose?"
+    const test4 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'What is your purpose?' }],
+    });
+    assert.strictEqual(test4.intent, 'ASSISTANT_PURPOSE');
+    assert.ok(test4.answer.includes('Aman Mishra'));
+    assert.ok(test4.answer.toLowerCase().includes('projects'));
+    assert.strictEqual(test4.answer.includes('Tagline:'), false);
+
+    // TEST 5: Project query "Tell me about CredVidhi."
+    const test5 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Tell me about CredVidhi.' }],
+    });
+    assert.strictEqual(test5.targetProject, 'credvidhi');
+    assert.ok(test5.citations.some((c) => c.url.includes('credvidhi')));
+
+    // TEST 6: "Explain the system architecture of KaushalNexus."
+    const test6 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'Explain the system architecture of KaushalNexus.' }],
+    });
+    assert.strictEqual(test6.targetProject, 'kaushal-nexus');
+    assert.strictEqual(test6.intent, 'PROJECT_ARCHITECTURE');
+
+    // TEST 7: Project-technical query "What technologies did Aman use to build Mantri?"
+    const test7 = analyzeQuery('What technologies did Aman use to build Mantri?');
+    assert.strictEqual(test7.intent, 'TECH_STACK');
+    assert.notStrictEqual(test7.intent, 'OWNER_IDENTITY');
+    assert.notStrictEqual(test7.intent, 'CREATOR_IDENTITY');
+
+    // TEST 8: Project-specific query "Who are the users of CredVidhi?"
+    const test8 = analyzeQuery('Who are the users of CredVidhi?');
+    assert.strictEqual(test8.targetProject, 'credvidhi');
+    assert.notStrictEqual(test8.intent, 'OWNER_IDENTITY');
+
+    // TEST 9: Detailed technical query "Give me a detailed technical explanation of how Mantri works."
+    const test9 = analyzeQuery('Give me a detailed technical explanation of how Mantri works.');
+    assert.notStrictEqual(test9.intent, 'OWNER_IDENTITY');
+    assert.notStrictEqual(test9.intent, 'CREATOR_IDENTITY');
+
+    // TEST 10: Zero metadata field leakage across queries
+    const test10Queries = ['Who is the owner?', 'Who built you?', 'who owns you', 'who made mantri'];
+    for (const q of test10Queries) {
+      const res = await orchestrator.handleChat({ messages: [{ role: 'user', content: q }] });
+      assert.strictEqual(res.answer.includes('Assistant Name:'), false, `Query "${q}" leaked Assistant Name`);
+      assert.strictEqual(res.answer.includes('Portfolio Owner:'), false, `Query "${q}" leaked Portfolio Owner`);
+      assert.strictEqual(res.answer.includes('Tagline:'), false, `Query "${q}" leaked Tagline`);
+      assert.strictEqual(res.answer.includes('Description:'), false, `Query "${q}" leaked Description`);
+    }
   });
 });

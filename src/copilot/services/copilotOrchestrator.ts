@@ -5,6 +5,7 @@ import { HybridRetriever } from './retrievalService.ts';
 import type { LLMProvider } from './llmProvider.ts';
 import { GeminiProvider, DeterministicFallbackProvider } from './llmProvider.ts';
 import { RESUME_CONFIG } from '../config/resumeConfig.ts';
+import { MANTRI_IDENTITY } from '../config/mantriIdentity.ts';
 import type {
   CopilotChatRequest,
   CopilotChatResponse,
@@ -94,6 +95,118 @@ export class CopilotOrchestrator {
           retrievalLatencyMs: 0,
           totalLatencyMs: Date.now() - startTs,
           retrievedCount: 0,
+        },
+      };
+    }
+
+    // Deterministic Fast-Path: Identity, Purpose & Resume Action
+    // Bypasses unnecessary RAG document dumps and returns concise, verified identity responses
+    if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
+      return {
+        answer: MANTRI_IDENTITY.responses.owner,
+        intent: 'OWNER_IDENTITY',
+        citations: [
+          {
+            sourceId: 'mantri-identity-1',
+            title: 'Mantri - AI Portfolio Assistant Identity & Creator',
+            section: 'Identity',
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1.0,
+          },
+        ],
+        metadata: {
+          model: 'deterministic-identity',
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1,
+        },
+      };
+    }
+
+    if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
+      return {
+        answer: MANTRI_IDENTITY.responses.creator,
+        intent: 'CREATOR_IDENTITY',
+        citations: [
+          {
+            sourceId: 'mantri-identity-1',
+            title: 'Mantri - AI Portfolio Assistant Identity & Creator',
+            section: 'Identity',
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1.0,
+          },
+        ],
+        metadata: {
+          model: 'deterministic-identity',
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1,
+        },
+      };
+    }
+
+    if (nlpAnalysis.intent === 'DEVELOPER_IDENTITY') {
+      return {
+        answer: MANTRI_IDENTITY.responses.developer,
+        intent: 'DEVELOPER_IDENTITY',
+        citations: [
+          {
+            sourceId: 'mantri-identity-1',
+            title: 'Mantri - AI Portfolio Assistant Identity & Creator',
+            section: 'Identity',
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1.0,
+          },
+        ],
+        metadata: {
+          model: 'deterministic-identity',
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1,
+        },
+      };
+    }
+
+    if (nlpAnalysis.intent === 'PORTFOLIO_IDENTITY') {
+      return {
+        answer: MANTRI_IDENTITY.responses.portfolio,
+        intent: 'PORTFOLIO_IDENTITY',
+        citations: [
+          {
+            sourceId: 'mantri-identity-1',
+            title: 'Mantri - AI Portfolio Assistant Identity & Creator',
+            section: 'Identity',
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1.0,
+          },
+        ],
+        metadata: {
+          model: 'deterministic-identity',
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1,
+        },
+      };
+    }
+
+    if (nlpAnalysis.intent === 'ASSISTANT_PURPOSE') {
+      return {
+        answer: MANTRI_IDENTITY.responses.purpose,
+        intent: 'ASSISTANT_PURPOSE',
+        citations: [
+          {
+            sourceId: 'mantri-identity-1',
+            title: 'Mantri - AI Portfolio Assistant Identity & Creator',
+            section: 'Identity',
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1.0,
+          },
+        ],
+        metadata: {
+          model: 'deterministic-identity',
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1,
         },
       };
     }

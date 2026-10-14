@@ -1,4 +1,5 @@
 import type { RetrievalResult, NLPAnalysis } from '../types.ts';
+import { MANTRI_IDENTITY } from '../config/mantriIdentity.ts';
 
 export interface LLMProvider {
   generateResponse(
@@ -210,17 +211,32 @@ export class DeterministicFallbackProvider implements LLMProvider {
       return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
     }
 
-    if (
-      analysis.intent === 'CREATOR_IDENTITY' ||
-      analysis.intent === 'OWNER_IDENTITY' ||
-      analysis.intent === 'DEVELOPER_IDENTITY' ||
-      analysis.intent === 'PORTFOLIO_IDENTITY'
-    ) {
-      return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work.";
+    if (analysis.intent === 'OWNER_IDENTITY') {
+      return MANTRI_IDENTITY.responses.owner;
+    }
+
+    if (analysis.intent === 'CREATOR_IDENTITY') {
+      return MANTRI_IDENTITY.responses.creator;
+    }
+
+    if (analysis.intent === 'DEVELOPER_IDENTITY') {
+      return MANTRI_IDENTITY.responses.developer;
+    }
+
+    if (analysis.intent === 'PORTFOLIO_IDENTITY') {
+      return MANTRI_IDENTITY.responses.portfolio;
+    }
+
+    if (analysis.intent === 'ASSISTANT_PURPOSE') {
+      return MANTRI_IDENTITY.responses.purpose;
+    }
+
+    if (analysis.intent === 'CONTACT_QUERY') {
+      return MANTRI_IDENTITY.responses.contact;
     }
 
     if (analysis.intent === 'ABOUT_AMAN') {
-      return "Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029). He specializes in modern C++, Data Structures & Algorithms (205+ LeetCode problems), React 19/TypeScript frontend systems, and full-stack AI architectures.";
+      return MANTRI_IDENTITY.responses.aboutAman;
     }
 
     if (analysis.intent === 'RECRUITER_EVALUATION') {
@@ -229,6 +245,11 @@ export class DeterministicFallbackProvider implements LLMProvider {
 
     if (analysis.intent === 'PROJECT_ARCHITECTURE' && analysis.targetProject === 'credvidhi') {
       return `### CredVidhi System Architecture & Data Flow\n\nCredVidhi is an institutional loan origination and deterministic credit underwriting platform:\n\n1. **API Gateway:** Python FastAPI with Pydantic v2 strict schema validation and JWT RBAC.\n2. **Underwriting Engine:** Fixed-point precision arithmetic in INR (₹) computing zero-drift EMI ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) and Debt-to-Income (DTI).\n3. **State Machine:** 6-stage forward-only Finite State Machine (Draft → Submitted → Under Review → Approved → Disbursed) enforced inside PostgreSQL ACID transactions.\n4. **Audit Trail:** Append-only cryptographic ledger recording every state change and actor UUID.\n5. **Caching & Rate Limiting:** Redis 7 sliding-window rate limits and session token management.\n6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with offline fallback.`;
+    }
+
+    // Guard against raw metadata leakage if chunk is mantri-identity
+    if (topChunk.documentId === 'mantri-identity') {
+      return MANTRI_IDENTITY.responses.creator;
     }
 
     return `Based on Aman Mishra's verified portfolio documentation:\n\n${topChunk.content.replace(/^\[.*?\]\n/, '')}\n\n*For further details, explore the dedicated case study at ${topChunk.url}.*`;

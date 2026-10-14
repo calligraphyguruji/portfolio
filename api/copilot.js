@@ -509,22 +509,27 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     lowerQuery
   ) || // "resume pdf", "cv pdf", "download link for resume"
   /\b(resume|cv)\s*(pdf|download|link|file|document)\b/i.test(lowerQuery) || /\b(download|get|view)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) || /\b(download\s+aman\s+mishra\s+resume)\b/i.test(lowerQuery) || /\b(copy\s+of\s+(your|his|aman('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) || /\b(resume|cv)\s+for\s+(recruitment|recruiter|interview|hiring)\b/i.test(lowerQuery));
-  const isCreatorIdentity = /\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
+  const isCreatorIdentity = !targetProject && !/\b(technolog(y|ies)|stack|how\s+does|how\s+to|how\s+mantri\s+works|detailed\s+technical)\b/i.test(lowerQuery) && (/\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
     lowerQuery
   ) || /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
     lowerQuery
-  ) || /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery);
-  const isOwnerIdentity = /\b(who\s*(is|are)?\s*(owns|owner\s*of|maintains|maintainer\s*of)\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+  ) || /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery));
+  const isOwnerIdentity = !targetProject && !/\b(users|clients|borrowers|customers)\s+of\b/i.test(lowerQuery) && (/\b(who\s*(is|are)?\s*(the\s+)?(owner|maintainer)(\s*(of\s*(this\s*)?(portfolio|website|site|project|mantri|it)?)?)?)\b/i.test(
     lowerQuery
-  ) || /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+  ) || /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site|this)?)\b/i.test(
     lowerQuery
-  ) || /\b(owner\s+of\s+mantri)\b/i.test(lowerQuery);
-  const isDeveloperIdentity = /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
+  ) || /\b(owner\s+of\s+(this\s+)?(portfolio|website|site|mantri))\b/i.test(lowerQuery) || /\b(who\s*(is|are)?\s*(behind\s+mantri|behind\s+this\s*(website|portfolio|site)))\b/i.test(
+    lowerQuery
+  ));
+  const isDeveloperIdentity = !targetProject && !/\b(technolog(y|ies)|stack)\b/i.test(lowerQuery) && /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
     lowerQuery
   );
-  const isPortfolioIdentity = /\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+  const isPortfolioIdentity = !targetProject && (/\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
     lowerQuery
   ) || /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
+    lowerQuery
+  ));
+  const isAssistantPurpose = /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission)|what\s*(can|do)\s*you\s*do|why\s*were\s*you\s*(built|created|made))\b/i.test(
     lowerQuery
   );
   const isAboutAman = /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?)\b/i.test(
@@ -543,11 +548,13 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     intent = "DEVELOPER_IDENTITY";
   } else if (isPortfolioIdentity) {
     intent = "PORTFOLIO_IDENTITY";
+  } else if (isAssistantPurpose) {
+    intent = "ASSISTANT_PURPOSE";
   } else if (isAboutAman) {
     intent = "ABOUT_AMAN";
   } else if (isRecruiter) {
     intent = "RECRUITER_EVALUATION";
-  } else if (/\b(contact|email|phone|reach out|message|get in touch)\b/i.test(lowerQuery)) {
+  } else if (/\b(contact|email|phone|reach out|message|get in touch|who should i contact)\b/i.test(lowerQuery)) {
     intent = "CONTACT_QUERY";
   } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
     intent = "PROJECT_ARCHITECTURE";
@@ -665,7 +672,8 @@ var HybridRetriever = class {
         "CREATOR_IDENTITY",
         "OWNER_IDENTITY",
         "DEVELOPER_IDENTITY",
-        "PORTFOLIO_IDENTITY"
+        "PORTFOLIO_IDENTITY",
+        "ASSISTANT_PURPOSE"
       ].includes(analysis.intent);
       if (analysis.intent === "RESUME_REQUEST") {
         if (chunk.documentId === "resume-document" || chunk.documentId === "recruiter-guide") {
@@ -679,7 +687,7 @@ var HybridRetriever = class {
         } else {
           score *= 0.1;
         }
-      } else if (analysis.intent === "ABOUT_AMAN") {
+      } else if (analysis.intent === "ABOUT_AMAN" || analysis.intent === "CONTACT_QUERY") {
         if (chunk.documentId === "bio-identity" || chunk.documentId === "recruiter-guide") {
           score += 10;
         }
@@ -727,6 +735,31 @@ var HybridRetriever = class {
       }
     }
     return citations;
+  }
+};
+
+// src/copilot/config/mantriIdentity.ts
+var MANTRI_IDENTITY = {
+  assistantName: "Mantri",
+  tagline: "Your AI guide to Aman Mishra's engineering work.",
+  creator: "Aman Mishra",
+  developer: "Aman Mishra",
+  portfolioOwner: "Aman Mishra",
+  portfolioUrl: "https://www.calligraphyguruji.dev",
+  purpose: "Help visitors explore Aman Mishra's engineering portfolio, system architectures, technical skills, and projects.",
+  contactEmail: "amanmishra7774@gmail.com",
+  github: "https://github.com/calligraphyguruji",
+  linkedin: "https://www.linkedin.com/in/calligraphygurji/",
+  leetcode: "https://leetcode.com/u/calligraphyguruji/",
+  // Concise deterministic responses
+  responses: {
+    creator: "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help visitors explore his projects, technical skills, and engineering work.",
+    owner: "Aman Mishra owns this portfolio. I'm Mantri, his AI assistant, designed to help visitors explore his projects, technical skills, and engineering work.",
+    developer: "Aman Mishra is my developer and the creator of this portfolio. I'm Mantri, his AI assistant.",
+    portfolio: "Aman Mishra built and owns this portfolio website. I'm Mantri, his AI assistant.",
+    purpose: "I'm here to help you explore Aman Mishra's projects, technical skills, system architectures, and engineering experience.",
+    aboutAman: "Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (CGPA: 9.38, Batch 2025\u20132029). He specializes in modern C++, Data Structures & Algorithms (205+ LeetCode problems), React 19/TypeScript frontend systems, and full-stack AI architectures.",
+    contact: "You can reach out to Aman Mishra directly via email at amanmishra7774@gmail.com, connect on LinkedIn (linkedin.com/in/calligraphygurji), or message him using the Contact section of this website."
   }
 };
 
@@ -893,11 +926,26 @@ Aman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Re
     if (analysis.intent === "RESUME_REQUEST") {
       return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
     }
-    if (analysis.intent === "CREATOR_IDENTITY" || analysis.intent === "OWNER_IDENTITY" || analysis.intent === "DEVELOPER_IDENTITY" || analysis.intent === "PORTFOLIO_IDENTITY") {
-      return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work.";
+    if (analysis.intent === "OWNER_IDENTITY") {
+      return MANTRI_IDENTITY.responses.owner;
+    }
+    if (analysis.intent === "CREATOR_IDENTITY") {
+      return MANTRI_IDENTITY.responses.creator;
+    }
+    if (analysis.intent === "DEVELOPER_IDENTITY") {
+      return MANTRI_IDENTITY.responses.developer;
+    }
+    if (analysis.intent === "PORTFOLIO_IDENTITY") {
+      return MANTRI_IDENTITY.responses.portfolio;
+    }
+    if (analysis.intent === "ASSISTANT_PURPOSE") {
+      return MANTRI_IDENTITY.responses.purpose;
+    }
+    if (analysis.intent === "CONTACT_QUERY") {
+      return MANTRI_IDENTITY.responses.contact;
     }
     if (analysis.intent === "ABOUT_AMAN") {
-      return "Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (CGPA: 9.38, Batch 2025\u20132029). He specializes in modern C++, Data Structures & Algorithms (205+ LeetCode problems), React 19/TypeScript frontend systems, and full-stack AI architectures.";
+      return MANTRI_IDENTITY.responses.aboutAman;
     }
     if (analysis.intent === "RECRUITER_EVALUATION") {
       return `### Candidate Evaluation: Aman Mishra
@@ -924,6 +972,9 @@ CredVidhi is an institutional loan origination and deterministic credit underwri
 4. **Audit Trail:** Append-only cryptographic ledger recording every state change and actor UUID.
 5. **Caching & Rate Limiting:** Redis 7 sliding-window rate limits and session token management.
 6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with offline fallback.`;
+    }
+    if (topChunk.documentId === "mantri-identity") {
+      return MANTRI_IDENTITY.responses.creator;
     }
     return `Based on Aman Mishra's verified portfolio documentation:
 
@@ -1008,6 +1059,111 @@ var CopilotOrchestrator = class {
           retrievalLatencyMs: 0,
           totalLatencyMs: Date.now() - startTs,
           retrievedCount: 0
+        }
+      };
+    }
+    if (nlpAnalysis.intent === "OWNER_IDENTITY") {
+      return {
+        answer: MANTRI_IDENTITY.responses.owner,
+        intent: "OWNER_IDENTITY",
+        citations: [
+          {
+            sourceId: "mantri-identity-1",
+            title: "Mantri - AI Portfolio Assistant Identity & Creator",
+            section: "Identity",
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1
+          }
+        ],
+        metadata: {
+          model: "deterministic-identity",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1
+        }
+      };
+    }
+    if (nlpAnalysis.intent === "CREATOR_IDENTITY") {
+      return {
+        answer: MANTRI_IDENTITY.responses.creator,
+        intent: "CREATOR_IDENTITY",
+        citations: [
+          {
+            sourceId: "mantri-identity-1",
+            title: "Mantri - AI Portfolio Assistant Identity & Creator",
+            section: "Identity",
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1
+          }
+        ],
+        metadata: {
+          model: "deterministic-identity",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1
+        }
+      };
+    }
+    if (nlpAnalysis.intent === "DEVELOPER_IDENTITY") {
+      return {
+        answer: MANTRI_IDENTITY.responses.developer,
+        intent: "DEVELOPER_IDENTITY",
+        citations: [
+          {
+            sourceId: "mantri-identity-1",
+            title: "Mantri - AI Portfolio Assistant Identity & Creator",
+            section: "Identity",
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1
+          }
+        ],
+        metadata: {
+          model: "deterministic-identity",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1
+        }
+      };
+    }
+    if (nlpAnalysis.intent === "PORTFOLIO_IDENTITY") {
+      return {
+        answer: MANTRI_IDENTITY.responses.portfolio,
+        intent: "PORTFOLIO_IDENTITY",
+        citations: [
+          {
+            sourceId: "mantri-identity-1",
+            title: "Mantri - AI Portfolio Assistant Identity & Creator",
+            section: "Identity",
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1
+          }
+        ],
+        metadata: {
+          model: "deterministic-identity",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1
+        }
+      };
+    }
+    if (nlpAnalysis.intent === "ASSISTANT_PURPOSE") {
+      return {
+        answer: MANTRI_IDENTITY.responses.purpose,
+        intent: "ASSISTANT_PURPOSE",
+        citations: [
+          {
+            sourceId: "mantri-identity-1",
+            title: "Mantri - AI Portfolio Assistant Identity & Creator",
+            section: "Identity",
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1
+          }
+        ],
+        metadata: {
+          model: "deterministic-identity",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1
         }
       };
     }
