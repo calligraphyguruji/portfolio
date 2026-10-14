@@ -25,8 +25,9 @@ export function calculateLexicalScore(query: string, chunk: KnowledgeChunk): num
     if (chunk.keywords.includes(token)) {
       score += 1.5;
     }
-    // Match in content
-    const count = (contentLower.match(new RegExp(`\\b${token}\\b`, 'g')) || []).length;
+    // Match in content safely escaping regex special characters
+    const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const count = (contentLower.match(new RegExp(`\\b${escapedToken}\\b`, 'g')) || []).length;
     score += Math.min(count, 5) * 0.5;
   }
 

@@ -612,7 +612,8 @@ function calculateLexicalScore(query, chunk) {
     if (chunk.keywords.includes(token)) {
       score += 1.5;
     }
-    const count = (contentLower.match(new RegExp(`\\b${token}\\b`, "g")) || []).length;
+    const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const count = (contentLower.match(new RegExp(`\\b${escapedToken}\\b`, "g")) || []).length;
     score += Math.min(count, 5) * 0.5;
   }
   if (chunk.projectId && query.toLowerCase().includes(chunk.projectId.toLowerCase())) {
