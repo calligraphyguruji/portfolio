@@ -38,6 +38,60 @@ A high-performance personal developer portfolio engineered with an editorial aes
 
 ---
 
+## 🤖 Mantri — Self-Hosted Local AI Engine & Full LLM Architecture
+
+Mantri is the production-grade, privacy-first technical assistant integrated natively into the portfolio. Unlike typical portfolio chatbots that rely on paid cloud API keys or hardcoded responses, **Mantri is engineered as a complete, self-hosted AI engine with zero mandatory external API keys (no Google Gemini, OpenAI, or Anthropic API keys required).**
+
+```
+                     ┌─────────────────────────────────────────────────────────────┐
+                     │               React 19 / TypeScript UI Widget               │
+                     │  • KaTeX LaTeX Math ($ / $$)     • Code Block Syntax Copy   │
+                     │  • Token Streaming SSE / NDJSON  • Stop / Retry Generation  │
+                     │  • Interactive Resume Card       • Strict Identity Display  │
+                     └──────────────────────────────┬──────────────────────────────┘
+                                                    │
+                                                    ▼
+                     ┌─────────────────────────────────────────────────────────────┐
+                     │       Mantri Orchestrator & Multi-Stage NLP Pipeline         │
+                     │  • Prompt Injection Firewall     • High-Priority Identity   │
+                     │  • Pronoun Follow-up Resolution  • Safe Tool Dispatcher     │
+                     └──────────────┬──────────────────────────────┬───────────────┘
+                                    │                              │
+                    ┌───────────────┴───────────────┐              │
+                    ▼                               ▼              ▼
+     ┌────────────────────────────┐  ┌────────────────────────────┐┌────────────────────────────┐
+     │  Hybrid RAG Engine (Local) │  │ Persistent SQLite Memory   ││ Controlled Tool Registry   │
+     │ • BM25-style Lexical Match │  │ • node:sqlite DB storage   ││ • Recursive AST Calculator │
+     │ • Dense Vector Similarity  │  │ • Multi-turn session logs  ││ • IST / UTC DateTime Tool  │
+     │ • Reciprocal Rank Fusion   │  │ • PII & Secret Redaction   ││ • Project Metadata Lookup  │
+     │ • SHA-256 Chunk Hash Cache │  │ • Contextual Entity Recall ││ • Health & Engine Diags    │
+     └──────────────┬─────────────┘  └────────────────────────────┘└────────────────────────────┘
+                    │
+                    ▼
+     ┌─────────────────────────────────────────────────────────────┐
+     │            Primary Inference: Local Ollama Daemon           │
+     │   • Models: llama3.2:3b / mistral / qwen2.5 (Self-Hosted)   │
+     │   • 100% Private, Zero Cloud Keys, Zero External API Cost   │
+     │   • Fallback: Deterministic Local Grounded Knowledge Engine │
+     └─────────────────────────────────────────────────────────────┘
+```
+
+### 🔑 Zero Cloud API Key Dependency
+- **100% Self-Hosted & Free:** Operates directly against a local Ollama daemon (`http://localhost:11434`) running lightweight open-weight models (default: `llama3.2:3b`).
+- **No Google Gemini Key Needed:** The engine does NOT require `GEMINI_API_KEY` or any external paid tokens.
+- **Graceful Deterministic Fallback:** If Ollama is offline or uninstalled, Mantri gracefully falls back to a deterministic, locally grounded AST knowledge engine with zero crashes, zero errors, and zero API outages.
+
+### 🧠 Complete LLM Capabilities & Technical Invariants
+1. **Local Inference Runtime (`OllamaProvider`):** Direct HTTP streaming client (`/api/chat`, `/api/generate`, `/api/embeddings`) supporting model health checks, latency tracking, and execution abort via `AbortController`.
+2. **Persistent Conversation Memory (`conversationMemory`):** Embedded SQLite database (`node:sqlite`) with WAL mode tracking multi-turn conversation threads, message timestamps, and contextual follow-up pronouns (`"it"`, `"this project"`) resolving back to previously discussed entities (e.g. CredVidhi).
+3. **Controlled Tool Registry (`toolRegistry`):** Sandboxed tool execution platform featuring an AST-based mathematical calculation parser (zero `eval()` / script injection risk), IST datetime resolver, and project metadata inspector.
+4. **Hybrid RAG Pipeline (`HybridRetriever`):** Combines exact word-boundary lexical matching with cosine vector embeddings using Reciprocal Rank Fusion ($RRF = \sum \frac{1}{k + rank}$) to synthesize verified citations without hallucination.
+5. **Incremental SHA-256 Vector Cache (`localVectorStore`):** Document chunks are fingerprinted with SHA-256 hashes so unchanged documents reuse existing embeddings instantly on boot.
+6. **Strict Identity & Anti-Leakage Invariant:** High-priority NLP classification intercepts identity queries ("Who are you?", "Who built you?", "What can you do?") and returns verified author identity (**Aman Mishra**) without leaking unrelated project URLs (such as Amazon clone) or raw schema metadata.
+7. **Production UI Craft:** Complete KaTeX mathematical typesetting for algorithmic asymptotic notations ($\mathcal{O}(N \log N)$, $\Omega(1)$), syntax-highlighted code blocks with 1-click clipboard copy, streaming response generation, Stop generation, and Retry buttons.
+
+---
+
 ## 🛡️ Contact Form Hardening & Anti-Spam Architecture
 
 To safeguard the free EmailJS sending quota (200 emails/month) against automated bot spam and malicious submission floods, the contact flow is decoupled from client-side direct EmailJS calls and routed through a hardened serverless pipeline:
@@ -86,7 +140,7 @@ To safeguard the free EmailJS sending quota (200 emails/month) against automated
 | **Frontend Frameworks & UI** | `React 18`, `Vite`, `Redux`, `Tailwind CSS`, `HTML5`, `CSS3` |
 | **Backend & REST APIs** | `FastAPI`, `Node.js`, `Express.js`, `SQLAlchemy`, `RESTful APIs` |
 | **Databases & In-Memory** | `PostgreSQL`, `MongoDB`, `Redis`, `MySQL`, `SQLite` |
-| **AI / ML & Data Science** | `Google Gemini AI`, `Machine Learning`, `Scikit-Learn`, `NumPy`, `Pandas`, `OpenCV` |
+| **AI / ML & Local LLM** | `Ollama (llama3.2:3b)`, `Hybrid RAG (BM25 + Cosine RRF)`, `node:sqlite Memory`, `KaTeX Math`, `Google Gemini AI` |
 | **DevOps & Platforms** | `Docker`, `Git`, `GitHub`, `Postman`, `Linux`, `Vercel` |
 
 ---
