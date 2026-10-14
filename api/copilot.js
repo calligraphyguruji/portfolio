@@ -22,6 +22,29 @@ Purpose: Help visitors explore Aman Mishra's engineering portfolio, projects, te
 Description: Aman Mishra built Mantri as the interactive technical guide for his portfolio (https://www.calligraphyguruji.dev). Mantri answers questions about Aman's projects (CredVidhi, KaushalNexus, Bodhi Sakha, LeetCode), evaluates candidate fit for recruiters, and explains system architectures.
 `
   },
+  // 0.1. OFFICIAL RESUME & CV DOCUMENT
+  {
+    id: "resume-document",
+    title: "Aman Mishra - Official Resume & Curriculum Vitae (PDF)",
+    category: "recruiter",
+    url: "https://www.calligraphyguruji.dev/Aman_Mishra_Resume.pdf",
+    metadata: {
+      updatedAt: "2026-10-14",
+      roleAlignment: ["SDE Intern", "Frontend Developer", "Full-Stack Developer", "AI/ML Intern"],
+      status: "implemented"
+    },
+    content: `
+Document Title: Aman Mishra - Resume (Curriculum Vitae)
+Format: ATS-Friendly PDF Document (55-63 KB)
+Direct Download URL: https://www.calligraphyguruji.dev/Aman_Mishra_Resume.pdf
+Relative URL: /Aman_Mishra_Resume.pdf
+Alternative URL: /resume.pdf
+Target Profile: Software Development Engineer (SDE) Intern / Frontend Developer / Full-Stack Engineer
+Education: B.Tech in CSE at NIET Greater Noida (2025\u20132029, CGPA: 9.38)
+Experience: AI & ML Intern at Codomax Digital Solutions
+Key Competencies: Modern C++, 205+ LeetCode DSA Solutions, React 19, TypeScript, FastAPI, PostgreSQL, Redis, Gemini AI.
+`
+  },
   // 1. BIOGRAPHY & PROFESSIONAL POSITIONING
   {
     id: "bio-identity",
@@ -469,6 +492,23 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     }
   }
   let intent = "UNKNOWN";
+  const isResumeNegative = /\b(how\s+(to|do|can|should)|improve|write|writing|parse|parsing|parser|format|tips|review|builder|build\s+a\s+resume|prepare\s+a\s+resume)\b/i.test(
+    lowerQuery
+  );
+  const isExplicitResumeRequest = !isResumeNegative && // Direct keyword trigger: "resume", "cv", "curriculum vitae"
+  (/^(resume|cv|curriculum\s+vitae|my\s+resume|your\s+resume|aman('?s)?\s+(resume|cv))$/i.test(
+    lowerQuery
+  ) || // Action phrases: gimme resume, give me resume, download resume, send resume, etc.
+  /\b(gimme|give\s*me|send|share|show|provide|get|fetch|have|see|view|access|download|grab|need)\s+(me\s+)?(a\s+|the\s+|your\s+|his\s+|aman('?s)?\s+|my\s+)?(latest\s+|updated\s+|official\s+)?(copy\s+of\s+)?(resume|cv|curriculum\s+vitae)\b/i.test(
+    lowerQuery
+  ) || // "can I see/have/get your resume"
+  /\bcan\s+i\s+(see|have|get|download|view|take)\s+(your|the|aman('?s)?)\s+(resume|cv)\b/i.test(
+    lowerQuery
+  ) || // "where can I download / find your resume"
+  /\b(where\s+(can|to)\s+(i\s+)?(download|find|get)\s+(your|the|aman('?s)?)\s+(resume|cv))\b/i.test(
+    lowerQuery
+  ) || // "resume pdf", "cv pdf", "download link for resume"
+  /\b(resume|cv)\s*(pdf|download|link|file|document)\b/i.test(lowerQuery) || /\b(download|get|view)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) || /\b(download\s+aman\s+mishra\s+resume)\b/i.test(lowerQuery) || /\b(copy\s+of\s+(your|his|aman('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) || /\b(resume|cv)\s+for\s+(recruitment|recruiter|interview|hiring)\b/i.test(lowerQuery));
   const isCreatorIdentity = /\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
     lowerQuery
   ) || /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
@@ -490,10 +530,12 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
   const isAboutAman = /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?)\b/i.test(
     lowerQuery
   );
-  const isRecruiter = /\b(hire|recruiter|interview|internship|resume|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
+  const isRecruiter = /\b(hire|recruiter|interview|internship|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
     lowerQuery
   );
-  if (isCreatorIdentity) {
+  if (isExplicitResumeRequest) {
+    intent = "RESUME_REQUEST";
+  } else if (isCreatorIdentity) {
     intent = "CREATOR_IDENTITY";
   } else if (isOwnerIdentity) {
     intent = "OWNER_IDENTITY";
@@ -505,6 +547,8 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     intent = "ABOUT_AMAN";
   } else if (isRecruiter) {
     intent = "RECRUITER_EVALUATION";
+  } else if (/\b(contact|email|phone|reach out|message|get in touch)\b/i.test(lowerQuery)) {
+    intent = "CONTACT_QUERY";
   } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
     intent = "PROJECT_ARCHITECTURE";
   } else if (/\b(tech stack|technologies|built with|languages|frameworks|tools)\b/i.test(lowerQuery)) {
@@ -519,6 +563,8 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     intent = "EXPERIENCE";
   } else if (/\b(recommend|best project|which project|show me)\b/i.test(lowerQuery)) {
     intent = "PROJECT_RECOMMENDATION";
+  } else if (/\b(hello|hi|hey|greetings|good morning|good afternoon|good evening|howdy)\b/i.test(lowerQuery)) {
+    intent = "GENERAL_CONVERSATION";
   } else if (targetProject || /\b(credvidhi|kaushalnexus|bodhi sakha|project|app)\b/i.test(lowerQuery)) {
     intent = "PROJECT_OVERVIEW";
   } else {
@@ -620,7 +666,13 @@ var HybridRetriever = class {
         "DEVELOPER_IDENTITY",
         "PORTFOLIO_IDENTITY"
       ].includes(analysis.intent);
-      if (isIdentityQuery) {
+      if (analysis.intent === "RESUME_REQUEST") {
+        if (chunk.documentId === "resume-document" || chunk.documentId === "recruiter-guide") {
+          score += 20;
+        } else {
+          score *= 0.1;
+        }
+      } else if (isIdentityQuery) {
         if (chunk.documentId === "mantri-identity" || chunk.documentId === "bio-identity") {
           score += 15;
         } else {
@@ -746,6 +798,14 @@ IDENTITY & CREATOR RULES:
 - NEVER substitute an unrelated project name, repository, technology stack (such as Amazon clone or e-commerce clone), or portfolio entry for the creator's name.
 - NEVER invent another creator or owner. Aman Mishra is your developer and portfolio owner.
 
+RESUME & ACTION-AWARE DELIVERY RULES:
+- When a visitor requests Aman Mishra's resume or CV (e.g. "gimme resume", "give me your resume", "download CV", "share resume"), the application executes a deterministic action that delivers the verified PDF and renders a dedicated interactive Resume Card.
+- Do NOT search the knowledge base for literal phrases such as "gimme resume".
+- Respond warmly and professionally, pointing the visitor to the interactive resume card below to download or view the PDF.
+- Example response: "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser."
+- Do NOT invent fake URLs or claim a file is attached if no file is provided.
+- If the visitor asks general questions about how to write a resume, resume tips, or resume parsers, answer with practical engineering advice rather than treating it as a request for Aman's resume.
+
 GROUNDING & TRUTHFULNESS RULES:
 1. ONLY make factual statements grounded in the retrieved sources below.
 2. If the user asks about a skill, project, or credential not supported by the retrieved context, explicitly admit that the portfolio documentation does not contain this information.
@@ -829,6 +889,9 @@ var DeterministicFallbackProvider = class {
 Aman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
     }
     const topChunk = retrievedResults[0].chunk;
+    if (analysis.intent === "RESUME_REQUEST") {
+      return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
+    }
     if (analysis.intent === "CREATOR_IDENTITY" || analysis.intent === "OWNER_IDENTITY" || analysis.intent === "DEVELOPER_IDENTITY" || analysis.intent === "PORTFOLIO_IDENTITY") {
       return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help you explore his projects, skills, and engineering work.";
     }
@@ -867,6 +930,20 @@ ${topChunk.content.replace(/^\[.*?\]\n/, "")}
 
 *For further details, explore the dedicated case study at ${topChunk.url}.*`;
   }
+};
+
+// src/copilot/config/resumeConfig.ts
+var RESUME_CONFIG = {
+  filename: "Aman_Mishra_Resume.pdf",
+  downloadUrl: "/Aman_Mishra_Resume.pdf",
+  fallbackFilename: "resume.pdf",
+  fallbackUrl: "/resume.pdf",
+  title: "Aman Mishra \u2014 Resume",
+  subtitle: "Software Development | Full-Stack | AI/ML",
+  fileType: "PDF Document",
+  fileSize: "63 KB",
+  lastUpdated: "2026-10-14",
+  description: "Verified ATS-friendly resume detailing C++ systems, React 19/TypeScript architecture, DSA, and full-stack projects."
 };
 
 // src/copilot/services/copilotOrchestrator.ts
@@ -977,6 +1054,17 @@ var CopilotOrchestrator = class {
   FSM -->|Append-Only Audit| Postgres[(PostgreSQL 16 Ledger)]
   Gateway -->|Guarded FAQ| Gemini[Google Gemini AI]`;
     }
+    let resumeCard = void 0;
+    if (nlpAnalysis.intent === "RESUME_REQUEST") {
+      resumeCard = {
+        title: RESUME_CONFIG.title,
+        subtitle: RESUME_CONFIG.subtitle,
+        filename: RESUME_CONFIG.filename,
+        downloadUrl: RESUME_CONFIG.downloadUrl,
+        fileSize: RESUME_CONFIG.fileSize,
+        isAvailable: true
+      };
+    }
     return {
       answer,
       intent: nlpAnalysis.intent,
@@ -984,6 +1072,7 @@ var CopilotOrchestrator = class {
       citations,
       recruiterAlignment,
       mermaidDiagram,
+      resumeCard,
       metadata: {
         model: this.isGeminiActive ? "gemini-2.5-flash" : "deterministic-fallback",
         retrievalLatencyMs: retrievalLatency,

@@ -145,6 +145,41 @@ export function analyzeQuery(
   // 3. Classify Intent
   let intent: QueryIntent = 'UNKNOWN';
 
+  // High-Priority: RESUME & CV REQUEST Intent
+  // Differentiates actual file requests ("gimme resume", "download CV", "share resume")
+  // from educational questions ("how to write a resume", "explain resume parsing").
+  const isResumeNegative =
+    /\b(how\s+(to|do|can|should)|improve|write|writing|parse|parsing|parser|format|tips|review|builder|build\s+a\s+resume|prepare\s+a\s+resume)\b/i.test(
+      lowerQuery
+    );
+
+  const isExplicitResumeRequest =
+    !isResumeNegative &&
+    (
+      // Direct keyword trigger: "resume", "cv", "curriculum vitae"
+      /^(resume|cv|curriculum\s+vitae|my\s+resume|your\s+resume|aman('?s)?\s+(resume|cv))$/i.test(
+        lowerQuery
+      ) ||
+      // Action phrases: gimme resume, give me resume, download resume, send resume, etc.
+      /\b(gimme|give\s*me|send|share|show|provide|get|fetch|have|see|view|access|download|grab|need)\s+(me\s+)?(a\s+|the\s+|your\s+|his\s+|aman('?s)?\s+|my\s+)?(latest\s+|updated\s+|official\s+)?(copy\s+of\s+)?(resume|cv|curriculum\s+vitae)\b/i.test(
+        lowerQuery
+      ) ||
+      // "can I see/have/get your resume"
+      /\bcan\s+i\s+(see|have|get|download|view|take)\s+(your|the|aman('?s)?)\s+(resume|cv)\b/i.test(
+        lowerQuery
+      ) ||
+      // "where can I download / find your resume"
+      /\b(where\s+(can|to)\s+(i\s+)?(download|find|get)\s+(your|the|aman('?s)?)\s+(resume|cv))\b/i.test(
+        lowerQuery
+      ) ||
+      // "resume pdf", "cv pdf", "download link for resume"
+      /\b(resume|cv)\s*(pdf|download|link|file|document)\b/i.test(lowerQuery) ||
+      /\b(download|get|view)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) ||
+      /\b(download\s+aman\s+mishra\s+resume)\b/i.test(lowerQuery) ||
+      /\b(copy\s+of\s+(your|his|aman('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) ||
+      /\b(resume|cv)\s+for\s+(recruitment|recruiter|interview|hiring)\b/i.test(lowerQuery)
+    );
+
   // High-Priority: Creator, Developer & Ownership Identity Patterns (with typo-tolerance)
   const isCreatorIdentity =
     /\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
@@ -183,11 +218,13 @@ export function analyzeQuery(
     );
 
   const isRecruiter =
-    /\b(hire|recruiter|interview|internship|resume|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
+    /\b(hire|recruiter|interview|internship|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
       lowerQuery
     );
 
-  if (isCreatorIdentity) {
+  if (isExplicitResumeRequest) {
+    intent = 'RESUME_REQUEST';
+  } else if (isCreatorIdentity) {
     intent = 'CREATOR_IDENTITY';
   } else if (isOwnerIdentity) {
     intent = 'OWNER_IDENTITY';
@@ -199,6 +236,8 @@ export function analyzeQuery(
     intent = 'ABOUT_AMAN';
   } else if (isRecruiter) {
     intent = 'RECRUITER_EVALUATION';
+  } else if (/\b(contact|email|phone|reach out|message|get in touch)\b/i.test(lowerQuery)) {
+    intent = 'CONTACT_QUERY';
   } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
     intent = 'PROJECT_ARCHITECTURE';
   } else if (/\b(tech stack|technologies|built with|languages|frameworks|tools)\b/i.test(lowerQuery)) {
@@ -213,6 +252,8 @@ export function analyzeQuery(
     intent = 'EXPERIENCE';
   } else if (/\b(recommend|best project|which project|show me)\b/i.test(lowerQuery)) {
     intent = 'PROJECT_RECOMMENDATION';
+  } else if (/\b(hello|hi|hey|greetings|good morning|good afternoon|good evening|howdy)\b/i.test(lowerQuery)) {
+    intent = 'GENERAL_CONVERSATION';
   } else if (targetProject || /\b(credvidhi|kaushalnexus|bodhi sakha|project|app)\b/i.test(lowerQuery)) {
     intent = 'PROJECT_OVERVIEW';
   } else {

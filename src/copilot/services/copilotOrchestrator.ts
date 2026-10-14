@@ -4,6 +4,7 @@ import { analyzeQuery } from '../nlp/nlpProcessor.ts';
 import { HybridRetriever } from './retrievalService.ts';
 import type { LLMProvider } from './llmProvider.ts';
 import { GeminiProvider, DeterministicFallbackProvider } from './llmProvider.ts';
+import { RESUME_CONFIG } from '../config/resumeConfig.ts';
 import type {
   CopilotChatRequest,
   CopilotChatResponse,
@@ -151,6 +152,19 @@ export class CopilotOrchestrator {
   Gateway -->|Guarded FAQ| Gemini[Google Gemini AI]`;
     }
 
+    // 7. Structured Resume Card Action
+    let resumeCard = undefined;
+    if (nlpAnalysis.intent === 'RESUME_REQUEST') {
+      resumeCard = {
+        title: RESUME_CONFIG.title,
+        subtitle: RESUME_CONFIG.subtitle,
+        filename: RESUME_CONFIG.filename,
+        downloadUrl: RESUME_CONFIG.downloadUrl,
+        fileSize: RESUME_CONFIG.fileSize,
+        isAvailable: true,
+      };
+    }
+
     return {
       answer,
       intent: nlpAnalysis.intent,
@@ -158,6 +172,7 @@ export class CopilotOrchestrator {
       citations,
       recruiterAlignment,
       mermaidDiagram,
+      resumeCard,
       metadata: {
         model: this.isGeminiActive ? 'gemini-2.5-flash' : 'deterministic-fallback',
         retrievalLatencyMs: retrievalLatency,

@@ -3,6 +3,7 @@
  */
 
 export type QueryIntent =
+  | 'RESUME_REQUEST'
   | 'CREATOR_IDENTITY'
   | 'OWNER_IDENTITY'
   | 'DEVELOPER_IDENTITY'
@@ -15,9 +16,11 @@ export type QueryIntent =
   | 'TECHNICAL_DECISION'
   | 'SKILLS'
   | 'EXPERIENCE'
+  | 'CONTACT_QUERY'
   | 'RECRUITER_EVALUATION'
   | 'PROJECT_RECOMMENDATION'
   | 'GENERAL_TECHNICAL'
+  | 'GENERAL_CONVERSATION'
   | 'PROMPT_INJECTION'
   | 'UNKNOWN';
 
@@ -89,6 +92,15 @@ export interface RetrievalResult {
   semanticScore?: number;
 }
 
+export interface ResumeCardData {
+  title: string;
+  subtitle: string;
+  filename: string;
+  downloadUrl: string;
+  fileSize: string;
+  isAvailable: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -103,6 +115,7 @@ export interface ChatMessage {
     caveats: string[];
   };
   mermaidDiagram?: string;
+  resumeCard?: ResumeCardData;
   isStreaming?: boolean;
   isError?: boolean;
 }
@@ -129,6 +142,7 @@ export interface CopilotChatResponse {
     caveats: string[];
   };
   mermaidDiagram?: string;
+  resumeCard?: ResumeCardData;
   metadata: {
     model: string;
     retrievalLatencyMs: number;

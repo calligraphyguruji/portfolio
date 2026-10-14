@@ -118,7 +118,13 @@ export class HybridRetriever {
           'PORTFOLIO_IDENTITY',
         ].includes(analysis.intent);
 
-        if (isIdentityQuery) {
+        if (analysis.intent === 'RESUME_REQUEST') {
+          if (chunk.documentId === 'resume-document' || chunk.documentId === 'recruiter-guide') {
+            score += 20.0;
+          } else {
+            score *= 0.1;
+          }
+        } else if (isIdentityQuery) {
           if (chunk.documentId === 'mantri-identity' || chunk.documentId === 'bio-identity') {
             score += 15.0;
           } else {

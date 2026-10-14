@@ -142,5 +142,50 @@ describe('AI Portfolio Copilot - NLP, RAG & Security Test Suite', () => {
     });
     assert.strictEqual(amazonResp.targetProject, 'amazon-clone');
     assert.ok(amazonResp.answer.toLowerCase().includes('amazon'));
+
+    // Resume Request Action & Card Delivery (Positive cases)
+    const resumeResp1 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'gimme resume' }],
+    });
+    assert.strictEqual(resumeResp1.intent, 'RESUME_REQUEST');
+    assert.ok(resumeResp1.resumeCard !== undefined, 'Must provide resumeCard object');
+    assert.strictEqual(resumeResp1.resumeCard?.filename, 'Aman_Mishra_Resume.pdf');
+    assert.strictEqual(resumeResp1.resumeCard?.downloadUrl, '/Aman_Mishra_Resume.pdf');
+    assert.strictEqual(resumeResp1.resumeCard?.isAvailable, true);
+    assert.ok(resumeResp1.answer.toLowerCase().includes('resume'));
+
+    const resumeResp2 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'download resume' }],
+    });
+    assert.strictEqual(resumeResp2.intent, 'RESUME_REQUEST');
+    assert.ok(resumeResp2.resumeCard !== undefined);
+
+    const resumeResp3 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'give me your resume' }],
+    });
+    assert.strictEqual(resumeResp3.intent, 'RESUME_REQUEST');
+    assert.ok(resumeResp3.resumeCard !== undefined);
+
+    const resumeResp4 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'show me your CV' }],
+    });
+    assert.strictEqual(resumeResp4.intent, 'RESUME_REQUEST');
+    assert.ok(resumeResp4.resumeCard !== undefined);
+
+    const resumeResp5 = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'where can I download your resume?' }],
+    });
+    assert.strictEqual(resumeResp5.intent, 'RESUME_REQUEST');
+    assert.ok(resumeResp5.resumeCard !== undefined);
+
+    // Negative resume cases (General education / advice / question about resume building)
+    const resumeNegative1 = analyzeQuery('How can I improve my resume?');
+    assert.notStrictEqual(resumeNegative1.intent, 'RESUME_REQUEST');
+
+    const resumeNegative2 = analyzeQuery('Explain resume parsing');
+    assert.notStrictEqual(resumeNegative2.intent, 'RESUME_REQUEST');
+
+    const resumeNegative3 = analyzeQuery('Build a resume builder in React');
+    assert.notStrictEqual(resumeNegative3.intent, 'RESUME_REQUEST');
   });
 });

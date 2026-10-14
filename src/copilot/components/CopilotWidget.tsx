@@ -16,12 +16,13 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import { ResumeCard } from './ResumeCard.tsx';
 import type { ChatMessage, CopilotChatResponse } from '../types.ts';
 
 const SUGGESTED_PROMPTS = [
   { label: 'Explain CredVidhi Architecture', query: 'Explain CredVidhi system architecture, finite state machine, and data flow.' },
   { label: 'Recruiter Fit: SDE Intern', query: 'Is Aman suitable for an SDE or Frontend internship? Give an evidence-backed evaluation.' },
-  { label: 'How does KaushalNexus work?', query: 'How does KaushalNexus match learners to internships and what AI does it use?' },
+  { label: 'Get Aman’s Resume (PDF)', query: 'gimme resume' },
   { label: 'DSA & LeetCode Foundations', query: 'What is Aman’s DSA experience and LeetCode problem solving background?' },
 ];
 
@@ -166,6 +167,7 @@ export const CopilotWidget: React.FC = () => {
         citations: data.citations,
         recruiterAlignment: data.recruiterAlignment,
         mermaidDiagram: data.mermaidDiagram,
+        resumeCard: data.resumeCard,
         timestamp: Date.now(),
       };
 
@@ -378,6 +380,11 @@ export const CopilotWidget: React.FC = () => {
                         </ReactMarkdown>
                       )}
                     </div>
+
+                    {/* Resume PDF Download Card */}
+                    {msg.resumeCard && (
+                      <ResumeCard data={msg.resumeCard} />
+                    )}
 
                     {/* Recruiter Badge Box */}
                     {msg.recruiterAlignment && (

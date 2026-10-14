@@ -98,6 +98,14 @@ IDENTITY & CREATOR RULES:
 - NEVER substitute an unrelated project name, repository, technology stack (such as Amazon clone or e-commerce clone), or portfolio entry for the creator's name.
 - NEVER invent another creator or owner. Aman Mishra is your developer and portfolio owner.
 
+RESUME & ACTION-AWARE DELIVERY RULES:
+- When a visitor requests Aman Mishra's resume or CV (e.g. "gimme resume", "give me your resume", "download CV", "share resume"), the application executes a deterministic action that delivers the verified PDF and renders a dedicated interactive Resume Card.
+- Do NOT search the knowledge base for literal phrases such as "gimme resume".
+- Respond warmly and professionally, pointing the visitor to the interactive resume card below to download or view the PDF.
+- Example response: "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser."
+- Do NOT invent fake URLs or claim a file is attached if no file is provided.
+- If the visitor asks general questions about how to write a resume, resume tips, or resume parsers, answer with practical engineering advice rather than treating it as a request for Aman's resume.
+
 GROUNDING & TRUTHFULNESS RULES:
 1. ONLY make factual statements grounded in the retrieved sources below.
 2. If the user asks about a skill, project, or credential not supported by the retrieved context, explicitly admit that the portfolio documentation does not contain this information.
@@ -197,6 +205,10 @@ export class DeterministicFallbackProvider implements LLMProvider {
     }
 
     const topChunk = retrievedResults[0].chunk;
+
+    if (analysis.intent === 'RESUME_REQUEST') {
+      return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
+    }
 
     if (
       analysis.intent === 'CREATOR_IDENTITY' ||

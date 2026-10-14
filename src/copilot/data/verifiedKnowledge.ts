@@ -28,6 +28,30 @@ Description: Aman Mishra built Mantri as the interactive technical guide for his
 `,
   },
 
+  // 0.1. OFFICIAL RESUME & CV DOCUMENT
+  {
+    id: 'resume-document',
+    title: 'Aman Mishra - Official Resume & Curriculum Vitae (PDF)',
+    category: 'recruiter',
+    url: 'https://www.calligraphyguruji.dev/Aman_Mishra_Resume.pdf',
+    metadata: {
+      updatedAt: '2026-10-14',
+      roleAlignment: ['SDE Intern', 'Frontend Developer', 'Full-Stack Developer', 'AI/ML Intern'],
+      status: 'implemented',
+    },
+    content: `
+Document Title: Aman Mishra - Resume (Curriculum Vitae)
+Format: ATS-Friendly PDF Document (55-63 KB)
+Direct Download URL: https://www.calligraphyguruji.dev/Aman_Mishra_Resume.pdf
+Relative URL: /Aman_Mishra_Resume.pdf
+Alternative URL: /resume.pdf
+Target Profile: Software Development Engineer (SDE) Intern / Frontend Developer / Full-Stack Engineer
+Education: B.Tech in CSE at NIET Greater Noida (2025–2029, CGPA: 9.38)
+Experience: AI & ML Intern at Codomax Digital Solutions
+Key Competencies: Modern C++, 205+ LeetCode DSA Solutions, React 19, TypeScript, FastAPI, PostgreSQL, Redis, Gemini AI.
+`,
+  },
+
   // 1. BIOGRAPHY & PROFESSIONAL POSITIONING
   {
     id: 'bio-identity',
