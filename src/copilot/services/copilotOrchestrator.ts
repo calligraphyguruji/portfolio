@@ -14,6 +14,7 @@ import type {
   CopilotChatResponse,
   KnowledgeChunk,
   CopilotHealthResponse,
+  QueryIntent,
 } from '../types.ts';
 
 /**
@@ -166,7 +167,7 @@ export class CopilotOrchestrator {
 
     const makeIdentityResponse = (
       answerText: string,
-      intentType: any
+      intentType: QueryIntent
     ): CopilotChatResponse => {
       if (request.conversationId) {
         conversationMemory.appendMessage(request.conversationId, {
@@ -192,17 +193,24 @@ export class CopilotOrchestrator {
       };
     };
 
-    if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.owner, 'OWNER_IDENTITY');
+    if (nlpAnalysis.intent === 'ASSISTANT_IDENTITY') {
+      const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(lastUserMessage);
+      const answerText = isCapabilities
+        ? MANTRI_IDENTITY.responses.capabilities
+        : MANTRI_IDENTITY.responses.assistant;
+      return makeIdentityResponse(answerText, 'ASSISTANT_IDENTITY');
     }
     if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.creator, 'CREATOR_IDENTITY');
+      return makeIdentityResponse(MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator, 'CREATOR_IDENTITY');
+    }
+    if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
+      return makeIdentityResponse(MANTRI_IDENTITY.responses.owner, 'OWNER_IDENTITY');
     }
     if (nlpAnalysis.intent === 'DEVELOPER_IDENTITY') {
       return makeIdentityResponse(MANTRI_IDENTITY.responses.developer, 'DEVELOPER_IDENTITY');
     }
-    if (nlpAnalysis.intent === 'PORTFOLIO_IDENTITY') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.portfolio, 'PORTFOLIO_IDENTITY');
+    if (nlpAnalysis.intent === 'PORTFOLIO_IDENTITY' || nlpAnalysis.intent === 'PORTFOLIO_OVERVIEW') {
+      return makeIdentityResponse(MANTRI_IDENTITY.responses.portfolio, nlpAnalysis.intent);
     }
     if (nlpAnalysis.intent === 'ASSISTANT_PURPOSE') {
       return makeIdentityResponse(MANTRI_IDENTITY.responses.purpose, 'ASSISTANT_PURPOSE');
@@ -329,13 +337,34 @@ export class CopilotOrchestrator {
       return;
     }
 
+    if (nlpAnalysis.intent === 'ASSISTANT_IDENTITY') {
+      const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(lastUserMessage);
+      yield isCapabilities ? MANTRI_IDENTITY.responses.capabilities : MANTRI_IDENTITY.responses.assistant;
+      return;
+    }
+
+    if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
+      yield MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator;
+      return;
+    }
+
     if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
       yield MANTRI_IDENTITY.responses.owner;
       return;
     }
 
-    if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
-      yield MANTRI_IDENTITY.responses.creator;
+    if (nlpAnalysis.intent === 'DEVELOPER_IDENTITY') {
+      yield MANTRI_IDENTITY.responses.developer;
+      return;
+    }
+
+    if (nlpAnalysis.intent === 'PORTFOLIO_IDENTITY' || nlpAnalysis.intent === 'PORTFOLIO_OVERVIEW') {
+      yield MANTRI_IDENTITY.responses.portfolio;
+      return;
+    }
+
+    if (nlpAnalysis.intent === 'ASSISTANT_PURPOSE') {
+      yield MANTRI_IDENTITY.responses.purpose;
       return;
     }
 

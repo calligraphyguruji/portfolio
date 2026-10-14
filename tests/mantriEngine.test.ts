@@ -318,4 +318,126 @@ describe('Mantri Self-Hosted AI Engine Test Suite', () => {
       assert.strictEqual(res.status, 401);
     });
   });
+
+  // 6. Identity Recognition & RAG Anti-Leakage Verification
+  describe('6. Identity Recognition & RAG Routing Invariants', () => {
+    it('Case 1: "Who are you?" routes to ASSISTANT_IDENTITY without retrieving Amazon clone or dumping repos', async () => {
+      const res = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Who are you?' }],
+        }),
+      });
+
+      assert.strictEqual(res.status, 200);
+      const data = await res.json();
+      assert.strictEqual(data.intent, 'ASSISTANT_IDENTITY');
+      assert.ok(data.answer.includes('Mantri'), 'Must introduce as Mantri');
+      assert.ok(data.answer.includes('Aman Mishra'), 'Must mention Aman Mishra');
+      assert.strictEqual(data.answer.toLowerCase().includes('amazon clone'), false);
+      assert.strictEqual(data.answer.toLowerCase().includes('youtube clone'), false);
+      assert.strictEqual(data.answer.toLowerCase().includes('github.com/calligraphyguruji/amazon-clone'), false);
+      assert.strictEqual(data.targetProject, undefined);
+    });
+
+    it('Case 2: "Who built you?" routes to CREATOR_IDENTITY identifying Aman Mishra directly', async () => {
+      const res = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Who built you?' }],
+        }),
+      });
+
+      assert.strictEqual(res.status, 200);
+      const data = await res.json();
+      assert.strictEqual(data.intent, 'CREATOR_IDENTITY');
+      assert.ok(data.answer.includes('Aman Mishra built me'));
+      assert.strictEqual(data.answer.toLowerCase().includes('amazon'), false);
+    });
+
+    it('Case 3: "What can you do?" routes to ASSISTANT_IDENTITY with verified capabilities', async () => {
+      const res = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'What can you do?' }],
+        }),
+      });
+
+      assert.strictEqual(res.status, 200);
+      const data = await res.json();
+      assert.strictEqual(data.intent, 'ASSISTANT_IDENTITY');
+      assert.ok(data.answer.includes('Mantri'));
+      assert.ok(data.answer.toLowerCase().includes('capabilities') || data.answer.toLowerCase().includes('projects'));
+    });
+
+    it('Case 4: "Tell me about the Amazon clone project" retrieves Amazon clone details', async () => {
+      const res = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Tell me about the Amazon clone project' }],
+        }),
+      });
+
+      assert.strictEqual(res.status, 200);
+      const data = await res.json();
+      assert.strictEqual(data.targetProject, 'amazon-clone');
+      assert.ok(data.answer.toLowerCase().includes('amazon'));
+    });
+
+    it('Case 5: "What is RAG?" routes to TECHNICAL_QUERY and explains RAG without project substitution', async () => {
+      const res = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'What is RAG?' }],
+        }),
+      });
+
+      assert.strictEqual(res.status, 200);
+      const data = await res.json();
+      assert.strictEqual(data.intent, 'TECHNICAL_QUERY');
+      assert.ok(data.answer.includes('Retrieval-Augmented Generation'));
+      assert.strictEqual(data.answer.toLowerCase().includes('amazon clone'), false);
+    });
+
+    it('Case 6: Multi-turn contextual resolution ("Tell me about CredVidhi" -> "What technologies does it use?")', async () => {
+      const conversationId = `conv-multiturn-${Date.now()}`;
+
+      // First turn
+      const res1 = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          messages: [{ role: 'user', content: 'Tell me about CredVidhi' }],
+        }),
+      });
+      assert.strictEqual(res1.status, 200);
+      const data1 = await res1.json();
+      assert.strictEqual(data1.targetProject, 'credvidhi');
+
+      // Second turn with pronoun 'it'
+      const res2 = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          messages: [
+            { role: 'user', content: 'Tell me about CredVidhi' },
+            { role: 'assistant', content: data1.answer },
+            { role: 'user', content: 'What technologies does it use?' },
+          ],
+        }),
+      });
+      assert.strictEqual(res2.status, 200);
+      const data2 = await res2.json();
+      assert.strictEqual(data2.targetProject, 'credvidhi');
+      assert.ok(data2.answer.includes('FastAPI') || data2.answer.includes('React 19'));
+      conversationMemory.deleteConversation(conversationId);
+    });
+  });
 });

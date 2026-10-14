@@ -469,7 +469,8 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
   }
   const recognizedProjects = /* @__PURE__ */ new Set();
   for (const [alias, projectId] of Object.entries(PROJECT_ALIASES)) {
-    if (lowerQuery.includes(alias)) {
+    const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${escapedAlias}\\b`, "i").test(lowerQuery)) {
       recognizedProjects.add(projectId);
     }
   }
@@ -509,6 +510,10 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     lowerQuery
   ) || // "resume pdf", "cv pdf", "download link for resume"
   /\b(resume|cv)\s*(pdf|download|link|file|document)\b/i.test(lowerQuery) || /\b(download|get|view)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) || /\b(download\s+aman\s+mishra\s+resume)\b/i.test(lowerQuery) || /\b(copy\s+of\s+(your|his|aman('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) || /\b(resume|cv)\s+for\s+(recruitment|recruiter|interview|hiring)\b/i.test(lowerQuery));
+  const isAssistantIdentity = !targetProject && (
+    /\b(who\s*(are|r)\s*(you|u)|introduce\s*yourself|what\s*are\s*you|tell\s*me\s*about\s*yourself|your\s*name|what\s*is\s*your\s*name|what\s*(can|do)\s*you\s*do|what\s*are\s*your\s*capabilities)\b/i.test(lowerQuery) ||
+    /^(who\s*(are|r)\s*(you|u)\??)$/i.test(lowerQuery.trim())
+  );
   const isCreatorIdentity = !targetProject && !/\b(technolog(y|ies)|stack|how\s+does|how\s+to|how\s+mantri\s+works|detailed\s+technical)\b/i.test(lowerQuery) && (/\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
     lowerQuery
   ) || /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
@@ -529,7 +534,7 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
   ) || /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
     lowerQuery
   ));
-  const isAssistantPurpose = /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission)|what\s*(can|do)\s*you\s*do|why\s*were\s*you\s*(built|created|made))\b/i.test(
+  const isAssistantPurpose = /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission)|why\s*were\s*you\s*(built|created|made))\b/i.test(
     lowerQuery
   );
   const isAboutAman = /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?)\b/i.test(
@@ -540,6 +545,8 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
   );
   if (isExplicitResumeRequest) {
     intent = "RESUME_REQUEST";
+  } else if (isAssistantIdentity) {
+    intent = "ASSISTANT_IDENTITY";
   } else if (isCreatorIdentity) {
     intent = "CREATOR_IDENTITY";
   } else if (isOwnerIdentity) {
@@ -613,17 +620,19 @@ function calculateLexicalScore(query, chunk) {
   const titleLower = chunk.title.toLowerCase();
   let score = 0;
   for (const token of queryTokens) {
-    if (titleLower.includes(token)) {
+    const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const wordBoundaryRegex = new RegExp(`\\b${escapedToken}\\b`, "i");
+
+    if (wordBoundaryRegex.test(titleLower)) {
       score += 3;
     }
-    if (chunk.keywords.includes(token)) {
+    if (chunk.keywords.some((k) => k.toLowerCase() === token)) {
       score += 1.5;
     }
-    const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const count = (contentLower.match(new RegExp(`\\b${escapedToken}\\b`, "g")) || []).length;
     score += Math.min(count, 5) * 0.5;
   }
-  if (chunk.projectId && query.toLowerCase().includes(chunk.projectId.toLowerCase())) {
+  if (chunk.projectId && new RegExp(`\\b${chunk.projectId.toLowerCase()}\\b`, "i").test(query)) {
     score += 4;
   }
   return score;
@@ -669,21 +678,23 @@ var HybridRetriever = class {
         score *= 1.8;
       }
       const isIdentityQuery = [
+        "ASSISTANT_IDENTITY",
         "CREATOR_IDENTITY",
         "OWNER_IDENTITY",
         "DEVELOPER_IDENTITY",
         "PORTFOLIO_IDENTITY",
+        "PORTFOLIO_OVERVIEW",
         "ASSISTANT_PURPOSE"
       ].includes(analysis.intent);
-      if (analysis.intent === "RESUME_REQUEST") {
+      if (isIdentityQuery) {
+        if (chunk.documentId === "mantri-identity") {
+          score = 15;
+        } else {
+          score = 0;
+        }
+      } else if (analysis.intent === "RESUME_REQUEST") {
         if (chunk.documentId === "resume-document" || chunk.documentId === "recruiter-guide") {
           score += 20;
-        } else {
-          score *= 0.1;
-        }
-      } else if (isIdentityQuery) {
-        if (chunk.documentId === "mantri-identity" || chunk.documentId === "bio-identity") {
-          score += 15;
         } else {
           score *= 0.1;
         }
@@ -713,7 +724,7 @@ var HybridRetriever = class {
         score: combinedScore,
         lexicalScore: lexScore
       };
-    }).filter((res) => res.score > 0.05).sort((a, b) => b.score - a.score).slice(0, limit);
+    }).filter((res) => res.score >= 0.25).sort((a, b) => b.score - a.score).slice(0, limit);
     return results;
   }
   generateCitations(results) {
@@ -753,11 +764,14 @@ var MANTRI_IDENTITY = {
   leetcode: "https://leetcode.com/u/calligraphyguruji/",
   // Concise deterministic responses
   responses: {
+    assistant: "I'm Mantri, Aman Mishra's AI portfolio assistant. I help visitors explore his technical skills, software engineering projects, and engineering work. You can also ask me programming questions, discuss project architectures, or learn about the technologies used in his projects.",
+    creatorExact: "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help visitors explore his projects, technical skills, and engineering work.",
     creator: "Aman Mishra built me! I'm Mantri, his AI portfolio assistant, designed to help visitors explore his projects, technical skills, and engineering work.",
     owner: "Aman Mishra owns this portfolio. I'm Mantri, his AI assistant, designed to help visitors explore his projects, technical skills, and engineering work.",
     developer: "Aman Mishra is my developer and the creator of this portfolio. I'm Mantri, his AI assistant.",
     portfolio: "Aman Mishra built and owns this portfolio website. I'm Mantri, his AI assistant.",
     purpose: "I'm here to help you explore Aman Mishra's projects, technical skills, system architectures, and engineering experience.",
+    capabilities: "I'm Mantri, your AI guide to Aman Mishra's portfolio. I can explain his projects, technical skills, and engineering work, as well as help with programming concepts and software architecture. My available capabilities depend on the features and models configured in this application.",
     aboutAman: "Aman Mishra (Calligraphy Guruji) is an aspiring Software Developer and Computer Science & Engineering undergraduate at NIET Greater Noida (CGPA: 9.38, Batch 2025\u20132029). He specializes in modern C++, Data Structures & Algorithms (205+ LeetCode problems), React 19/TypeScript frontend systems, and full-stack AI architectures.",
     contact: "You can reach out to Aman Mishra directly via email at amanmishra7774@gmail.com, connect on LinkedIn (linkedin.com/in/calligraphygurji), or message him using the Contact section of this website."
   }
@@ -917,62 +931,92 @@ var DeterministicFallbackProvider = class {
     if (analysis.intent === "PROMPT_INJECTION") {
       return "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?";
     }
-    if (retrievedResults.length === 0) {
-      return `I searched Aman Mishra's verified portfolio and project repositories, but did not find documentation regarding "${query}". 
 
-Aman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
+    if (analysis.intent === "ASSISTANT_IDENTITY") {
+      const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(query);
+      return isCapabilities
+        ? MANTRI_IDENTITY.responses.capabilities
+        : MANTRI_IDENTITY.responses.assistant;
     }
-    const topChunk = retrievedResults[0].chunk;
-    if (analysis.intent === "RESUME_REQUEST") {
-      return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
+
+    if (analysis.intent === "CREATOR_IDENTITY") {
+      return MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator;
     }
+
     if (analysis.intent === "OWNER_IDENTITY") {
       return MANTRI_IDENTITY.responses.owner;
     }
-    if (analysis.intent === "CREATOR_IDENTITY") {
-      return MANTRI_IDENTITY.responses.creator;
-    }
+
     if (analysis.intent === "DEVELOPER_IDENTITY") {
       return MANTRI_IDENTITY.responses.developer;
     }
-    if (analysis.intent === "PORTFOLIO_IDENTITY") {
+
+    if (analysis.intent === "PORTFOLIO_IDENTITY" || analysis.intent === "PORTFOLIO_OVERVIEW") {
       return MANTRI_IDENTITY.responses.portfolio;
     }
+
     if (analysis.intent === "ASSISTANT_PURPOSE") {
       return MANTRI_IDENTITY.responses.purpose;
     }
+
     if (analysis.intent === "CONTACT_QUERY") {
       return MANTRI_IDENTITY.responses.contact;
     }
+
     if (analysis.intent === "ABOUT_AMAN") {
       return MANTRI_IDENTITY.responses.aboutAman;
     }
+
+    if (analysis.intent === "RESUME_REQUEST") {
+      return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
+    }
+
     if (analysis.intent === "RECRUITER_EVALUATION") {
-      return `### Candidate Evaluation: Aman Mishra
-
-**Candidate Profile & Fit Summary:**
-- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.
-- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025\u20132029).
-- **Key Strengths:**
-  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).
-  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.
-  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).
-  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.
-
-*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
+      return `### Candidate Evaluation: Aman Mishra\n\n**Candidate Profile & Fit Summary:**\n- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.\n- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029).\n- **Key Strengths:**\n  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).\n  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.\n  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).\n  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.\n\n*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
     }
+
     if (analysis.intent === "PROJECT_ARCHITECTURE" && analysis.targetProject === "credvidhi") {
-      return `### CredVidhi System Architecture & Data Flow
-
-CredVidhi is an institutional loan origination and deterministic credit underwriting platform:
-
-1. **API Gateway:** Python FastAPI with Pydantic v2 strict schema validation and JWT RBAC.
-2. **Underwriting Engine:** Fixed-point precision arithmetic in INR (\u20B9) computing zero-drift EMI ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) and Debt-to-Income (DTI).
-3. **State Machine:** 6-stage forward-only Finite State Machine (Draft \u2192 Submitted \u2192 Under Review \u2192 Approved \u2192 Disbursed) enforced inside PostgreSQL ACID transactions.
-4. **Audit Trail:** Append-only cryptographic ledger recording every state change and actor UUID.
-5. **Caching & Rate Limiting:** Redis 7 sliding-window rate limits and session token management.
-6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with offline fallback.`;
+      return `### CredVidhi System Architecture & Data Flow\n\nCredVidhi is an institutional loan origination and deterministic credit underwriting platform:\n\n1. **API Gateway:** Python FastAPI with Pydantic v2 strict schema validation and JWT RBAC.\n2. **Underwriting Engine:** Fixed-point precision arithmetic in INR (₹) computing zero-drift EMI ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) and Debt-to-Income (DTI).\n3. **State Machine:** 6-stage forward-only Finite State Machine (Draft → Submitted → Under Review → Approved → Disbursed) enforced inside PostgreSQL ACID transactions.\n4. **Audit Trail:** Append-only cryptographic ledger recording every state change and actor UUID.\n5. **Caching & Rate Limiting:** Redis 7 sliding-window rate limits and session token management.\n6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with offline fallback.`;
     }
+
+    // Direct resolution for CredVidhi follow-up / technology query
+    if (analysis.targetProject === "credvidhi" && /technolog|tech|stack|use/i.test(query)) {
+      return `### CredVidhi Technology Stack\n\nCredVidhi is engineered using the following production-grade stack:\n\n- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, and accessible UI patterns.\n- **Backend Gateway:** Python FastAPI with asynchronous endpoints and strict Pydantic v2 data validation.\n- **Database:** PostgreSQL 16 with an append-only cryptographic ledger for ACID state transitions.\n- **In-Memory Cache & Rate Limiting:** Redis 7 for sliding-window token bucket rate limiting and session management.\n- **AI & Underwriting:** Google Gemini API / local inference for guided document processing, alongside fixed-point INR mathematical underwriting formulas.`;
+    }
+
+    // Direct resolution for Amazon clone project query
+    if (
+      (analysis.targetProject === "amazon-clone" || /amazon\s+clone/i.test(query)) &&
+      !analysis.targetProject?.includes("credvidhi")
+    ) {
+      return `### Frontend Architecture Clones — Amazon & YouTube Web Apps\n\n**Overview:**\nAman built production-grade frontend architectural clones of Amazon and YouTube to master complex component hierarchies, state management, and real-time interaction patterns.\n\n- **Live URL:** https://clone-7553f.web.app/\n- **GitHub Repository:** https://github.com/calligraphyguruji/Amazon-Clone\n- **Technology Stack:** React, JavaScript/TypeScript, CSS Flexbox/Grid, Firebase Hosting.\n- **Core Features:** Responsive e-commerce product feed, interactive cart state persistence, authentication flow simulation, and component layout optimization.`;
+    }
+
+    // Direct resolution for general technical / computer science questions
+    if (analysis.intent === "TECHNICAL_QUERY" || /what is rag|retrieval-augmented generation/i.test(query)) {
+      if (/rag|retrieval[-\s]augmented/i.test(query)) {
+        return `### What is RAG (Retrieval-Augmented Generation)?\n\n**Retrieval-Augmented Generation (RAG)** is an AI architecture that enhances Large Language Models (LLMs) by retrieving authoritative, domain-specific documents from an external knowledge base before generating a response.\n\n#### How RAG Works:\n1. **Ingestion & Indexing:** Documents are split into semantic chunks and embedded into high-dimensional vectors stored in a vector database.\n2. **Retrieval:** When a user asks a question, the system computes the query's embedding and performs similarity search (e.g., Cosine Similarity, HNSW) to retrieve the most relevant knowledge chunks.\n3. **Augmentation:** The retrieved context chunks are inserted into the LLM system prompt alongside strict grounding instructions.\n4. **Generation:** The model produces an accurate, verifiable answer strictly citing the retrieved sources, preventing hallucinations.\n\n*In this portfolio, Mantri uses a local hybrid RAG pipeline combining lexical BM25-style keyword matching, vector similarity, and Reciprocal Rank Fusion (RRF).*`;
+      }
+
+      if (/vector (database|store|db)/i.test(query)) {
+        return `### What is a Vector Database?\n\nA **Vector Database** is a specialized data storage system designed to index, store, and query high-dimensional vector embeddings generated by machine learning models.\n\n- **Core Mechanism:** Unlike relational databases that match exact scalar values, vector databases find semantic similarity using distance metrics (Cosine Similarity, Euclidean distance, Dot Product) and approximate nearest neighbor (ANN) indexing algorithms such as HNSW (Hierarchical Navigable Small World).\n- **Use Cases:** Semantic search, Retrieval-Augmented Generation (RAG), recommendation systems, and multimodal similarity matching.`;
+      }
+
+      if (/binary search/i.test(query)) {
+        return `### Binary Search Algorithm\n\n**Binary Search** is an efficient divide-and-conquer search algorithm that finds the position of a target value within a **sorted array** in logarithmic time: $\\mathcal{O}(\\log N)$.\n\n#### Complexity:\n- **Time Complexity:** $\\mathcal{O}(\\log N)$ worst and average case, $\\mathcal{O}(1)$ best case.\n- **Space Complexity:** $\\mathcal{O}(1)$ iterative, $\\mathcal{O}(\\log N)$ recursive.\n\n\`\`\`cpp\nint binarySearch(const std::vector<int>& arr, int target) {\n    int low = 0, high = static_cast<int>(arr.size()) - 1;\n    while (low <= high) {\n        int mid = low + (high - low) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}\n\`\`\``;
+      }
+
+      if (/process (vs|and|versus) thread/i.test(query)) {
+        return `### Process vs. Thread\n\n| Attribute | Process | Thread |\n| :--- | :--- | :--- |\n| **Definition** | An independent executing program in memory | The smallest unit of CPU execution within a process |\n| **Address Space** | Has its own isolated virtual memory address space | Shares the address space, code, and data with peer threads |\n| **Creation Overhead** | High (fork/exec, page tables allocated) | Low (lightweight, shares process resources) |\n| **Communication** | Inter-Process Communication (IPC: pipes, sockets, shared memory) | Direct memory access (requires synchronization like mutexes/locks) |\n| **Fault Isolation** | High (a crashing process doesn't directly crash others) | Low (an unhandled exception in one thread can terminate the whole process) |`;
+      }
+    }
+
+    if (retrievedResults.length === 0) {
+      return `I searched Aman Mishra's verified portfolio and project repositories, but did not find documentation regarding "${query}". \n\nAman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
+    }
+
+    const topChunk = retrievedResults[0].chunk;
+
     if (topChunk.documentId === "mantri-identity") {
       return MANTRI_IDENTITY.responses.creator;
     }
@@ -1062,10 +1106,14 @@ var CopilotOrchestrator = class {
         }
       };
     }
-    if (nlpAnalysis.intent === "OWNER_IDENTITY") {
+    if (nlpAnalysis.intent === "ASSISTANT_IDENTITY") {
+      const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(lastUserMessage);
+      const answerText = isCapabilities
+        ? MANTRI_IDENTITY.responses.capabilities
+        : MANTRI_IDENTITY.responses.assistant;
       return {
-        answer: MANTRI_IDENTITY.responses.owner,
-        intent: "OWNER_IDENTITY",
+        answer: answerText,
+        intent: "ASSISTANT_IDENTITY",
         citations: [
           {
             sourceId: "mantri-identity-1",
@@ -1085,8 +1133,29 @@ var CopilotOrchestrator = class {
     }
     if (nlpAnalysis.intent === "CREATOR_IDENTITY") {
       return {
-        answer: MANTRI_IDENTITY.responses.creator,
+        answer: MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator,
         intent: "CREATOR_IDENTITY",
+        citations: [
+          {
+            sourceId: "mantri-identity-1",
+            title: "Mantri - AI Portfolio Assistant Identity & Creator",
+            section: "Identity",
+            url: MANTRI_IDENTITY.portfolioUrl,
+            relevanceScore: 1
+          }
+        ],
+        metadata: {
+          model: "deterministic-identity",
+          retrievalLatencyMs: 0,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: 1
+        }
+      };
+    }
+    if (nlpAnalysis.intent === "OWNER_IDENTITY") {
+      return {
+        answer: MANTRI_IDENTITY.responses.owner,
+        intent: "OWNER_IDENTITY",
         citations: [
           {
             sourceId: "mantri-identity-1",
@@ -1125,10 +1194,10 @@ var CopilotOrchestrator = class {
         }
       };
     }
-    if (nlpAnalysis.intent === "PORTFOLIO_IDENTITY") {
+    if (nlpAnalysis.intent === "PORTFOLIO_IDENTITY" || nlpAnalysis.intent === "PORTFOLIO_OVERVIEW") {
       return {
         answer: MANTRI_IDENTITY.responses.portfolio,
-        intent: "PORTFOLIO_IDENTITY",
+        intent: nlpAnalysis.intent,
         citations: [
           {
             sourceId: "mantri-identity-1",

@@ -17,8 +17,9 @@ export function calculateLexicalScore(query: string, chunk: KnowledgeChunk): num
 
   let score = 0;
   for (const token of queryTokens) {
-    // Exact match in title receives heavy boost
-    if (titleLower.includes(token)) {
+    const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match in title using strict word boundary (prevents 'you' matching 'youtube')
+    if (new RegExp(`\\b${escapedToken}\\b`, 'i').test(titleLower)) {
       score += 3.0;
     }
     // Match in keywords
@@ -26,14 +27,16 @@ export function calculateLexicalScore(query: string, chunk: KnowledgeChunk): num
       score += 1.5;
     }
     // Match in content safely escaping regex special characters
-    const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const count = (contentLower.match(new RegExp(`\\b${escapedToken}\\b`, 'g')) || []).length;
     score += Math.min(count, 5) * 0.5;
   }
 
-  // Exact project ID match boost
-  if (chunk.projectId && query.toLowerCase().includes(chunk.projectId.toLowerCase())) {
-    score += 4.0;
+  // Exact project ID match boost using word boundary
+  if (chunk.projectId) {
+    const escapedProj = chunk.projectId.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`\\b${escapedProj}\\b`, 'i').test(query.toLowerCase())) {
+      score += 4.0;
+    }
   }
 
   return score;
@@ -99,6 +102,31 @@ export class HybridRetriever {
     queryEmbedding?: number[],
     limit: number = 5
   ): RetrievalResult[] {
+    // If query is an assistant or creator identity intent, never retrieve project chunks
+    const isIdentityQuery = [
+      'ASSISTANT_IDENTITY',
+      'CREATOR_IDENTITY',
+      'OWNER_IDENTITY',
+      'DEVELOPER_IDENTITY',
+      'PORTFOLIO_IDENTITY',
+      'ASSISTANT_PURPOSE',
+    ].includes(analysis.intent);
+
+    if (isIdentityQuery) {
+      const identityChunk = this.chunks.find((c) => c.documentId === 'mantri-identity');
+      if (identityChunk) {
+        return [
+          {
+            chunk: identityChunk,
+            score: 1.0,
+            lexicalScore: 10.0,
+            semanticScore: 1.0,
+          },
+        ];
+      }
+      return [];
+    }
+
     const query = analysis.expandedTerms.join(' ');
 
     // 1. Lexical Retrieval
@@ -108,34 +136,21 @@ export class HybridRetriever {
 
         // Boost if matches targetProject detected by NLP
         if (analysis.targetProject && chunk.projectId === analysis.targetProject) {
-          score *= 1.8;
+          score *= 2.5;
+        } else if (analysis.targetProject && chunk.projectId && chunk.projectId !== analysis.targetProject) {
+          // Penalize different projects when targetProject is known
+          score *= 0.05;
         }
-
-        // Heavy boost for assistant identity and creator queries
-        const isIdentityQuery = [
-          'CREATOR_IDENTITY',
-          'OWNER_IDENTITY',
-          'DEVELOPER_IDENTITY',
-          'PORTFOLIO_IDENTITY',
-          'ASSISTANT_PURPOSE',
-        ].includes(analysis.intent);
 
         if (analysis.intent === 'RESUME_REQUEST') {
           if (chunk.documentId === 'resume-document' || chunk.documentId === 'recruiter-guide') {
             score += 20.0;
           } else {
-            score *= 0.1;
+            score *= 0.05;
           }
-        } else if (isIdentityQuery) {
-          if (chunk.documentId === 'mantri-identity' || chunk.documentId === 'bio-identity') {
-            score += 15.0;
-          } else {
-            // Penalize unrelated project chunks for creator identity questions
-            score *= 0.1;
-          }
-        } else if (analysis.intent === 'ABOUT_AMAN' || analysis.intent === 'CONTACT_QUERY') {
+        } else if (analysis.intent === 'PORTFOLIO_OVERVIEW' || analysis.intent === 'ABOUT_AMAN' || analysis.intent === 'CONTACT_QUERY') {
           if (chunk.documentId === 'bio-identity' || chunk.documentId === 'recruiter-guide') {
-            score += 10.0;
+            score += 15.0;
           }
         }
 
@@ -175,7 +190,8 @@ export class HybridRetriever {
           lexicalScore: lexScore,
         };
       })
-      .filter((res) => res.score > 0.05)
+      // Minimum relevance threshold prevents accidental low-signal noise from substituting irrelevant projects
+      .filter((res) => res.score >= 0.25)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
