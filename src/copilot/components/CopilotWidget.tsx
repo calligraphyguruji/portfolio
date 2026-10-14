@@ -15,6 +15,8 @@ import {
   Briefcase,
   Copy,
   Check,
+  Square,
+  RefreshCw,
 } from 'lucide-react';
 import { ResumeCard } from './ResumeCard.tsx';
 import type { ChatMessage, CopilotChatResponse } from '../types.ts';
@@ -101,6 +103,10 @@ export const CopilotWidget: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string>(
+    () => 'conv-' + Math.random().toString(36).slice(2, 10)
+  );
+  const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -112,6 +118,14 @@ export const CopilotWidget: React.FC = () => {
       scrollToBottom();
     }
   }, [messages, isOpen]);
+
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  };
 
   const handleSend = async (queryToSend?: string) => {
     const text = (queryToSend || input).trim();
@@ -128,12 +142,20 @@ export const CopilotWidget: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const apiUrl =
+      (typeof import.meta !== 'undefined' &&
+        import.meta.env?.VITE_MANTRI_API_URL) ||
+      '/api/copilot';
+
     try {
-      // Call serverless /api/copilot
-      const res = await fetch('/api/copilot', {
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
+          conversationId,
           messages: [...messages, userMsg].map((m) => ({
             role: m.role === 'user' ? 'user' : 'assistant',
             content: m.content,
@@ -146,7 +168,7 @@ export const CopilotWidget: React.FC = () => {
         try {
           errData = await res.json();
         } catch {}
-        
+
         if (res.status === 429) {
           throw new Error('RATE_LIMIT');
         } else if (res.status === 504) {
@@ -173,12 +195,27 @@ export const CopilotWidget: React.FC = () => {
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `aborted-${Date.now()}`,
+            role: 'assistant',
+            content: '*(Generation stopped by user)*',
+            timestamp: Date.now(),
+          },
+        ]);
+        return;
+      }
+
       console.error('[Mantri UI] Error:', err);
-      let errorText = "I encountered a temporary connection issue. You can explore Aman's verified projects directly via the **Projects** section or re-try your question.";
+      let errorText =
+        "I encountered a temporary connection issue. You can explore Aman's verified projects directly via the **Projects** section or re-try your question.";
       if (err?.message === 'RATE_LIMIT') {
-        errorText = "Mantri is receiving too many requests right now. Please wait a moment and try again.";
+        errorText =
+          'Mantri is receiving too many requests right now. Please wait a moment and try again.';
       } else if (err?.message === 'TIMEOUT') {
-        errorText = "Mantri took too long to respond. Please try your question again.";
+        errorText = 'Mantri took too long to respond. Please try your question again.';
       }
 
       setMessages((prev) => [
@@ -192,11 +229,14 @@ export const CopilotWidget: React.FC = () => {
         },
       ]);
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
   };
 
   const handleReset = () => {
+    handleStopGeneration();
+    setConversationId('conv-' + Math.random().toString(36).slice(2, 10));
     setMessages([
       {
         id: 'welcome',
@@ -429,6 +469,23 @@ export const CopilotWidget: React.FC = () => {
                         </div>
                       </div>
                     )}
+                    {msg.isError && (
+                      <div className="mt-2 pt-2 border-t border-rose-500/20">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const lastUser = [...messages]
+                              .reverse()
+                              .find((m) => m.role === 'user');
+                            if (lastUser) handleSend(lastUser.content);
+                          }}
+                          className="flex items-center gap-1 text-[11px] font-mono text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 underline underline-offset-2"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Retry question</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <span className="text-[10px] font-mono text-slate-400 mt-1 px-1">
                     {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -440,9 +497,19 @@ export const CopilotWidget: React.FC = () => {
               ))}
 
               {isLoading && (
-                <div className="flex items-center gap-2 p-3 rounded-2xl bg-slate-100 dark:bg-[#1E2230] text-slate-500 w-fit">
-                  <Sparkles className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                  <span className="text-xs font-mono">Mantri is consulting portfolio knowledge base...</span>
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-[#1E2230] text-slate-500 w-full">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                    <span className="text-xs font-mono">Mantri is generating response...</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleStopGeneration}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-mono bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-colors"
+                  >
+                    <Square className="w-2.5 h-2.5 fill-current" />
+                    <span>Stop</span>
+                  </button>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -480,14 +547,26 @@ export const CopilotWidget: React.FC = () => {
                 className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1C202C] text-slate-800 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-transparent"
                 disabled={isLoading}
               />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition-colors"
-                aria-label="Send message"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={handleStopGeneration}
+                  className="p-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition-colors flex items-center gap-1"
+                  title="Stop generating"
+                  aria-label="Stop generation"
+                >
+                  <Square className="w-4 h-4 fill-current" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition-colors"
+                  aria-label="Send message"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              )}
             </form>
           </motion.div>
         )}

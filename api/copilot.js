@@ -1245,6 +1245,11 @@ var copilotOrchestrator = new CopilotOrchestrator();
 var rateLimitMap = /* @__PURE__ */ new Map();
 function checkRateLimit(ip) {
   const now = Date.now();
+  if (rateLimitMap.size > 100) {
+    for (const [key, val] of rateLimitMap.entries()) {
+      if (now > val.expiresAt) rateLimitMap.delete(key);
+    }
+  }
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.expiresAt) {
     rateLimitMap.set(ip, { count: 1, expiresAt: now + 5 * 60 * 1e3 });
@@ -1300,13 +1305,31 @@ async function handler(req, res) {
     if (lastMsg.content.length > 800) {
       lastMsg.content = lastMsg.content.slice(0, 800);
     }
+
+    // Proxy to self-hosted inference backend if configured
+    const backendUrl = process.env.MANTRI_BACKEND_URL;
+    if (backendUrl) {
+      try {
+        const proxyRes = await fetch(`${backendUrl.replace(/\/$/, '')}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (proxyRes.ok) {
+          const proxyData = await proxyRes.json();
+          return res.status(200).json(proxyData);
+        }
+      } catch (proxyErr) {
+        console.warn('[Mantri Vercel Proxy] Remote backend unreachable, engaging fallback:', proxyErr);
+      }
+    }
+
     const response = await copilotOrchestrator.handleChat(body);
     return res.status(200).json(response);
   } catch (err) {
     console.error("[Mantri API Error]:", err);
     return res.status(500).json({
-      error: err?.message || "Server error",
-      stack: String(err?.stack || err)
+      error: err?.message || "Server error"
     });
   }
 }

@@ -28,7 +28,7 @@ A high-performance personal developer portfolio engineered with an editorial aes
 ### ✨ Standout Features
 - **Editorial Single-Line Typography:** Bold headline with outlined stroke (`AMAN`) and filled typography (`MISHRA`) matching minimalist editorial systems.
 - **Interactive Cursor Spotlight Color Reveal:** The centerpiece portrait remains grayscale by default and dynamically reveals vibrant natural color strictly within the circular cursor spotlight on hover.
-- **Mantri (Grounded AI Portfolio Guide & Advisor):** Production-grade technical assistant integrated natively into the portfolio, powered by deterministic intent routing (creator identity, resume PDF delivery card), hybrid retrieval (BM25 + vector similarity via Reciprocal Rank Fusion), official Google Gemini API SDK (`@google/genai`), rich GitHub-flavored markdown with LaTeX math ($...$ / $$...$$ via KaTeX), syntax-highlighted code blocks with clipboard copy, prompt injection defenses, Recruiter Evaluation mode, and verified source citations.
+- **Mantri (Self-Hosted Local AI Portfolio Assistant):** Production-grade technical assistant integrated natively into the portfolio, powered by self-hosted local inference (**Ollama** with zero mandatory external API keys), persistent SQLite memory (`node:sqlite`), controlled tool execution (safe calculator, project metadata, diagnostics), SHA-256 incremental vector caching, hybrid retrieval (BM25 + vector similarity via Reciprocal Rank Fusion), rich GitHub-flavored markdown with LaTeX math ($...$ / $$...$$ via KaTeX), syntax-highlighted code blocks with clipboard copy, generation controls (Stop generation, Retry query), deterministic identity & resume card delivery, prompt injection defenses, Recruiter Evaluation mode, and verified source citations.
 - **Dedicated Project Case Study Routing:** Direct navigation to clean URLs (`/projects/<id>`) detailing the problem statement, engineered solution, system architecture, key metrics, and technology stack.
 - **Zero-Dependency SPA Routing & Vercel Clean URLs:** Powered by native browser history APIs and Vercel edge rewrite/redirect configuration (`vercel.json`), providing direct URL access, refresh handling, and permanent 301 redirects without server-side 404 errors.
 - **Production Technical SEO & Structured Data:** Full Google Search Console compliance with XML sitemap (`/sitemap.xml`), robots.txt, dynamic OpenGraph/Twitter meta tags, and schema.org JSON-LD structured data (`Person`, `WebSite`, `SoftwareSourceCode`).
@@ -163,16 +163,19 @@ npm install
 cp .env.example .env
 # Set VITE_TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, and EMAILJS_* credentials
 
-# 4. Run automated anti-spam & API tests
+# 4. Run automated test suite (76 tests across security, RAG, Ollama, and architecture)
 npm test
 
-# 5. Start local development server
+# 5. Start Mantri self-hosted AI engine backend
+npm run server
+
+# 6. Start local Vite frontend (in a separate terminal)
 npm run dev
 
-# 6. Create production build
+# 7. Create production build
 npm run build
 
-# 7. Preview production build locally
+# 8. Preview production build locally
 npm run preview
 ```
 
