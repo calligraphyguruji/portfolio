@@ -106,6 +106,15 @@ export const CopilotWidget: React.FC = () => {
   const [conversationId, setConversationId] = useState<string>(
     () => 'conv-' + Math.random().toString(36).slice(2, 10)
   );
+  const [healthStatus, setHealthStatus] = useState<{
+    status: 'checking' | 'connected' | 'offline';
+    llmConfigured: boolean;
+    indexedChunks: number;
+  }>({
+    status: 'checking',
+    llmConfigured: false,
+    indexedChunks: 0,
+  });
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +127,38 @@ export const CopilotWidget: React.FC = () => {
       scrollToBottom();
     }
   }, [messages, isOpen]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkHealth = async () => {
+      try {
+        const apiUrl =
+          (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MANTRI_API_URL) ||
+          '/api/copilot';
+        const res = await fetch(apiUrl, { method: 'GET' });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setHealthStatus({
+              status: 'connected',
+              llmConfigured: !!data.llmConfigured,
+              indexedChunks: data.indexedChunks || 24,
+            });
+          }
+        } else if (isMounted) {
+          setHealthStatus({ status: 'offline', llmConfigured: false, indexedChunks: 0 });
+        }
+      } catch {
+        if (isMounted) {
+          setHealthStatus({ status: 'offline', llmConfigured: false, indexedChunks: 0 });
+        }
+      }
+    };
+    checkHealth();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleStopGeneration = () => {
     if (abortControllerRef.current) {
@@ -216,6 +257,8 @@ export const CopilotWidget: React.FC = () => {
           'Mantri is receiving too many requests right now. Please wait a moment and try again.';
       } else if (err?.message === 'TIMEOUT') {
         errorText = 'Mantri took too long to respond. Please try your question again.';
+      } else if (err?.message && !err.message.startsWith('HTTP_') && err.message.length < 150) {
+        errorText = `Service issue: ${err.message}. Please click Retry below to re-submit your message.`;
       }
 
       setMessages((prev) => [
@@ -295,10 +338,26 @@ export const CopilotWidget: React.FC = () => {
                     <h3 className="text-xs font-bold text-[#171717] dark:text-white uppercase tracking-wider font-mono">
                       Mantri
                     </h3>
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>Portfolio knowledge connected</span>
-                    </div>
+                    {healthStatus.status === 'connected' ? (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>
+                          {healthStatus.llmConfigured
+                            ? 'Knowledge & Gemini connected'
+                            : 'Knowledge connected (Grounded fallback)'}
+                        </span>
+                      </div>
+                    ) : healthStatus.status === 'checking' ? (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                        <span>Checking system...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span>Offline mode</span>
+                      </div>
+                    )}
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans truncate max-w-[260px] sm:max-w-[320px]">
                     Your AI guide to Aman Mishra's engineering work.

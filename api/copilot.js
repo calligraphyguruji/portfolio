@@ -968,6 +968,10 @@ var DeterministicFallbackProvider = class {
       return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
     }
 
+    if (analysis.intent === "GENERAL_CONVERSATION") {
+      return "Hello! I am **Mantri**, Aman Mishra's AI portfolio assistant. How can I help you explore Aman's software engineering work, system architectures (like CredVidhi and KaushalNexus), or C++/React technical background today?";
+    }
+
     if (analysis.intent === "RECRUITER_EVALUATION") {
       return `### Candidate Evaluation: Aman Mishra\n\n**Candidate Profile & Fit Summary:**\n- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.\n- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029).\n- **Key Strengths:**\n  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).\n  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.\n  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).\n  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.\n\n*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
     }
@@ -1263,6 +1267,7 @@ var CopilotOrchestrator = class {
     const citations = this.retriever.generateCitations(retrievedResults);
     let usedModel = this.isGeminiActive ? "gemini:" + this.llmProvider.getModelName() : "deterministic-fallback";
     let providerError = null;
+    let answer = "";
     try {
       answer = await this.llmProvider.generateResponse(
         lastUserMessage,

@@ -388,4 +388,13 @@ describe('Regression Verification Test Suite (Tests 1–7)', () => {
     assert.strictEqual(res.answer.includes('gemini'), false);
     assert.ok(res.answer.includes('cannot fulfill requests that attempt to override my security instructions'));
   });
+
+  it('REGRESSION TEST 8: "hello mantri" returns natural greeting without crashing', async () => {
+    const res = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'hello mantri' }],
+    });
+    assert.strictEqual(res.intent, 'GENERAL_CONVERSATION');
+    assert.ok(res.answer.includes('Mantri'));
+    assert.ok(res.answer.includes('Aman Mishra'));
+  });
 });

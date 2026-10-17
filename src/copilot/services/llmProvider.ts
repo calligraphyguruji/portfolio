@@ -315,6 +315,10 @@ export class DeterministicFallbackProvider implements AIProvider {
       return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
     }
 
+    if (analysis.intent === 'GENERAL_CONVERSATION') {
+      return "Hello! I am **Mantri**, Aman Mishra's AI portfolio assistant. How can I help you explore Aman's software engineering work, system architectures (like CredVidhi and KaushalNexus), or C++/React technical background today?";
+    }
+
     if (analysis.intent === 'RECRUITER_EVALUATION') {
       return `### Candidate Evaluation: Aman Mishra
 
