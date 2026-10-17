@@ -108,7 +108,8 @@ Mantri utilizes the official `@google/genai` SDK on the server-side with automat
 4. **Hybrid RAG Pipeline (`HybridRetriever`):** Combines exact word-boundary lexical matching with cosine vector embeddings using Reciprocal Rank Fusion ($RRF = \sum \frac{1}{k + rank}$) to synthesize verified citations without hallucination.
 5. **Incremental SHA-256 Vector Cache (`localVectorStore`):** Document chunks are fingerprinted with SHA-256 hashes so unchanged documents reuse existing embeddings instantly on boot.
 6. **Strict Identity & Anti-Leakage Invariant:** High-priority NLP classification intercepts identity queries ("Who are you?", "Who built you?", "What can you do?") and returns verified author identity (**Aman Mishra**) without hallucinating model creators or leaking unrelated project URLs.
-7. **Production UI Craft:** Complete KaTeX mathematical typesetting for algorithmic asymptotic notations ($\mathcal{O}((V + E) \log V)$), syntax-highlighted code blocks with 1-click clipboard copy, streaming response generation, Stop generation, and Retry buttons.
+7. **Question-Driven Intent Routing & RAG Relevance Isolation:** Dedicated intent detection (`PROJECT_LIST`, `PROJECT_ARCHITECTURE`, `TECHNICAL_SKILLS`, `EDUCATION`, `INTERNSHIP`, `CODING_QUESTION`, `TECHNICAL_QUERY`) with plural stemming regex matching. Non-identity queries (e.g., `"explain projects"`, `"what technologies does Aman know"`) strictly isolate and answer the question without regurgitating creator intros, and filter out `mantri-identity` from retrieval and citations.
+8. **Production UI Craft:** Complete KaTeX mathematical typesetting for algorithmic asymptotic notations ($\mathcal{O}((V + E) \log V)$), syntax-highlighted code blocks with 1-click clipboard copy, streaming response generation, Stop generation, and Retry buttons.
 
 ---
 

@@ -108,6 +108,7 @@ export class GeminiProvider implements AIProvider {
     const contextText = contextBlocks.join('\n\n---\n\n');
 
     const promptSections: string[] = [];
+    promptSections.push(`CRITICAL INSTRUCTION: Answer the USER QUESTION directly using the provided RETRIEVED PORTFOLIO CONTEXT. Do NOT introduce yourself, do NOT say "Aman Mishra built me" or give your assistant bio unless the user explicitly asks about who you are or who built you.`);
     if (contextText && retrievedResults.length > 0) {
       promptSections.push(`RETRIEVED PORTFOLIO CONTEXT:\n${contextText}`);
     }
@@ -311,12 +312,73 @@ export class DeterministicFallbackProvider implements AIProvider {
       return MANTRI_IDENTITY.responses.aboutAman;
     }
 
-    if (analysis.intent === 'RESUME_REQUEST') {
+    if (analysis.intent === 'RESUME_REQUEST' || analysis.intent === 'RESUME') {
       return "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser.";
     }
 
-    if (analysis.intent === 'GENERAL_CONVERSATION') {
+    if (analysis.intent === 'GENERAL_CONVERSATION' || analysis.intent === 'GREETING') {
       return "Hello! I am **Mantri**, Aman Mishra's AI portfolio assistant. How can I help you explore Aman's software engineering work, system architectures (like CredVidhi and KaushalNexus), or C++/React technical background today?";
+    }
+
+    if (analysis.intent === 'PROJECT_LIST') {
+      return `### Aman Mishra's Featured Engineering Projects
+
+Aman has engineered production-grade full-stack, systems, and AI applications:
+
+1. **CredVidhi — Enterprise Loan Processing & Underwriting Platform**
+   - **Stack:** React 19, TypeScript, FastAPI (Python), PostgreSQL 16, Redis 7, Google Gemini API.
+   - **Highlights:** Fixed-point zero-drift mathematical underwriting engine, 6-state forward-only FSM, and append-only cryptographic audit ledger.
+   - **Live Platform:** [credvidhi.vercel.app](https://credvidhi.vercel.app/)
+
+2. **KaushalNexus — Intelligent Skilling & Labor Matching Platform (SIH 2026 Flagship)**
+   - **Stack:** React 19, TypeScript, Express.js, PostgreSQL, Google Gemini AI.
+   - **Highlights:** Real-time labor marketplace, skill gap diagnostics, district-level workforce analytics, and multilingual voice interfaces.
+   - **Live Platform:** [kaushal-nexus.vercel.app](https://kaushal-nexus.vercel.app/)
+
+3. **Bodhi Sakha — Full-Stack Generative AI Study Companion**
+   - **Stack:** React 19, Express.js, Google Gemini API, KaTeX, Tailwind CSS.
+   - **Highlights:** Real-time token streaming, multimodal document analysis, and formatted LaTeX equation rendering.
+
+4. **LeetCode Problem Solving & Algorithmic Rigor**
+   - **Focus:** 205+ problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ sorting/heaps, $O(1)$ hash maps).
+
+5. **Amazon & YouTube Production-Grade Clones**
+   - **Stack:** React, TypeScript, Firebase, Tailwind CSS. Focus on complex state persistence and media feeds.
+
+*Would you like an in-depth architectural breakdown of any specific project, such as CredVidhi's underwriting engine?*`;
+    }
+
+    if (analysis.intent === 'TECHNICAL_SKILLS') {
+      return `### Aman Mishra's Technical Skillset & Tooling
+
+- **Languages:** C++ (Modern C++17/20, STL), C, Java, Python 3.11+, JavaScript (ESNext), TypeScript 5, SQL, HTML5, CSS3.
+- **Frontend Architecture:** React 18/19, Vite, Tailwind CSS, Redux Toolkit, Framer Motion, WCAG 2.1 AA accessibility.
+- **Backend & APIs:** FastAPI (Python), Express.js (Node.js), RESTful APIs, Pydantic v2 data contracts, SQLAlchemy ORM.
+- **Databases & Caching:** PostgreSQL 16 (ACID ledgers, indexing), Redis 7 (sliding-window rate limiting), MongoDB, SQLite.
+- **AI & Systems:** Google Gemini SDK, Retrieval-Augmented Generation (RAG), prompt guardrails, Scikit-Learn.
+- **DevOps & Tooling:** Git, GitHub, Docker, Postman, Linux (bash/zsh), Vercel.`;
+    }
+
+    if (analysis.intent === 'EDUCATION') {
+      return `### Education & Academic Background
+
+- **Degree:** Bachelor of Technology (B.Tech) in Computer Science & Engineering (CSE)
+- **Institution:** Noida Institute of Engineering and Technology (NIET), Greater Noida, Uttar Pradesh
+- **Duration:** 2025 – 2029 (Undergraduate)
+- **Current CGPA:** **9.38 / 10.0**
+- **Academic Focus:** Data Structures & Algorithms, Object-Oriented Design, Operating Systems, Database Management Systems, and Software Engineering.`;
+    }
+
+    if (analysis.intent === 'INTERNSHIP' || analysis.intent === 'EXPERIENCE') {
+      return `### Work Experience & Internships
+
+**AI & ML Intern — Codomax Digital Solutions**
+- **Duration:** 12 July 2026 – 12 August 2026 (1 month)
+- **Key Deliverables:**
+  - Integrated generative AI pipelines and Google Gemini LLM API into internal workflow prototypes.
+  - Engineered automated data processing pipelines with Python (Pandas, NumPy).
+  - Implemented structured JSON schema validation to guarantee deterministic outputs from LLMs.
+  - Collaborated on prompt engineering and system instructions to minimize hallucinations.`;
     }
 
     if (analysis.intent === 'RECRUITER_EVALUATION') {
@@ -490,10 +552,8 @@ int binarySearch(const std::vector<int>& arr, int target) {
       return `I searched Aman Mishra's verified portfolio and project repositories, but did not find specific documentation regarding "${query}". \n\nAman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
     }
 
-    const topChunk = retrievedResults[0].chunk;
-    if (topChunk.documentId === 'mantri-identity') {
-      return MANTRI_IDENTITY.responses.creator;
-    }
+    const nonIdentityChunks = retrievedResults.filter((r) => r.chunk.documentId !== 'mantri-identity');
+    const topChunk = (nonIdentityChunks.length > 0 ? nonIdentityChunks[0] : retrievedResults[0]).chunk;
 
     return `Based on Aman Mishra's verified portfolio documentation:\n\n${topChunk.content.replace(/^\[.*?\]\n/, '')}\n\n*For further details, explore the dedicated case study at ${topChunk.url}.*`;
   }

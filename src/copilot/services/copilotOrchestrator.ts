@@ -363,7 +363,7 @@ export class CopilotOrchestrator {
 
     // 10. Structured Resume Card Action
     let resumeCard = undefined;
-    if (nlpAnalysis.intent === 'RESUME_REQUEST') {
+    if (nlpAnalysis.intent === 'RESUME_REQUEST' || nlpAnalysis.intent === 'RESUME') {
       resumeCard = {
         title: RESUME_CONFIG.title,
         subtitle: RESUME_CONFIG.subtitle,

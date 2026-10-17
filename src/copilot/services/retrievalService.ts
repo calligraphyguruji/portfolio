@@ -18,16 +18,22 @@ export function calculateLexicalScore(query: string, chunk: KnowledgeChunk): num
   let score = 0;
   for (const token of queryTokens) {
     const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Match in title using strict word boundary (prevents 'you' matching 'youtube')
-    if (new RegExp(`\\b${escapedToken}\\b`, 'i').test(titleLower)) {
-      score += 3.0;
+    // Stemming support for regular plurals (e.g. "projects" <-> "project")
+    const stem = token.endsWith('s') && token.length > 3 ? token.slice(0, -1) : token;
+    const escapedStem = stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const termRegex = new RegExp(`\\b(?:${escapedToken}|${escapedStem}|${escapedStem}s)\\b`, 'i');
+    const termGlobalRegex = new RegExp(`\\b(?:${escapedToken}|${escapedStem}|${escapedStem}s)\\b`, 'gi');
+
+    // Match in title using strict word boundary
+    if (termRegex.test(titleLower)) {
+      score += 3.5;
     }
     // Match in keywords
-    if (chunk.keywords.includes(token)) {
-      score += 1.5;
+    if (chunk.keywords.includes(token) || chunk.keywords.includes(stem)) {
+      score += 2.0;
     }
     // Match in content safely escaping regex special characters
-    const count = (contentLower.match(new RegExp(`\\b${escapedToken}\\b`, 'g')) || []).length;
+    const count = (contentLower.match(termGlobalRegex) || []).length;
     score += Math.min(count, 5) * 0.5;
   }
 
@@ -129,8 +135,15 @@ export class HybridRetriever {
 
     const query = analysis.expandedTerms.join(' ');
 
-    // 1. Lexical Retrieval
-    const scoredLexical = this.chunks
+    // 1. Lexical Retrieval (Filter out mantri-identity for non-identity queries)
+    const validCandidateChunks = this.chunks.filter((c) => {
+      if (!isIdentityQuery && c.documentId === 'mantri-identity') {
+        return false;
+      }
+      return true;
+    });
+
+    const scoredLexical = validCandidateChunks
       .map((chunk) => {
         let score = calculateLexicalScore(query, chunk);
 
@@ -142,13 +155,35 @@ export class HybridRetriever {
           score *= 0.05;
         }
 
-        if (analysis.intent === 'RESUME_REQUEST') {
+        // Boost project overview chunks for PROJECT_LIST intent
+        if (analysis.intent === 'PROJECT_LIST') {
+          if (chunk.category === 'project') {
+            score += 10.0;
+            if (chunk.section.toLowerCase().includes('overview') || chunk.title.toLowerCase().includes('overview')) {
+              score += 5.0;
+            }
+          } else {
+            score *= 0.2;
+          }
+        } else if (analysis.intent === 'TECHNICAL_SKILLS') {
+          if (chunk.documentId === 'skills-matrix' || chunk.category === 'skills') {
+            score += 15.0;
+          }
+        } else if (analysis.intent === 'EDUCATION') {
+          if (chunk.documentId === 'bio-identity' || chunk.title.toLowerCase().includes('education') || chunk.content.toLowerCase().includes('niet')) {
+            score += 15.0;
+          }
+        } else if (analysis.intent === 'INTERNSHIP' || analysis.intent === 'EXPERIENCE') {
+          if (chunk.documentId === 'exp-codomax' || chunk.category === 'experience') {
+            score += 15.0;
+          }
+        } else if (analysis.intent === 'RESUME_REQUEST' || analysis.intent === 'RESUME') {
           if (chunk.documentId === 'resume-document' || chunk.documentId === 'recruiter-guide') {
             score += 20.0;
           } else {
             score *= 0.05;
           }
-        } else if (analysis.intent === 'PORTFOLIO_OVERVIEW' || analysis.intent === 'ABOUT_AMAN' || analysis.intent === 'CONTACT_QUERY') {
+        } else if (analysis.intent === 'PORTFOLIO_OVERVIEW' || analysis.intent === 'ABOUT_AMAN' || analysis.intent === 'CONTACT_QUERY' || analysis.intent === 'CONTACT') {
           if (chunk.documentId === 'bio-identity' || chunk.documentId === 'recruiter-guide') {
             score += 15.0;
           }
@@ -164,7 +199,7 @@ export class HybridRetriever {
     // 2. Semantic Retrieval (if embedding is available)
     let semanticChunks: KnowledgeChunk[] = [];
     if (queryEmbedding && queryEmbedding.length > 0) {
-      semanticChunks = this.chunks
+      semanticChunks = validCandidateChunks
         .filter((c) => c.embedding && c.embedding.length > 0)
         .map((chunk) => {
           const sim = cosineSimilarity(queryEmbedding, chunk.embedding!);
@@ -177,7 +212,7 @@ export class HybridRetriever {
     // 3. Fusion & Ranking
     const rrfScores = reciprocalRankFusion(lexicalChunks, semanticChunks);
 
-    const results: RetrievalResult[] = this.chunks
+    const rankedCandidates: RetrievalResult[] = validCandidateChunks
       .map((chunk) => {
         const rrf = rrfScores.get(chunk.chunkId) || 0;
         const lexItem = scoredLexical.find((l) => l.chunk.chunkId === chunk.chunkId);
@@ -190,12 +225,40 @@ export class HybridRetriever {
           lexicalScore: lexScore,
         };
       })
-      // Minimum relevance threshold prevents accidental low-signal noise from substituting irrelevant projects
+      // Minimum relevance threshold prevents accidental low-signal noise
       .filter((res) => res.score >= 0.25)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+      .sort((a, b) => b.score - a.score);
 
-    return results;
+    // If PROJECT_LIST, diversify results across unique projectIds
+    if (analysis.intent === 'PROJECT_LIST') {
+      const selected: RetrievalResult[] = [];
+      const seenProjects = new Set<string>();
+
+      for (const res of rankedCandidates) {
+        if (res.chunk.projectId) {
+          if (!seenProjects.has(res.chunk.projectId)) {
+            seenProjects.add(res.chunk.projectId);
+            selected.push(res.chunk.projectId ? res : { ...res });
+          }
+        } else {
+          selected.push(res);
+        }
+        if (selected.length >= limit) break;
+      }
+
+      // If fewer than limit, fill with remaining candidates
+      if (selected.length < limit) {
+        for (const res of rankedCandidates) {
+          if (!selected.some((s) => s.chunk.chunkId === res.chunk.chunkId)) {
+            selected.push(res);
+            if (selected.length >= limit) break;
+          }
+        }
+      }
+      return selected;
+    }
+
+    return rankedCandidates.slice(0, limit);
   }
 
   public generateCitations(results: RetrievalResult[]): CitationReference[] {
@@ -203,6 +266,11 @@ export class HybridRetriever {
     const citations: CitationReference[] = [];
 
     for (const res of results) {
+      // Never cite mantri-identity if result contains real project/content chunks
+      if (res.chunk.documentId === 'mantri-identity' && results.some((r) => r.chunk.documentId !== 'mantri-identity')) {
+        continue;
+      }
+
       const key = `${res.chunk.documentId}-${res.chunk.section}`;
       if (!seen.has(key)) {
         seen.add(key);

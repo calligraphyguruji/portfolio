@@ -12,7 +12,6 @@ const PROJECT_ALIASES: Record<string, string> = {
   kaushalnexus: 'kaushal-nexus',
   'kaushal-nexus': 'kaushal-nexus',
   kaushal: 'kaushal-nexus',
-  internship: 'kaushal-nexus',
   skilling: 'kaushal-nexus',
   sih: 'kaushal-nexus',
   bodhisakha: 'gemini-ai-chatbot',
@@ -117,13 +116,35 @@ export function analyzeQuery(
     };
   }
 
-  // 2. High-Priority Intent: ASSISTANT_IDENTITY (Runs before any project RAG)
-  // Matches "Who are you?", "What are you?", "Introduce yourself", "Tell me about yourself",
-  // "What is your name?", "What can you do?", "What are your capabilities?", "Are you Mantri?",
-  // "What powers you?", "Which model are you using?"
+  // 2. Pure Greeting Check (e.g. "hello", "hi mantri", "good morning")
+  const isPureGreeting =
+    /^(hello|hi|hey|howdy|sup|greetings|good\s+(morning|afternoon|evening|day))(\s+mantri|\s+there|\s+bot)?[\s!.,?]*$/i.test(
+      lowerQuery
+    );
+
+  if (isPureGreeting) {
+    return {
+      originalQuery: rawQuery,
+      normalizedQuery,
+      intent: 'GENERAL_CONVERSATION',
+      entities: { projects: [], technologies: [], roles: [], skills: [] },
+      expandedTerms: [normalizedQuery],
+      isRecruiterMode: false,
+      isInappropriateOrInjection: false,
+    };
+  }
+
+  // Substantive technical/project terms that PREVENT identity classification
+  const hasNegativeEntity =
+    /\b(project|projects|architecture|stack|technolog(y|ies)|skill|skills|experience|internship|credvidhi|kaushal|bodhi|amazon|youtube|leetcode|dijkstra|binary\s*search)\b/i.test(
+      lowerQuery
+    );
+
+  // 3. High-Priority Intent: ASSISTANT_IDENTITY
+  // Must only match when the user specifically asks who or what Mantri is
   const isAssistantPurpose =
-    /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission))\b/i.test(lowerQuery) &&
-    !/\b(aman|credvidhi|kaushal|bodhi|amazon|youtube|leetcode)\b/i.test(lowerQuery);
+    !hasNegativeEntity &&
+    /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission))\b/i.test(lowerQuery);
 
   if (isAssistantPurpose) {
     return {
@@ -138,6 +159,7 @@ export function analyzeQuery(
   }
 
   const isAssistantIdentity =
+    !hasNegativeEntity &&
     (/\b(who\s*(are|r)\s*(you|u))\b/i.test(lowerQuery) ||
       /\b(what\s*(are|r)\s*(you|u))\b/i.test(lowerQuery) ||
       /\b(introduce\s*(yourself|urself))\b/i.test(lowerQuery) ||
@@ -145,8 +167,7 @@ export function analyzeQuery(
       /\b(what\s*is\s*your\s*name)\b/i.test(lowerQuery) ||
       /\b(what\s*can\s*you\s*do|what\s*are\s*your\s*capabilities)\b/i.test(lowerQuery) ||
       /\b(are\s*you\s*mantri)\b/i.test(lowerQuery) ||
-      /\b(what\s*(model|llm)?\s*powers\s*you|which\s*model\s*are\s*you\s*using)\b/i.test(lowerQuery)) &&
-    !/\b(aman|credvidhi|kaushal|bodhi|amazon|youtube|leetcode)\b/i.test(lowerQuery);
+      /\b(what\s*(model|llm)?\s*powers\s*you|which\s*model\s*are\s*you\s*using)\b/i.test(lowerQuery));
 
   if (isAssistantIdentity) {
     return {
@@ -160,16 +181,15 @@ export function analyzeQuery(
     };
   }
 
-  // 3. High-Priority Intent: CREATOR_IDENTITY
-  // Matches "Who built you?", "Who created you?", "Who is your developer?", "Who owns you?", "Who made Mantri?"
+  // 4. High-Priority Intent: CREATOR_IDENTITY
+  // Must only match when asking who created/built Mantri
   const isCreatorIdentity =
-    !/\b(technolog(y|ies)|stack|how\s+does|how\s+to|how\s+mantri\s+works|detailed\s+technical)\b/i.test(lowerQuery) &&
+    !hasNegativeEntity &&
     (/\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(lowerQuery) ||
       /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(lowerQuery) ||
       /\b(who\s*(is|are)?\s*(the\s+)?(creator|developer|maker|builder)\s+of\s+mantri)\b/i.test(lowerQuery) ||
       /\b(who\s*created\s*mantri)\b/i.test(lowerQuery) ||
-      /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery)) &&
-    !/\b(credvidhi|kaushal|bodhi|amazon|youtube)\b/i.test(lowerQuery);
+      /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery));
 
   if (isCreatorIdentity) {
     return {
@@ -183,7 +203,52 @@ export function analyzeQuery(
     };
   }
 
-  // 4. High-Priority Intent: PORTFOLIO_OVERVIEW / ABOUT_AMAN
+  // 4b. OWNER_IDENTITY & DEVELOPER_IDENTITY
+  const isOwnerIdentity =
+    !hasNegativeEntity &&
+    !/\b(users|clients|borrowers|customers)\s+of\b/i.test(lowerQuery) &&
+    (/\b(who\s*(is|are)?\s*(the\s+)?(owner|maintainer)(\s*(of\s*(this\s*)?(portfolio|website|site|project|mantri|it)?)?)?)\b/i.test(
+      lowerQuery
+    ) ||
+      /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site|this)?)\b/i.test(
+        lowerQuery
+      ) ||
+      /\b(owner\s+of\s+(this\s+)?(portfolio|website|site|mantri))\b/i.test(lowerQuery) ||
+      /\b(who\s*(is|are)?\s*(behind\s+mantri|behind\s+this\s*(website|portfolio|site)))\b/i.test(
+        lowerQuery
+      ));
+
+  if (isOwnerIdentity) {
+    return {
+      originalQuery: rawQuery,
+      normalizedQuery,
+      intent: 'OWNER_IDENTITY',
+      entities: { projects: [], technologies: [], roles: [], skills: [] },
+      expandedTerms: [normalizedQuery],
+      isRecruiterMode: false,
+      isInappropriateOrInjection: false,
+    };
+  }
+
+  const isDeveloperIdentity =
+    !hasNegativeEntity &&
+    /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
+      lowerQuery
+    );
+
+  if (isDeveloperIdentity) {
+    return {
+      originalQuery: rawQuery,
+      normalizedQuery,
+      intent: 'DEVELOPER_IDENTITY',
+      entities: { projects: [], technologies: [], roles: [], skills: [] },
+      expandedTerms: [normalizedQuery],
+      isRecruiterMode: false,
+      isInappropriateOrInjection: false,
+    };
+  }
+
+  // 5. Portfolio Owner Overview / About Aman
   const isPortfolioOverview =
     /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?|introduce\s*the\s*portfolio\s*owner|what\s*does\s*aman\s*do|what\s*is\s*his\s*technical\s*background)\b/i.test(
       lowerQuery
@@ -201,7 +266,7 @@ export function analyzeQuery(
     };
   }
 
-  // 5. High-Priority Intent: RESUME & CV REQUEST
+  // 6. Resume & CV Request
   const isResumeNegative =
     /\b(how\s+(to|do|can|should)|improve|write|writing|parse|parsing|parser|format|tips|review|builder|build\s+a\s+resume|prepare\s+a\s+resume)\b/i.test(
       lowerQuery
@@ -233,10 +298,9 @@ export function analyzeQuery(
     };
   }
 
-  // 6. Identify Project Entities
+  // 7. Identify Project Entities
   const recognizedProjects = new Set<string>();
   for (const [alias, projectId] of Object.entries(PROJECT_ALIASES)) {
-    // Exact word boundary match for project aliases (avoids substring false positives)
     const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (new RegExp(`\\b${escapedAlias}\\b`, 'i').test(lowerQuery)) {
       recognizedProjects.add(projectId);
@@ -277,78 +341,99 @@ export function analyzeQuery(
     }
   }
 
-  // 7. Classify Remaining Intents
+  // 8. Classify Remaining Intents
   let intent: QueryIntent = 'UNKNOWN';
 
-  const isOwnerIdentity =
+  // Check General Project List Queries
+  const isProjectList =
     !targetProject &&
-    !/\b(users|clients|borrowers|customers)\s+of\b/i.test(lowerQuery) &&
-    (/\b(who\s*(is|are)?\s*(the\s+)?(owner|maintainer)(\s*(of\s*(this\s*)?(portfolio|website|site|project|mantri|it)?)?)?)\b/i.test(lowerQuery) ||
-      /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site|this)?)\b/i.test(lowerQuery) ||
-      /\b(owner\s+of\s+(this\s+)?(portfolio|website|site|mantri))\b/i.test(lowerQuery) ||
-      /\b(who\s*(is|are)?\s*(behind\s+mantri|behind\s+this\s*(website|portfolio|site)))\b/i.test(lowerQuery));
+    (/\b(projects|featured\s+projects|portfolio\s+projects|your\s+projects|aman('?s)?\s+projects|my\s+projects|list\s+(the\s+)?projects|show\s+(me\s+)?(the\s+)?projects|what\s+projects|explain\s+(the\s+|all\s+|your\s+|aman('?s)?\s+)?projects|tell\s+me\s+about\s+(the\s+|all\s+|your\s+|aman('?s)?\s+)?projects|overview\s+of\s+(the\s+)?projects)\b/i.test(
+      lowerQuery
+    ) ||
+      /^(projects|explain\s+projects|show\s+projects|list\s+projects|tell\s+me\s+about\s+projects|tell\s+me\s+about\s+your\s+projects|tell\s+me\s+about\s+my\s+projects)$/i.test(
+        lowerQuery
+      ));
 
-  const isDeveloperIdentity =
-    !targetProject &&
-    !/\b(technolog(y|ies)|stack)\b/i.test(lowerQuery) &&
-    /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
+  const isProjectArchitecture =
+    /\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries|finite state machine|fsm|append[- ]only ledger|transaction envelope|rate limit|underwriting engine)\b/i.test(
       lowerQuery
     );
-
-  const isPortfolioIdentity =
-    !targetProject &&
-    (/\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(lowerQuery) ||
-      /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(lowerQuery));
 
   const isRecruiter =
-    /\b(hire|recruiter|interview|internship|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
+    /\b(hire|recruiter|interview|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
       lowerQuery
     );
 
-  const isTechnicalQuery =
-    /\b(what\s*is\s*rag|explain\s*rag|what\s*is\s*a\s*vector\s*database|binary\s*search\s*in\s*c\+\+|difference\s*between\s*(a\s*)?process\s*and\s*(a\s*)?thread|mutex\s*in\s*c\+\+|time\s*complexity|space\s*complexity|dijkstra|dijkstra's\s*algorithm|depth\s*first\s*search|breadth\s*first\s*search|dynamic\s*programming)\b/i.test(
+  const isEducation =
+    /\b(education|college|degree|b\.?tech|niet|university|academics|cgpa|gpa|studies|graduation)\b/i.test(
       lowerQuery
     );
 
-  if (isOwnerIdentity) {
-    intent = 'OWNER_IDENTITY';
-  } else if (isDeveloperIdentity) {
-    intent = 'DEVELOPER_IDENTITY';
-  } else if (isPortfolioIdentity) {
-    intent = 'PORTFOLIO_IDENTITY';
+  const isInternship =
+    /\b(internship|internships|codomax)\b/i.test(lowerQuery);
+
+  const isExperience =
+    /\b(experience|work\s+experience|professional\s+experience|job\s+history|previous\s+work)\b/i.test(
+      lowerQuery
+    );
+
+  const isTechnicalSkills =
+    /\b(what\s+are\s+your\s+technical\s+skills|technical\s+skills|tech\s+stack|what\s+(technologies|languages|frameworks|tools)\s+does\s+aman|skills|competencies|what\s+languages\s+do\s+you\s+know)\b/i.test(
+      lowerQuery
+    );
+
+  const isCodingQuestion =
+    /\b(dijkstra|dijkstra's\s*algorithm|binary\s*search|dsa|algorithm|algorithms|time\s*complexity|space\s*complexity|big-?o|dynamic\s*programming|dfs|bfs|graph\s*theory|two\s*pointers|sliding\s*window)\b/i.test(
+      lowerQuery
+    );
+
+  const isGeneralTechnical =
+    /\b(what\s*is\s*rag|explain\s*rag|retrieval[- ]augmented|vector\s*(database|store|db)|process\s*(vs|versus|and)\s*thread|mutex\s*in\s*c\+\+|difference\s*between\s*(a\s*)?process\s*and\s*(a\s*)?thread)\b/i.test(
+      lowerQuery
+    );
+
+  const isTechStack =
+    /\b(tech\s+stack|technologies|built with|languages|frameworks|tools)\b/i.test(lowerQuery);
+
+  if (isProjectList) {
+    intent = 'PROJECT_LIST';
   } else if (isRecruiter) {
     intent = 'RECRUITER_EVALUATION';
-  } else if (isTechnicalQuery) {
+  } else if (isCodingQuestion) {
     intent = 'TECHNICAL_QUERY';
-  } else if (isFollowUp && targetProject) {
-    intent = 'FOLLOW_UP';
-  } else if (/\b(contact|email|phone|reach out|message|get in touch|who should i contact)\b/i.test(lowerQuery)) {
-    intent = 'CONTACT_QUERY';
-  } else if (/\b(architecture|system design|data flow|components|lifecycle|topology|security boundaries)\b/i.test(lowerQuery)) {
-    intent = 'PROJECT_ARCHITECTURE';
-  } else if (/\b(tech stack|technologies|built with|languages|frameworks|tools)\b/i.test(lowerQuery)) {
+  } else if (isTechStack) {
     intent = 'TECH_STACK';
-  } else if (/\b(why did you|trade-off|decision|why fast api|why redis|rationale)\b/i.test(lowerQuery)) {
-    intent = 'TECHNICAL_DECISION';
-  } else if (/\b(code|implementation|function|algorithm|complexity|big-o|dsa|leetcode)\b/i.test(lowerQuery)) {
-    intent = 'CODE_EXPLANATION';
-  } else if (/\b(skills|competencies|what do you know)\b/i.test(lowerQuery)) {
-    intent = 'SKILLS';
-  } else if (/\b(experience|internship|codomax|history|work)\b/i.test(lowerQuery)) {
+  } else if (isFollowUp && targetProject) {
+    intent = isProjectArchitecture ? 'PROJECT_ARCHITECTURE' : 'FOLLOW_UP';
+  } else if (isProjectArchitecture) {
+    intent = 'PROJECT_ARCHITECTURE';
+  } else if (targetProject) {
+    intent = 'PROJECT_OVERVIEW';
+  } else if (isTechnicalSkills) {
+    intent = 'TECHNICAL_SKILLS';
+  } else if (isGeneralTechnical) {
+    intent = 'TECHNICAL_QUERY';
+  } else if (isEducation) {
+    intent = 'EDUCATION';
+  } else if (isInternship) {
+    intent = 'INTERNSHIP';
+  } else if (isExperience) {
     intent = 'EXPERIENCE';
+  } else if (/\b(contact|email|phone|reach out|message|get in touch|who should i contact)\b/i.test(lowerQuery)) {
+    intent = 'CONTACT';
   } else if (/\b(recommend|best project|which project|show me)\b/i.test(lowerQuery)) {
     intent = 'PROJECT_RECOMMENDATION';
   } else if (/\b(hello|hi|hey|greetings|good morning|good afternoon|good evening|howdy)\b/i.test(lowerQuery)) {
     intent = 'GENERAL_CONVERSATION';
-  } else if (targetProject || /\b(credvidhi|kaushalnexus|bodhi sakha|amazon clone|youtube clone|project|app)\b/i.test(lowerQuery)) {
-    intent = 'PROJECT_OVERVIEW';
   } else {
-    intent = 'GENERAL_TECHNICAL';
+    intent = 'UNKNOWN';
   }
 
-  // 8. Query expansion terms for retrieval
+  // 9. Query expansion terms for retrieval
   const expandedTerms: string[] = [normalizedQuery];
-  if (targetProject === 'credvidhi') {
+  if (intent === 'PROJECT_LIST') {
+    expandedTerms.push('credvidhi loan underwriting kaushal nexus bodhisakha leetcode amazon clone projects overview');
+  } else if (targetProject === 'credvidhi') {
     expandedTerms.push('loan underwriting finite state machine postgresql ledger fixed point emi dti redis');
   } else if (targetProject === 'kaushal-nexus') {
     expandedTerms.push('skilling intelligence sih smart india hackathon gemini diagnostic district analytics ml matching');
@@ -360,6 +445,12 @@ export function analyzeQuery(
     expandedTerms.push('amazon clone ecommerce web app react firebase stripe authentication cart checkout');
   } else if (targetProject === 'youtube-clone') {
     expandedTerms.push('youtube clone video streaming rapidapi material ui react search player');
+  } else if (intent === 'TECHNICAL_SKILLS') {
+    expandedTerms.push('c++ react typescript fastapi postgresql redis gemini ai tailwind docker python');
+  } else if (intent === 'EDUCATION') {
+    expandedTerms.push('niet b.tech computer science engineering cgpa niet greater noida');
+  } else if (intent === 'INTERNSHIP' || intent === 'EXPERIENCE') {
+    expandedTerms.push('codomax digital solutions ai ml intern python gemini prompt engineering data pipelines');
   }
 
   const entities: RecognizedEntities = {

@@ -392,7 +392,6 @@ var PROJECT_ALIASES = {
   kaushalnexus: "kaushal-nexus",
   "kaushal-nexus": "kaushal-nexus",
   kaushal: "kaushal-nexus",
-  internship: "kaushal-nexus",
   skilling: "kaushal-nexus",
   sih: "kaushal-nexus",
   bodhisakha: "gemini-ai-chatbot",
@@ -514,31 +513,35 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
     lowerQuery
   ) || // "resume pdf", "cv pdf", "download link for resume"
   /\b(resume|cv)\s*(pdf|download|link|file|document)\b/i.test(lowerQuery) || /\b(download|get|view)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) || /\b(download\s+aman\s+mishra\s+resume)\b/i.test(lowerQuery) || /\b(copy\s+of\s+(your|his|aman('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) || /\b(resume|cv)\s+for\s+(recruitment|recruiter|interview|hiring)\b/i.test(lowerQuery));
-  const isAssistantIdentity = !targetProject && (
+  const hasNegativeEntity = /\b(project|projects|architecture|stack|technolog(y|ies)|skill|skills|experience|internship|credvidhi|kaushal|bodhi|amazon|youtube|leetcode|dijkstra|binary\s*search)\b/i.test(
+    lowerQuery
+  );
+
+  const isAssistantIdentity = !targetProject && !hasNegativeEntity && (
     /\b(who\s*(are|r)\s*(you|u)|introduce\s*yourself|what\s*are\s*you|tell\s*me\s*about\s*yourself|your\s*name|what\s*is\s*your\s*name|what\s*(can|do)\s*you\s*do|what\s*are\s*your\s*capabilities)\b/i.test(lowerQuery) ||
     /^(who\s*(are|r)\s*(you|u)\??)$/i.test(lowerQuery.trim())
   );
-  const isCreatorIdentity = !targetProject && !/\b(technolog(y|ies)|stack|how\s+does|how\s+to|how\s+mantri\s+works|detailed\s+technical)\b/i.test(lowerQuery) && (/\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
+  const isCreatorIdentity = !targetProject && !hasNegativeEntity && !/\b(technolog(y|ies)|stack|how\s+does|how\s+to|how\s+mantri\s+works|detailed\s+technical)\b/i.test(lowerQuery) && (/\b(who\s*(is|are|was)?\s*(built|build|bulit|bild|created|made|make|developed|programmed|engineered|authored|coded|designed)\s*(you|u|mantri|this\s*ai|this\s*assistant|this\s*bot))\b/i.test(
     lowerQuery
   ) || /\b(who\s*(is|are)?\s*(your|mantri'?s?)\s*(creator|maker|developer|author|architect|engineer|coder|builder))\b/i.test(
     lowerQuery
   ) || /\b(creator|developer|maker|builder)\s+of\s+mantri\b/i.test(lowerQuery));
-  const isOwnerIdentity = !targetProject && !/\b(users|clients|borrowers|customers)\s+of\b/i.test(lowerQuery) && (/\b(who\s*(is|are)?\s*(the\s+)?(owner|maintainer)(\s*(of\s*(this\s*)?(portfolio|website|site|project|mantri|it)?)?)?)\b/i.test(
+  const isOwnerIdentity = !targetProject && !hasNegativeEntity && !/\b(users|clients|borrowers|customers)\s+of\b/i.test(lowerQuery) && (/\b(who\s*(is|are)?\s*(the\s+)?(owner|maintainer)(\s*(of\s*(this\s*)?(portfolio|website|site|project|mantri|it)?)?)?)\b/i.test(
     lowerQuery
   ) || /\b(who\s*owns\s*(you|u|mantri|this\s*portfolio|this\s*website|this\s*site|this)?)\b/i.test(
     lowerQuery
   ) || /\b(owner\s+of\s+(this\s+)?(portfolio|website|site|mantri))\b/i.test(lowerQuery) || /\b(who\s*(is|are)?\s*(behind\s+mantri|behind\s+this\s*(website|portfolio|site)))\b/i.test(
     lowerQuery
   ));
-  const isDeveloperIdentity = !targetProject && !/\b(technolog(y|ies)|stack)\b/i.test(lowerQuery) && /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
+  const isDeveloperIdentity = !targetProject && !hasNegativeEntity && !/\b(technolog(y|ies)|stack)\b/i.test(lowerQuery) && /\b(who\s*(is|are)?\s*(developed|developer\s*(of|behind)|engineer\s*(of|behind)|brain\s*(of|behind))\s*(this\s*website|this\s*portfolio|this\s*ai|mantri))\b/i.test(
     lowerQuery
   );
-  const isPortfolioIdentity = !targetProject && (/\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
+  const isPortfolioIdentity = !targetProject && !hasNegativeEntity && (/\b(who\s*(built|build|bulit|created|made|make|developed)\s*(this\s*portfolio|this\s*website|this\s*site))\b/i.test(
     lowerQuery
   ) || /\b(who\s*is\s*behind\s*(this\s*website|this\s*portfolio|this\s*site))\b/i.test(
     lowerQuery
   ));
-  const isAssistantPurpose = /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission)|why\s*were\s*you\s*(built|created|made))\b/i.test(
+  const isAssistantPurpose = !hasNegativeEntity && /\b(what\s*(is|are)?\s*(your|mantri'?s?)\s*(purpose|role|job|function|goal|mission)|why\s*were\s*you\s*(built|created|made))\b/i.test(
     lowerQuery
   );
   const isAboutAman = /\b(who\s*is\s*aman(\s*mishra)?|tell\s*me\s*about\s*aman(\s*mishra)?|about\s*aman(\s*mishra)?)\b/i.test(
@@ -547,8 +550,20 @@ function analyzeQuery(rawQuery, conversationHistory = []) {
   const isRecruiter = /\b(hire|recruiter|interview|internship|qualifications|fit|suitable|hiring|role|sde|job|work with)\b/i.test(
     lowerQuery
   );
+
+  const isProjectList =
+    !targetProject &&
+    (/\b(projects|featured\s+projects|portfolio\s+projects|your\s+projects|aman('?s)?\s+projects|my\s+projects|list\s+(the\s+)?projects|show\s+(me\s+)?(the\s+)?projects|what\s+projects|explain\s+(the\s+|all\s+|your\s+|aman('?s)?\s+)?projects|tell\s+me\s+about\s+(the\s+|all\s+|your\s+|aman('?s)?\s+)?projects|overview\s+of\s+(the\s+)?projects)\b/i.test(
+      lowerQuery
+    ) ||
+      /^(projects|explain\s+projects|show\s+projects|list\s+projects|tell\s+me\s+about\s+projects|tell\s+me\s+about\s+your\s+projects|tell\s+me\s+about\s+my\s+projects)$/i.test(
+        lowerQuery
+      ));
+
   if (isExplicitResumeRequest) {
     intent = "RESUME_REQUEST";
+  } else if (isProjectList) {
+    intent = "PROJECT_LIST";
   } else if (isAssistantIdentity) {
     intent = "ASSISTANT_IDENTITY";
   } else if (isCreatorIdentity) {
@@ -625,15 +640,18 @@ function calculateLexicalScore(query, chunk) {
   let score = 0;
   for (const token of queryTokens) {
     const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const wordBoundaryRegex = new RegExp(`\\b${escapedToken}\\b`, "i");
+    const stem = token.endsWith('s') && token.length > 3 ? token.slice(0, -1) : token;
+    const escapedStem = stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const termRegex = new RegExp(`\\b(?:${escapedToken}|${escapedStem}|${escapedStem}s)\\b`, 'i');
+    const termGlobalRegex = new RegExp(`\\b(?:${escapedToken}|${escapedStem}|${escapedStem}s)\\b`, 'gi');
 
-    if (wordBoundaryRegex.test(titleLower)) {
-      score += 3;
+    if (termRegex.test(titleLower)) {
+      score += 3.5;
     }
-    if (chunk.keywords.some((k) => k.toLowerCase() === token)) {
-      score += 1.5;
+    if (chunk.keywords.some((k) => k.toLowerCase() === token || k.toLowerCase() === stem)) {
+      score += 2.0;
     }
-    const count = (contentLower.match(new RegExp(`\\b${escapedToken}\\b`, "g")) || []).length;
+    const count = (contentLower.match(termGlobalRegex) || []).length;
     score += Math.min(count, 5) * 0.5;
   }
   if (chunk.projectId && new RegExp(`\\b${chunk.projectId.toLowerCase()}\\b`, "i").test(query)) {
@@ -675,50 +693,91 @@ var HybridRetriever = class {
     this.chunks = chunks;
   }
   retrieve(analysis, queryEmbedding, limit = 5) {
+    const isIdentityQuery = [
+      "ASSISTANT_IDENTITY",
+      "CREATOR_IDENTITY",
+      "OWNER_IDENTITY",
+      "DEVELOPER_IDENTITY",
+      "PORTFOLIO_IDENTITY",
+      "ASSISTANT_PURPOSE"
+    ].includes(analysis.intent);
+
+    if (isIdentityQuery) {
+      const identityChunk = this.chunks.find((c) => c.documentId === "mantri-identity");
+      if (identityChunk) {
+        return [
+          {
+            chunk: identityChunk,
+            score: 1.0,
+            lexicalScore: 10.0,
+            semanticScore: 1.0
+          }
+        ];
+      }
+      return [];
+    }
+
     const query = analysis.expandedTerms.join(" ");
-    const scoredLexical = this.chunks.map((chunk) => {
+    const validCandidateChunks = this.chunks.filter((c) => {
+      if (!isIdentityQuery && c.documentId === "mantri-identity") {
+        return false;
+      }
+      return true;
+    });
+
+    const scoredLexical = validCandidateChunks.map((chunk) => {
       let score = calculateLexicalScore(query, chunk);
       if (analysis.targetProject && chunk.projectId === analysis.targetProject) {
-        score *= 1.8;
+        score *= 2.5;
+      } else if (analysis.targetProject && chunk.projectId && chunk.projectId !== analysis.targetProject) {
+        score *= 0.05;
       }
-      const isIdentityQuery = [
-        "ASSISTANT_IDENTITY",
-        "CREATOR_IDENTITY",
-        "OWNER_IDENTITY",
-        "DEVELOPER_IDENTITY",
-        "PORTFOLIO_IDENTITY",
-        "PORTFOLIO_OVERVIEW",
-        "ASSISTANT_PURPOSE"
-      ].includes(analysis.intent);
-      if (isIdentityQuery) {
-        if (chunk.documentId === "mantri-identity") {
-          score = 15;
+
+      if (analysis.intent === "PROJECT_LIST") {
+        if (chunk.category === "project") {
+          score += 10.0;
+          if (chunk.section.toLowerCase().includes("overview") || chunk.title.toLowerCase().includes("overview")) {
+            score += 5.0;
+          }
         } else {
-          score = 0;
+          score *= 0.2;
+        }
+      } else if (analysis.intent === "TECHNICAL_SKILLS" || analysis.intent === "SKILLS" || analysis.intent === "TECH_STACK") {
+        if (chunk.documentId === "skills-matrix" || chunk.category === "skills") {
+          score += 15.0;
+        }
+      } else if (analysis.intent === "EDUCATION") {
+        if (chunk.documentId === "bio-identity" || chunk.title.toLowerCase().includes("education") || chunk.content.toLowerCase().includes("niet")) {
+          score += 15.0;
+        }
+      } else if (analysis.intent === "INTERNSHIP" || analysis.intent === "EXPERIENCE") {
+        if (chunk.documentId === "exp-codomax" || chunk.category === "experience") {
+          score += 15.0;
         }
       } else if (analysis.intent === "RESUME_REQUEST") {
         if (chunk.documentId === "resume-document" || chunk.documentId === "recruiter-guide") {
           score += 20;
         } else {
-          score *= 0.1;
+          score *= 0.05;
         }
-      } else if (analysis.intent === "ABOUT_AMAN" || analysis.intent === "CONTACT_QUERY") {
+      } else if (analysis.intent === "PORTFOLIO_OVERVIEW" || analysis.intent === "ABOUT_AMAN" || analysis.intent === "CONTACT_QUERY") {
         if (chunk.documentId === "bio-identity" || chunk.documentId === "recruiter-guide") {
-          score += 10;
+          score += 15;
         }
       }
       return { chunk, score };
     }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
+
     const lexicalChunks = scoredLexical.map((item) => item.chunk);
     let semanticChunks = [];
     if (queryEmbedding && queryEmbedding.length > 0) {
-      semanticChunks = this.chunks.filter((c) => c.embedding && c.embedding.length > 0).map((chunk) => {
+      semanticChunks = validCandidateChunks.filter((c) => c.embedding && c.embedding.length > 0).map((chunk) => {
         const sim = cosineSimilarity(queryEmbedding, chunk.embedding);
         return { chunk, score: sim };
       }).sort((a, b) => b.score - a.score).map((item) => item.chunk);
     }
     const rrfScores = reciprocalRankFusion(lexicalChunks, semanticChunks);
-    const results = this.chunks.map((chunk) => {
+    const rankedCandidates = validCandidateChunks.map((chunk) => {
       const rrf = rrfScores.get(chunk.chunkId) || 0;
       const lexItem = scoredLexical.find((l) => l.chunk.chunkId === chunk.chunkId);
       const lexScore = lexItem ? lexItem.score : 0;
@@ -728,13 +787,42 @@ var HybridRetriever = class {
         score: combinedScore,
         lexicalScore: lexScore
       };
-    }).filter((res) => res.score >= 0.25).sort((a, b) => b.score - a.score).slice(0, limit);
-    return results;
+    }).filter((res) => res.score >= 0.25).sort((a, b) => b.score - a.score);
+
+    if (analysis.intent === "PROJECT_LIST") {
+      const selected = [];
+      const seenProjects = new Set();
+      for (const res of rankedCandidates) {
+        if (res.chunk.projectId) {
+          if (!seenProjects.has(res.chunk.projectId)) {
+            seenProjects.add(res.chunk.projectId);
+            selected.push(res);
+          }
+        } else {
+          selected.push(res);
+        }
+        if (selected.length >= limit) break;
+      }
+      if (selected.length < limit) {
+        for (const res of rankedCandidates) {
+          if (!selected.some((s) => s.chunk.chunkId === res.chunk.chunkId)) {
+            selected.push(res);
+            if (selected.length >= limit) break;
+          }
+        }
+      }
+      return selected;
+    }
+
+    return rankedCandidates.slice(0, limit);
   }
   generateCitations(results) {
     const seen = /* @__PURE__ */ new Set();
     const citations = [];
     for (const res of results) {
+      if (res.chunk.documentId === "mantri-identity" && results.some((r) => r.chunk.documentId !== "mantri-identity")) {
+        continue;
+      }
       const key = `${res.chunk.documentId}-${res.chunk.section}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -780,6 +868,51 @@ var MANTRI_IDENTITY = {
     contact: "You can reach out to Aman Mishra directly via email at amanmishra7774@gmail.com, connect on LinkedIn (linkedin.com/in/calligraphygurji), or message him using the Contact section of this website."
   }
 };
+
+var MANTRI_SYSTEM_PROMPT = `You are Mantri, the AI portfolio assistant for Aman Mishra (https://calligraphyguruji.dev).
+
+Your primary responsibility is to answer the visitor's current question accurately and helpfully using verified portfolio information.
+
+Always identify the user's actual intent before constructing an answer:
+- If the user asks about projects (e.g. "explain projects", "tell me about your projects"), explain Aman Mishra's verified projects (CredVidhi, KaushalNexus, Bodhi Sakha, LeetCode, Frontend Clones).
+- If the user asks about a specific project, provide concrete details about that project.
+- If the user asks about project architecture, explain its architecture, state transitions, components, and data flow.
+- If the user asks about technical skills, discuss verified technical skills (languages, frameworks, databases, tools).
+- If the user asks about education, discuss Aman's B.Tech in CSE at NIET Greater Noida (Batch 2025–2029, CGPA 9.38).
+- If the user asks about experience or internships, discuss his AI & ML Internship at Codomax Digital Solutions.
+- If the user asks about your identity, explain that you are Mantri, Aman Mishra's AI portfolio assistant.
+- If the user asks who created you, identify Aman Mishra as your creator.
+
+CRITICAL BEHAVIORAL INVARIANTS:
+- Do not introduce yourself unnecessarily.
+- Do not answer project questions with your identity description.
+- Do not repeat your standard introduction in unrelated responses.
+- Do not invent project features, metrics, technologies, or achievements.
+- Use retrieved portfolio information as evidence.
+- If the available context is insufficient, acknowledge the limitation honestly and ask a relevant clarifying question.
+- Answer the user's latest message directly.
+- Use previous conversation history only when it helps interpret the current message or resolve a genuine follow-up.
+- Never let unrelated retrieved documents override the user's current intent.
+
+PORTFOLIO KNOWLEDGE & TECHNICAL ACCURACY:
+- Treat retrieved portfolio documents as the authoritative source of truth.
+- Do not invent technologies, metrics, achievements, or project features.
+- Clearly distinguish implemented features from planned or prototype features.
+- If portfolio information is unavailable or unconfirmed in the retrieved documents, state that honestly.
+- You can answer general programming and computer science questions using your engineering expertise.
+
+REASONING AND ANSWER QUALITY:
+- Analyze complex technical questions carefully before responding.
+- Break complex architectures into clear, understandable components with defined responsibilities.
+- For coding questions, provide correct, maintainable, production-quality examples.
+- For multi-turn follow-up questions, preserve the relevant conversation context.
+
+ANSWER STYLE & FORMATTING:
+- Answer the actual question first before providing supplementary context.
+- Use structured GitHub-flavored Markdown: headings (###), ordered/unordered lists, bold highlights.
+- For mathematical equations, render standard LaTeX ($O(N \\log N)$, $$...$$).
+- In code blocks, always specify the language tag (e.g. \`\`\`cpp, \`\`\`typescript, \`\`\`python).
+- Avoid generic filler introductions and repetitive closing pleasantries.`;
 
 // src/copilot/services/llmProvider.ts
 var GeminiProvider = class {
@@ -857,6 +990,7 @@ var GeminiProvider = class {
     const contextText = contextBlocks.join("\n\n---\n\n");
 
     const promptSections = [];
+    promptSections.push(`CRITICAL INSTRUCTION: Answer the USER QUESTION directly using the provided RETRIEVED PORTFOLIO CONTEXT. Do NOT introduce yourself, do NOT say "Aman Mishra built me" or give your assistant bio unless the user explicitly asks about who you are or who built you.`);
     if (contextText && retrievedResults.length > 0) {
       promptSections.push(`RETRIEVED PORTFOLIO CONTEXT:\n${contextText}`);
     }
@@ -1223,6 +1357,22 @@ var DeterministicFallbackProvider = class {
       return "Hello! I am **Mantri**, Aman Mishra's AI portfolio assistant. How can I help you explore Aman's software engineering work, system architectures (like CredVidhi and KaushalNexus), or C++/React technical background today?";
     }
 
+    if (analysis.intent === "PROJECT_LIST") {
+      return `### Aman Mishra's Featured Engineering Projects\n\nAman has engineered production-grade full-stack, systems, and AI applications:\n\n1. **CredVidhi — Enterprise Loan Processing & Underwriting Platform**\n   - **Stack:** React 19, TypeScript, FastAPI (Python), PostgreSQL 16, Redis 7, Google Gemini API.\n   - **Highlights:** Fixed-point zero-drift mathematical underwriting engine, 6-state forward-only FSM, and append-only cryptographic audit ledger.\n   - **Live Platform:** [credvidhi.vercel.app](https://credvidhi.vercel.app/)\n\n2. **KaushalNexus — Intelligent Skilling & Labor Matching Platform (SIH 2026 Flagship)**\n   - **Stack:** React 19, TypeScript, Express.js, PostgreSQL, Google Gemini AI.\n   - **Highlights:** Real-time labor marketplace, skill gap diagnostics, district-level workforce analytics, and multilingual voice interfaces.\n   - **Live Platform:** [kaushal-nexus.vercel.app](https://kaushal-nexus.vercel.app/)\n\n3. **Bodhi Sakha — Full-Stack Generative AI Study Companion**\n   - **Stack:** React 19, Express.js, Google Gemini API, KaTeX, Tailwind CSS.\n   - **Highlights:** Real-time token streaming, multimodal document analysis, and formatted LaTeX equation rendering.\n\n4. **LeetCode Problem Solving & Algorithmic Rigor**\n   - **Focus:** 205+ problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ sorting/heaps, $O(1)$ hash maps).\n\n5. **Amazon & YouTube Production-Grade Clones**\n   - **Stack:** React, TypeScript, Firebase, Tailwind CSS. Focus on complex state persistence and media feeds.\n\n*Would you like an in-depth architectural breakdown of any specific project, such as CredVidhi's underwriting engine?*`;
+    }
+
+    if (analysis.intent === "TECHNICAL_SKILLS" || analysis.intent === "SKILLS" || analysis.intent === "TECH_STACK") {
+      return `### Aman Mishra's Technical Skillset & Tooling\n\n- **Languages:** C++ (Modern C++17/20, STL), C, Java, Python 3.11+, JavaScript (ESNext), TypeScript 5, SQL, HTML5, CSS3.\n- **Frontend Architecture:** React 18/19, Vite, Tailwind CSS, Redux Toolkit, Framer Motion, WCAG 2.1 AA accessibility.\n- **Backend & APIs:** FastAPI (Python), Express.js (Node.js), RESTful APIs, Pydantic v2 data contracts, SQLAlchemy ORM.\n- **Databases & Caching:** PostgreSQL 16 (ACID ledgers, indexing), Redis 7 (sliding-window rate limiting), MongoDB, SQLite.\n- **AI & Systems:** Google Gemini SDK, Retrieval-Augmented Generation (RAG), prompt guardrails, Scikit-Learn.\n- **DevOps & Tooling:** Git, GitHub, Docker, Postman, Linux (bash/zsh), Vercel.`;
+    }
+
+    if (analysis.intent === "EDUCATION") {
+      return `### Education & Academic Background\n\n- **Degree:** Bachelor of Technology (B.Tech) in Computer Science & Engineering (CSE)\n- **Institution:** Noida Institute of Engineering and Technology (NIET), Greater Noida, Uttar Pradesh\n- **Duration:** 2025 – 2029 (Undergraduate)\n- **Current CGPA:** **9.38 / 10.0**\n- **Academic Focus:** Data Structures & Algorithms, Object-Oriented Design, Operating Systems, Database Management Systems, and Software Engineering.`;
+    }
+
+    if (analysis.intent === "INTERNSHIP" || analysis.intent === "EXPERIENCE") {
+      return `### Work Experience & Internships\n\n**AI & ML Intern — Codomax Digital Solutions**\n- **Duration:** 12 July 2026 – 12 August 2026 (1 month)\n- **Key Deliverables:**\n  - Integrated generative AI pipelines and Google Gemini LLM API into internal workflow prototypes.\n  - Engineered automated data processing pipelines with Python (Pandas, NumPy).\n  - Implemented structured JSON schema validation to guarantee deterministic outputs from LLMs.\n  - Collaborated on prompt engineering and system instructions to minimize hallucinations.`;
+    }
+
     if (analysis.intent === "RECRUITER_EVALUATION") {
       return `### Candidate Evaluation: Aman Mishra\n\n**Candidate Profile & Fit Summary:**\n- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.\n- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029).\n- **Key Strengths:**\n  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).\n  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.\n  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).\n  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.\n\n*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
     }
@@ -1293,11 +1443,8 @@ var DeterministicFallbackProvider = class {
       return `I searched Aman Mishra's verified portfolio and project repositories, but did not find documentation regarding "${query}". \n\nAman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
     }
 
-    const topChunk = retrievedResults[0].chunk;
-
-    if (topChunk.documentId === "mantri-identity") {
-      return MANTRI_IDENTITY.responses.creator;
-    }
+    const nonIdentityChunks = retrievedResults.filter((r) => r.chunk.documentId !== 'mantri-identity');
+    const topChunk = (nonIdentityChunks.length > 0 ? nonIdentityChunks[0] : retrievedResults[0]).chunk;
 
     return `Based on Aman Mishra's verified portfolio documentation:\n\n${topChunk.content.replace(/^\[.*?\]\n/, "")}\n\n*For further details, explore the dedicated case study at ${topChunk.url}.*`;
   }
