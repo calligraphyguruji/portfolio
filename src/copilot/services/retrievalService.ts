@@ -147,9 +147,14 @@ export class HybridRetriever {
       .map((chunk) => {
         let score = calculateLexicalScore(query, chunk);
 
-        // Boost if matches targetProject detected by NLP
+        // Boost if matches targetProject detected by NLP or context resolution
         if (analysis.targetProject && chunk.projectId === analysis.targetProject) {
-          score *= 2.5;
+          score = Math.max(score * 3.0, 5.0);
+          if (chunk.section.toLowerCase().includes('overview') || chunk.title.toLowerCase().includes('overview')) {
+            score += 2.0;
+          }
+        } else if (analysis.targetProjects && chunk.projectId && analysis.targetProjects.includes(chunk.projectId)) {
+          score = Math.max(score * 2.5, 4.0);
         } else if (analysis.targetProject && chunk.projectId && chunk.projectId !== analysis.targetProject) {
           // Penalize different projects when targetProject is known
           score *= 0.05;
@@ -164,6 +169,10 @@ export class HybridRetriever {
             }
           } else {
             score *= 0.2;
+          }
+        } else if (analysis.intent === 'PROJECT_DETAILS' || analysis.intent === 'FOLLOW_UP') {
+          if (chunk.category === 'project' || chunk.category === 'architecture') {
+            score += 3.0;
           }
         } else if (analysis.intent === 'TECHNICAL_SKILLS') {
           if (chunk.documentId === 'skills-matrix' || chunk.category === 'skills') {
@@ -193,6 +202,23 @@ export class HybridRetriever {
       })
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score);
+
+    // Guaranteed fallback chunks for context-resolved target project
+    if (scoredLexical.length === 0 && analysis.targetProject) {
+      const fallbackChunks = validCandidateChunks
+        .filter((c) => c.projectId === analysis.targetProject)
+        .slice(0, limit);
+      fallbackChunks.forEach((chunk, idx) => {
+        scoredLexical.push({ chunk, score: 5.0 - idx * 0.5 });
+      });
+    } else if (scoredLexical.length === 0 && analysis.targetProjects && analysis.targetProjects.length > 0) {
+      const fallbackChunks = validCandidateChunks
+        .filter((c) => c.projectId && analysis.targetProjects!.includes(c.projectId))
+        .slice(0, limit);
+      fallbackChunks.forEach((chunk, idx) => {
+        scoredLexical.push({ chunk, score: 5.0 - idx * 0.5 });
+      });
+    }
 
     const lexicalChunks = scoredLexical.map((item) => item.chunk);
 

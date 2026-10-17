@@ -118,6 +118,9 @@ export class GeminiProvider implements AIProvider {
     if (analysis.intent) {
       promptSections.push(`DETECTED INTENT: ${analysis.intent}`);
     }
+    if (analysis.resolvedQuery && analysis.resolvedQuery !== query) {
+      promptSections.push(`RESOLVED CONVERSATIONAL CONTEXT:\nThe user is asking a follow-up referring to the preceding conversation. Resolved interpretation: "${analysis.resolvedQuery}". Answer directly about this resolved subject using the retrieved context.`);
+    }
     promptSections.push(`USER QUESTION:\n${query}`);
 
     contents.push({
@@ -270,6 +273,11 @@ export class DeterministicFallbackProvider implements AIProvider {
     analysis: NLPAnalysis
   ): Promise<string> {
     const qLower = query.toLowerCase();
+
+    // 0. Clarification for Ambiguous References
+    if (analysis.requiresClarification && analysis.clarificationPrompt) {
+      return analysis.clarificationPrompt;
+    }
 
     // 1. Security & Prompt Injection
     if (analysis.intent === 'PROMPT_INJECTION' || analysis.isInappropriateOrInjection) {
@@ -465,6 +473,79 @@ CredVidhi is engineered using the following production-grade stack:
 - **AI & Underwriting:** Google Gemini API for guided document processing, alongside fixed-point INR mathematical underwriting formulas.`;
     }
 
+    // 5b. CredVidhi General Overview & Selection Follow-Up
+    if (analysis.targetProject === 'credvidhi' || /credvidhi/i.test(query)) {
+      const isIntroFollowUp = /\b(anyone|any\s*one|either|one)\s+of\s+them\b/i.test(query);
+      const prefix = isIntroFollowUp
+        ? "I'll explain **CredVidhi**, Aman Mishra's flagship fintech underwriting platform from the projects mentioned (let me know if you would prefer KaushalNexus or Bodhi Sakha instead):\n\n"
+        : "";
+      return `${prefix}### CredVidhi — Enterprise Loan Processing & Deterministic Underwriting Platform
+
+**CredVidhi** is an institutional digital lending and credit underwriting platform built for retail lending, NBFCs, and banks:
+
+1. **Deterministic Underwriting Engine:** Zero-drift fixed-point arithmetic in INR (₹) calculating compound EMI ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) and Debt-to-Income (DTI) without floating-point rounding errors.
+2. **6-Stage Finite State Machine:** Non-reversible lifecycle: \`Draft → Submitted → Under Review → Approved → Disbursed\` (with terminal \`Rejected\` and intermediate \`Discrepancy\` states) enforced inside PostgreSQL ACID transaction boundaries.
+3. **KYC Verification Workbench:** Side-by-side visual document inspection interface for loan officers with discrepancy triage.
+4. **Append-Only Ledger (PostgreSQL 16):** Cryptographic immutable audit table tracking every state change, actor ID, and underwriting decision.
+5. **High-Throughput Tech Stack:** React 19, TypeScript, Vite, Tailwind CSS, Python FastAPI, PostgreSQL 16, Redis 7, and Google Gemini AI.
+
+*Live Platform: [credvidhi.vercel.app](https://credvidhi.vercel.app/) | Source: [GitHub](https://github.com/calligraphyguruji/CredVidhi)*`;
+    }
+
+    // 5c. KaushalNexus Detailed Explanation
+    if (analysis.targetProject === 'kaushal-nexus' || /kaushalnexus|kaushal/i.test(query)) {
+      return `### KaushalNexus — Employment & Skilling Intelligence Platform
+
+**KaushalNexus** is Aman Mishra's Smart India Hackathon (SIH) 2026 flagship platform built for Problem Statement 135 (Youth Employability & Skilling Intelligence):
+
+1. **Longitudinal Learner Tracking:** Tracks student progression across modular vocational skill milestones and coursework completions.
+2. **AI Skill Gap Diagnostics:** Uses the Google Gemini API to analyze candidate competencies against dynamic employer skill vectors and generate concrete intervention roadmaps.
+3. **District Analytics Dashboard:** Real-time administrative metrics tracking regional employment indicators, demand spikes, and vocational training throughput.
+4. **ML Opportunity Matching:** Matches learner technical competency vectors with verified internships and job opportunities.
+5. **Tech Stack:** React 19, TypeScript, Python FastAPI asynchronous microservices, PostgreSQL 16, Redis 7 caching, and Google Gemini AI.
+
+*Live Platform: [kaushal-nexus.vercel.app](https://kaushal-nexus.vercel.app/) | Source: [GitHub](https://github.com/calligraphyguruji/Kaushal-Nexus)*`;
+    }
+
+    // 5d. Bodhi Sakha Detailed Explanation
+    if (analysis.targetProject === 'gemini-ai-chatbot' || /bodhi\s*sakha|bodhi/i.test(query)) {
+      return `### Bodhi Sakha (बोधिसखा) — Full-Stack Conversational AI Assistant
+
+**Bodhi Sakha** is a production-grade conversational AI assistant engineered by Aman Mishra:
+
+1. **Real-Time Streaming Dialogue:** Low-latency token-by-token response streaming using Server-Sent Events (SSE) and Google Gemini SDK.
+2. **Deep Thinking Reasoning Mode:** Dedicated analytical reasoning mode with step-by-step problem deconstruction.
+3. **Serverless Document Ingestion:** Extracts and grounds context from uploaded PDF, DOCX, and TXT files using serverless document parsers.
+4. **KaTeX Math & Markdown Rendering:** Full LaTeX mathematical equation formatting alongside Markdown.
+5. **Multi-User Session Persistence:** Session tracking and conversation history in PostgreSQL.
+
+*Live Platform: [bodhi-sakha-phi.vercel.app](https://bodhi-sakha-phi.vercel.app/) | Source: [GitHub](https://github.com/calligraphyguruji/bodhi-sakha)*`;
+    }
+
+    // 5e. LeetCode Problem Solving Detailed Explanation
+    if (analysis.targetProject === 'leetcode-solutions' || /leetcode/i.test(query)) {
+      return `### LeetCode Problem Solving & Algorithmic Foundations
+
+Aman Mishra has solved **205+ algorithmic problems on LeetCode** implemented predominantly in **Modern C++ (C++17/20)**:
+
+- **Algorithmic Domains:** Tree/Graph Traversals (DFS, BFS, Dijkstra's), Dynamic Programming (1D/2D memoization), Monotonic Stacks, Two Pointers, and Binary Search.
+- **Engineering Discipline:** Strict asymptotic Big-O runtime and space bounds, utilizing C++ STL cache locality (\`std::vector\`, \`std::priority_queue\`, \`std::unordered_map\`) for minimal memory allocation overhead.
+
+*LeetCode Profile: [leetcode.com/u/calligraphyguruji](https://leetcode.com/u/calligraphyguruji/) | Repository: [GitHub](https://github.com/calligraphyguruji/LeetCode-Questions)*`;
+    }
+
+    // 5f. Frontend Architecture Clones Detailed Explanation
+    if (analysis.targetProject === 'amazon-clone' || /amazon.*clone/i.test(query)) {
+      return `### Frontend Architecture Clones — Amazon & YouTube
+
+Aman Mishra engineered production-grade web clones to master core browser fundamentals, state synchronization, and DOM performance without third-party frameworks:
+
+1. **Amazon E-Commerce Clone:** Multi-page client architecture with product catalog generation, dynamic cart quantity counters, checkout review, and package delivery status tracking in vanilla JavaScript (ES6+), HTML5, and modular CSS Grid/Flexbox.
+2. **YouTube Web Clone:** High-fidelity layout engineering replicating YouTube's sidebar navigation, responsive video grid auto-fit columns, and video playback views.
+
+*Live: [Amazon Clone on Vercel](https://myecommerce-project-clone.vercel.app/) | Source: [GitHub](https://github.com/calligraphyguruji/amazon-clone)*`;
+    }
+
     // 6. General Computer Science & Algorithms (Dijkstra, Binary Search, RAG)
     if (/dijkstra/i.test(qLower)) {
       return `### Dijkstra's Shortest Path Algorithm
@@ -549,7 +630,7 @@ int binarySearch(const std::vector<int>& arr, int target) {
 
     // 7. Grounded Retrieval Fallback
     if (retrievedResults.length === 0) {
-      return `I searched Aman Mishra's verified portfolio and project repositories, but did not find specific documentation regarding "${query}". \n\nAman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
+      return `I couldn't locate specific documentation matching that request in Aman Mishra's verified portfolio. You can ask about his flagship projects (**CredVidhi**, **KaushalNexus**, **Bodhi Sakha**), technical skills (modern C++, React 19, FastAPI, PostgreSQL), or download his resume.`;
     }
 
     const nonIdentityChunks = retrievedResults.filter((r) => r.chunk.documentId !== 'mantri-identity');

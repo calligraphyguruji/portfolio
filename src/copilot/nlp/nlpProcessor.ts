@@ -1,4 +1,5 @@
 import type { QueryIntent, NLPAnalysis, RecognizedEntities } from '../types.ts';
+import { resolveConversationalContext } from './contextResolver.ts';
 
 /**
  * Recognized Entity Dictionaries
@@ -314,9 +315,26 @@ export function analyzeQuery(
 
   // Context-aware follow-up resolution from conversation history
   let targetProject = Array.from(recognizedProjects)[0];
+  let targetProjects: string[] | undefined = undefined;
+  let referencedEntity: string | undefined = undefined;
+  let resolvedQuery = normalizedQuery;
+  let requiresClarification = false;
+  let clarificationPrompt: string | undefined = undefined;
   let isFollowUp = false;
 
-  if (!targetProject && conversationHistory.length > 0) {
+  const contextRes = resolveConversationalContext(normalizedQuery, conversationHistory);
+  if (contextRes.isFollowUp) {
+    isFollowUp = true;
+    resolvedQuery = contextRes.resolvedQuery;
+    targetProject = contextRes.targetProject || targetProject;
+    targetProjects = contextRes.targetProjects;
+    referencedEntity = contextRes.referencedEntity;
+    requiresClarification = contextRes.requiresClarification;
+    clarificationPrompt = contextRes.clarificationPrompt;
+    if (targetProject) {
+      recognizedProjects.add(targetProject);
+    }
+  } else if (!targetProject && conversationHistory.length > 0) {
     isFollowUp =
       /\b(it|this|that|project|system|platform|app|clone|component|components|layer|layers|step|steps|phase|phases|stage|stages|service|services|module|modules|part|parts|second|first|third|verification|underwriting|fsm|failure|fails)\b/i.test(
         lowerQuery
@@ -395,7 +413,9 @@ export function analyzeQuery(
   const isTechStack =
     /\b(tech\s+stack|technologies|built with|languages|frameworks|tools)\b/i.test(lowerQuery);
 
-  if (isProjectList) {
+  if (contextRes.isFollowUp && contextRes.detectedIntent !== 'UNKNOWN') {
+    intent = contextRes.detectedIntent;
+  } else if (isProjectList) {
     intent = 'PROJECT_LIST';
   } else if (isRecruiter) {
     intent = 'RECRUITER_EVALUATION';
@@ -431,7 +451,10 @@ export function analyzeQuery(
 
   // 9. Query expansion terms for retrieval
   const expandedTerms: string[] = [normalizedQuery];
-  if (intent === 'PROJECT_LIST') {
+  if (resolvedQuery && resolvedQuery !== normalizedQuery) {
+    expandedTerms.push(resolvedQuery);
+  }
+  if (intent === 'PROJECT_LIST' || targetProjects) {
     expandedTerms.push('credvidhi loan underwriting kaushal nexus bodhisakha leetcode amazon clone projects overview');
   } else if (targetProject === 'credvidhi') {
     expandedTerms.push('loan underwriting finite state machine postgresql ledger fixed point emi dti redis');
@@ -463,10 +486,16 @@ export function analyzeQuery(
   return {
     originalQuery: rawQuery,
     normalizedQuery,
+    resolvedQuery,
     intent,
     entities,
     expandedTerms,
     targetProject,
+    targetProjects,
+    referencedEntity,
+    isFollowUp,
+    requiresClarification,
+    clarificationPrompt,
     isRecruiterMode: isRecruiter,
     isInappropriateOrInjection: false,
   };

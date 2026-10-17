@@ -236,12 +236,17 @@ export class ConversationMemory {
     for (let i = recent.length - 1; i >= 0; i--) {
       const content = recent[i].content.toLowerCase();
       if (content.includes('credvidhi')) return { targetProject: 'credvidhi', recentTopic: 'CredVidhi' };
-      if (content.includes('kaushalnexus')) return { targetProject: 'kaushalnexus', recentTopic: 'KaushalNexus' };
-      if (content.includes('bodhi sakha') || content.includes('bodhisakha')) {
-        return { targetProject: 'bodhisakha', recentTopic: 'Bodhi Sakha' };
+      if (content.includes('kaushalnexus') || content.includes('kaushal-nexus') || content.includes('kaushal')) {
+        return { targetProject: 'kaushal-nexus', recentTopic: 'KaushalNexus' };
+      }
+      if (content.includes('bodhi sakha') || content.includes('bodhisakha') || content.includes('gemini-ai-chatbot')) {
+        return { targetProject: 'gemini-ai-chatbot', recentTopic: 'Bodhi Sakha' };
       }
       if (content.includes('leetcode') || content.includes('dsa')) {
-        return { targetProject: 'leetcode', recentTopic: 'LeetCode & DSA' };
+        return { targetProject: 'leetcode-solutions', recentTopic: 'LeetCode & DSA' };
+      }
+      if (content.includes('amazon') || content.includes('clone')) {
+        return { targetProject: 'amazon-clone', recentTopic: 'Frontend Clones' };
       }
     }
 

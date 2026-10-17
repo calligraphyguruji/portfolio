@@ -52,10 +52,16 @@ export interface RecognizedEntities {
 export interface NLPAnalysis {
   originalQuery: string;
   normalizedQuery: string;
+  resolvedQuery?: string;
   intent: QueryIntent;
   entities: RecognizedEntities;
   expandedTerms: string[];
   targetProject?: string;
+  targetProjects?: string[];
+  referencedEntity?: string;
+  isFollowUp?: boolean;
+  requiresClarification?: boolean;
+  clarificationPrompt?: string;
   isRecruiterMode: boolean;
   isInappropriateOrInjection: boolean;
 }
