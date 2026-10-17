@@ -307,12 +307,12 @@ export const CopilotWidget: React.FC = () => {
           className={`flex items-center gap-2.5 px-4 py-3 rounded-full shadow-2xl transition-all duration-300 ${
             isOpen
               ? 'bg-[#171717] dark:bg-white text-white dark:text-[#171717] scale-95'
-              : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-blue-500/25 hover:scale-105 active:scale-95'
+              : 'bg-gradient-to-r from-amber-500 to-amber-600 text-[#111111] font-semibold hover:shadow-amber-500/25 hover:from-amber-400 hover:to-amber-500 hover:scale-105 active:scale-95'
           }`}
           aria-label={isOpen ? 'Close Mantri' : 'Ask Mantri'}
         >
-          <Sparkles className="w-4 h-4 animate-pulse" />
-          <span className="text-xs font-mono font-bold tracking-wider uppercase">
+          <Sparkles className="w-4 h-4 animate-pulse text-[#111111]" />
+          <span className="text-xs font-mono font-bold tracking-wider uppercase text-[#111111]">
             {isOpen ? 'Close Mantri' : 'Ask Mantri'}
           </span>
         </button>
@@ -331,7 +331,7 @@ export const CopilotWidget: React.FC = () => {
             {/* Header */}
             <div className="px-4 py-3.5 bg-slate-50 dark:bg-[#181B24] border-b border-black/10 dark:border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div>
@@ -349,8 +349,8 @@ export const CopilotWidget: React.FC = () => {
                         </span>
                       </div>
                     ) : healthStatus.status === 'checking' ? (
-                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-mono">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono border border-amber-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                         <span>Checking system...</span>
                       </div>
                     ) : (
@@ -400,7 +400,7 @@ export const CopilotWidget: React.FC = () => {
                   <div
                     className={`max-w-[92%] sm:max-w-[88%] p-3.5 rounded-2xl relative group ${
                       msg.role === 'user'
-                        ? 'bg-blue-600 text-white rounded-br-xs'
+                        ? 'bg-amber-500 hover:bg-amber-400 text-[#111111] font-medium rounded-br-xs shadow-md shadow-amber-500/10'
                         : msg.isError
                         ? 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-bl-xs'
                         : 'bg-slate-100 dark:bg-[#1E2230] text-slate-800 dark:text-slate-200 border border-black/5 dark:border-white/5 rounded-bl-xs'
@@ -438,7 +438,7 @@ export const CopilotWidget: React.FC = () => {
                               <h2 className="text-xs font-bold mt-2 mb-1 text-slate-900 dark:text-white font-mono" {...props} />
                             ),
                             h3: ({ ...props }) => (
-                              <h3 className="text-xs font-bold mt-2 mb-1 text-blue-600 dark:text-blue-400 font-mono" {...props} />
+                              <h3 className="text-xs font-bold mt-2 mb-1 text-amber-600 dark:text-amber-400 font-mono" {...props} />
                             ),
                             p: ({ ...props }) => (
                               <p className="mb-2 last:mb-0 leading-relaxed" {...props} />
@@ -453,7 +453,7 @@ export const CopilotWidget: React.FC = () => {
                               <li className="leading-relaxed" {...props} />
                             ),
                             blockquote: ({ ...props }) => (
-                              <blockquote className="border-l-2 border-blue-500 pl-3 my-2 italic text-slate-600 dark:text-slate-400" {...props} />
+                              <blockquote className="border-l-2 border-amber-500 pl-3 my-2 italic text-slate-600 dark:text-slate-400" {...props} />
                             ),
                             table: ({ ...props }) => (
                               <div className="my-2.5 overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
@@ -468,7 +468,7 @@ export const CopilotWidget: React.FC = () => {
                             ),
                             a: ({ ...props }) => (
                               <a
-                                className="text-blue-600 dark:text-blue-400 underline hover:opacity-80"
+                                className="text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-500 dark:hover:text-amber-300 transition-colors"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 {...props}
@@ -489,7 +489,7 @@ export const CopilotWidget: React.FC = () => {
                     {/* Recruiter Badge Box */}
                     {msg.recruiterAlignment && (
                       <div className="mt-3 pt-3 border-t border-black/10 dark:border-white/10 space-y-2">
-                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
                           <Briefcase className="w-3.5 h-3.5" />
                           <span>Candidate Fit Summary:</span>
                         </div>
@@ -497,7 +497,7 @@ export const CopilotWidget: React.FC = () => {
                           {msg.recruiterAlignment.suitableRoles.map((role) => (
                             <span
                               key={role}
-                              className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 text-[10px] font-mono"
+                              className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-mono border border-amber-500/20"
                             >
                               {role}
                             </span>
@@ -520,7 +520,7 @@ export const CopilotWidget: React.FC = () => {
                               href={cite.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-blue-500/10 hover:text-blue-500 transition-colors text-[11px] font-mono"
+                              className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-500/30 border border-transparent transition-all text-[11px] font-mono"
                             >
                               <span className="truncate">{cite.title}</span>
                               <ExternalLink className="w-3 h-3 shrink-0" />
@@ -562,10 +562,10 @@ export const CopilotWidget: React.FC = () => {
               ))}
 
               {isLoading && (
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-[#1E2230] text-slate-500 w-full">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-[#1E2230] text-slate-500 w-full border border-amber-500/15">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                    <span className="text-xs font-mono">Mantri is generating response...</span>
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                    <span className="text-xs font-mono text-slate-700 dark:text-slate-300">Mantri is generating response...</span>
                   </div>
                   <button
                     type="button"
@@ -588,7 +588,7 @@ export const CopilotWidget: React.FC = () => {
                     type="button"
                     key={prompt.label}
                     onClick={() => handleSend(prompt.query)}
-                    className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-mono bg-white dark:bg-[#1E2230] border border-black/10 dark:border-white/10 hover:border-blue-500 text-slate-700 dark:text-slate-300 transition-all text-left"
+                    className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-mono bg-white dark:bg-[#1E2230] border border-black/10 dark:border-white/10 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 text-slate-700 dark:text-slate-300 transition-all text-left"
                   >
                     {prompt.label}
                   </button>
@@ -609,7 +609,7 @@ export const CopilotWidget: React.FC = () => {
                 value={input}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
                 placeholder="Ask Mantri about projects, architecture, DSA, and more..."
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1C202C] text-slate-800 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-transparent"
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1C202C] text-slate-800 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500/50 border border-transparent transition-all"
                 disabled={isLoading}
               />
               {isLoading ? (
@@ -626,7 +626,7 @@ export const CopilotWidget: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!input.trim()}
-                  className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition-colors"
+                  className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-[#111111] font-semibold transition-all shadow-sm hover:shadow-amber-500/20"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
