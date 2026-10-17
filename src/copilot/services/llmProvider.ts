@@ -177,18 +177,36 @@ export class GeminiProvider implements AIProvider {
 
       const errMsg = String(err?.message || err);
 
-      // Classify common error categories without leaking keys
-      if (errMsg.includes('401') || errMsg.includes('API_KEY_INVALID') || errMsg.includes('PERMISSION_DENIED')) {
+      // Classify auth and permission errors first (e.g. 400 API key not valid, 401, 403, PERMISSION_DENIED)
+      if (
+        err?.status === 401 ||
+        err?.status === 403 ||
+        errMsg.includes('401') ||
+        errMsg.includes('403') ||
+        errMsg.includes('API_KEY_INVALID') ||
+        errMsg.includes('API key not valid') ||
+        errMsg.includes('PERMISSION_DENIED')
+      ) {
         throw new Error('GEMINI_AUTH_ERROR: Invalid or unauthorized Gemini API key.');
       }
-      if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+      if (
+        err?.status === 429 ||
+        errMsg.includes('429') ||
+        errMsg.includes('RESOURCE_EXHAUSTED') ||
+        errMsg.includes('quota')
+      ) {
         throw new Error('GEMINI_QUOTA_ERROR: Rate limit or quota exceeded on Gemini API.');
       }
-      if (errMsg.includes('404') || errMsg.includes('NOT_FOUND') || errMsg.includes('models/')) {
+      if (
+        err?.status === 404 ||
+        errMsg.includes('404') ||
+        errMsg.includes('NOT_FOUND') ||
+        errMsg.includes('is not found')
+      ) {
         throw new Error(`GEMINI_MODEL_ERROR: Model "${this.modelName}" not found or unsupported.`);
       }
 
-      throw new Error(`GEMINI_API_ERROR: ${errMsg.replace(/AIza[0-9A-Za-z\-_]{35}/g, '[REDACTED]')}`);
+      throw new Error(`GEMINI_API_ERROR: ${errMsg.replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')}`);
     }
   }
 

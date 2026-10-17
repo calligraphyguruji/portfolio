@@ -1418,13 +1418,31 @@ var GeminiProvider = class {
         throw new Error(`GEMINI_TIMEOUT: Request exceeded timeout of ${this.timeoutMs}ms.`);
       }
       const errMsg = String(err?.message || err);
-      if (errMsg.includes("401") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("PERMISSION_DENIED")) {
+      if (
+        err?.status === 401 ||
+        err?.status === 403 ||
+        errMsg.includes("401") ||
+        errMsg.includes("403") ||
+        errMsg.includes("API_KEY_INVALID") ||
+        errMsg.includes("API key not valid") ||
+        errMsg.includes("PERMISSION_DENIED")
+      ) {
         throw new Error("GEMINI_AUTH_ERROR: Invalid or unauthorized Gemini API key.");
       }
-      if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED")) {
+      if (
+        err?.status === 429 ||
+        errMsg.includes("429") ||
+        errMsg.includes("RESOURCE_EXHAUSTED") ||
+        errMsg.includes("quota")
+      ) {
         throw new Error("GEMINI_QUOTA_ERROR: Rate limit or quota exceeded on Gemini API.");
       }
-      if (errMsg.includes("404") || errMsg.includes("NOT_FOUND") || errMsg.includes("models/")) {
+      if (
+        err?.status === 404 ||
+        errMsg.includes("404") ||
+        errMsg.includes("NOT_FOUND") ||
+        errMsg.includes("is not found")
+      ) {
         throw new Error(`GEMINI_MODEL_ERROR: Model "${this.modelName}" not found or unsupported.`);
       }
       throw new Error(`GEMINI_API_ERROR: ${errMsg.replace(/AIza[0-9A-Za-z\-_]{20,}/g, "[REDACTED]")}`);
@@ -1435,9 +1453,13 @@ var GeminiProvider = class {
 function classifyGeminiError(err) {
   const msg = String(err?.message || err);
   if (
+    err?.status === 401 ||
+    err?.status === 403 ||
     msg.includes('GEMINI_AUTH_ERROR') ||
     msg.includes('401') ||
+    msg.includes('403') ||
     msg.includes('API_KEY_INVALID') ||
+    msg.includes('API key not valid') ||
     msg.includes('PERMISSION_DENIED')
   ) {
     return 'AUTH_ERROR';
@@ -1446,6 +1468,7 @@ function classifyGeminiError(err) {
     return 'SAFETY_BLOCKED';
   }
   if (
+    err?.status === 404 ||
     msg.includes('404') ||
     msg.includes('NOT_FOUND') ||
     msg.includes('is not found') ||
@@ -1487,6 +1510,41 @@ function diagnoseGeminiFailure(err, modelId) {
     .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
     .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
   const lower = sanitized.toLowerCase();
+
+  // Auth / Permissions (Check FIRST before 404/models pattern)
+  if (
+    err?.status === 401 ||
+    err?.status === 403 ||
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('api_key_invalid') ||
+    lower.includes('api key not valid') ||
+    lower.includes('permission_denied') ||
+    lower.includes('auth_error')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: err?.status || (lower.includes('403') ? 403 : 401),
+      category: 'AUTH_OR_PERMISSION_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Safety block
+  if (lower.includes('safety') || lower.includes('blocked')) {
+    return {
+      provider: 'gemini',
+      statusCode: 400,
+      category: 'SAFETY_BLOCKED',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
   const is404 =
     err?.status === 404 ||
@@ -1550,26 +1608,6 @@ function diagnoseGeminiFailure(err, modelId) {
       statusCode: 404,
       category: 'RESOURCE_NOT_FOUND',
       is404: true,
-      modelId,
-      reason: sanitized,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  if (
-    err?.status === 401 ||
-    err?.status === 403 ||
-    lower.includes('401') ||
-    lower.includes('403') ||
-    lower.includes('api_key_invalid') ||
-    lower.includes('permission_denied') ||
-    lower.includes('auth_error')
-  ) {
-    return {
-      provider: 'gemini',
-      statusCode: err?.status || (lower.includes('403') ? 403 : 401),
-      category: 'AUTH_OR_PERMISSION_ERROR',
-      is404: false,
       modelId,
       reason: sanitized,
       timestamp: new Date().toISOString(),
@@ -1812,6 +1850,121 @@ var GroqProvider = class {
   }
 };
 
+function diagnoseGroqFailure(err, modelId) {
+  const rawMsg = String(err?.message || err);
+  const sanitized = rawMsg
+    .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
+    .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
+  const lower = sanitized.toLowerCase();
+
+  if (
+    err?.status === 401 ||
+    err?.status === 403 ||
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('invalid_api_key') ||
+    lower.includes('unauthorized') ||
+    lower.includes('groq_auth_error')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: err?.status || 401,
+      category: 'AUTH_OR_PERMISSION_ERROR',
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status === 404 ||
+    lower.includes('404') ||
+    lower.includes('model_not_found') ||
+    lower.includes('model does not exist') ||
+    lower.includes('groq_model_not_found')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: 404,
+      category: 'MODEL_NOT_FOUND',
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status === 429 ||
+    lower.includes('429') ||
+    lower.includes('rate_limit') ||
+    lower.includes('groq_rate_limit')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: 429,
+      category: 'RATE_LIMIT_OR_QUOTA',
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.name === 'AbortError' ||
+    lower.includes('timeout') ||
+    lower.includes('groq_timeout') ||
+    lower.includes('aborted')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: 408,
+      category: 'TIMEOUT',
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status >= 500 ||
+    lower.includes('500') ||
+    lower.includes('502') ||
+    lower.includes('503') ||
+    lower.includes('504') ||
+    lower.includes('service unavailable') ||
+    lower.includes('internal server error')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: err?.status || 503,
+      category: 'SERVER_ERROR',
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (lower.includes('malformed') || lower.includes('empty')) {
+    return {
+      provider: 'groq',
+      statusCode: 422,
+      category: 'MALFORMED_OUTPUT',
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  return {
+    provider: 'groq',
+    statusCode: err?.status,
+    category: 'UNKNOWN_ERROR',
+    modelId,
+    reason: sanitized,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 var GeminiModelRouter = class {
   apiKey;
   primaryModel;
@@ -1824,9 +1977,9 @@ var GeminiModelRouter = class {
 
   constructor(options = {}) {
     this.apiKey = options.apiKey || (typeof process !== 'undefined' && (process.env?.GEMINI_API_KEY || process.env?.GOOGLE_API_KEY)) || '';
-    this.primaryModel = options.primaryModel || (typeof process !== 'undefined' && (process.env?.GEMINI_PRIMARY_MODEL || process.env?.GEMINI_MODEL)) || 'gemini-2.0-flash';
+    this.primaryModel = options.primaryModel || (typeof process !== 'undefined' && (process.env?.GEMINI_PRIMARY_MODEL || process.env?.GEMINI_MODEL)) || 'gemini-2.5-flash';
     const fallbackEnv = typeof process !== 'undefined' && process.env?.GEMINI_FALLBACK_MODELS;
-    this.fallbackModels = options.fallbackModels || (fallbackEnv ? fallbackEnv.split(',').map(m => m.trim()).filter(Boolean) : ['gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']);
+    this.fallbackModels = options.fallbackModels || (fallbackEnv ? fallbackEnv.split(',').map(m => m.trim()).filter(Boolean) : ['gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-3.8-flash']);
     this.maxAttempts = options.maxAttempts || (typeof process !== 'undefined' && process.env?.GEMINI_MAX_ATTEMPTS ? parseInt(process.env.GEMINI_MAX_ATTEMPTS, 10) : 4);
     this.cooldownSeconds = options.cooldownSeconds || (typeof process !== 'undefined' && process.env?.GEMINI_COOLDOWN_SECONDS ? parseInt(process.env.GEMINI_COOLDOWN_SECONDS, 10) : 60);
     this.requestTimeoutMs = options.requestTimeoutMs || (typeof process !== 'undefined' && process.env?.REQUEST_TIMEOUT_MS ? parseInt(process.env.REQUEST_TIMEOUT_MS, 10) : 12000);
@@ -2476,11 +2629,11 @@ var CopilotOrchestrator = class {
           failoverReason = failoverReason || 'GEMINI_FAILOVER_TO_GROQ';
         }
       } catch (groqErr) {
-        const rawErrMsg = String(groqErr?.message || groqErr);
-        const sanitizedErr = rawErrMsg
-          .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
-          .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
-        console.warn("[CopilotOrchestrator] Groq fallback failed, engaging deterministic fallback:", sanitizedErr);
+        const groqDiag = diagnoseGroqFailure(groqErr, this.groqProvider.getModelName());
+        diagnostics.push(groqDiag);
+        failoverOccurred = true;
+        failoverReason = failoverReason ? `${failoverReason} -> GROQ_FAILED: ${groqDiag.category}` : `GROQ_FAILED: ${groqDiag.category}`;
+        console.warn("[CopilotOrchestrator] Groq fallback failed, engaging deterministic fallback:", JSON.stringify(groqDiag));
       }
     }
 

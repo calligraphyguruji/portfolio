@@ -254,3 +254,146 @@ export class GroqProvider implements AIProvider {
     });
   }
 }
+
+export interface GroqFailureDiagnostic {
+  provider: 'groq';
+  statusCode?: number;
+  category:
+    | 'AUTH_OR_PERMISSION_ERROR'
+    | 'MODEL_NOT_FOUND'
+    | 'RATE_LIMIT_OR_QUOTA'
+    | 'TIMEOUT'
+    | 'SERVER_ERROR'
+    | 'MALFORMED_OUTPUT'
+    | 'UNKNOWN_ERROR';
+  is404: boolean;
+  modelId?: string;
+  reason: string;
+  timestamp: string;
+}
+
+/**
+ * Distinguishes and safely classifies Groq errors into diagnostics
+ * without exposing credentials or user data.
+ */
+export function diagnoseGroqFailure(err: any, modelId?: string): GroqFailureDiagnostic {
+  const rawMsg = String(err?.message || err);
+  const sanitized = rawMsg
+    .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
+    .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
+  const lower = sanitized.toLowerCase();
+
+  if (
+    err?.status === 401 ||
+    err?.status === 403 ||
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('invalid_api_key') ||
+    lower.includes('unauthorized') ||
+    lower.includes('groq_auth_error')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: err?.status || 401,
+      category: 'AUTH_OR_PERMISSION_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status === 404 ||
+    lower.includes('404') ||
+    lower.includes('model_not_found') ||
+    lower.includes('model does not exist') ||
+    lower.includes('groq_model_not_found')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: 404,
+      category: 'MODEL_NOT_FOUND',
+      is404: true,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status === 429 ||
+    lower.includes('429') ||
+    lower.includes('rate_limit') ||
+    lower.includes('groq_rate_limit')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: 429,
+      category: 'RATE_LIMIT_OR_QUOTA',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.name === 'AbortError' ||
+    lower.includes('timeout') ||
+    lower.includes('groq_timeout') ||
+    lower.includes('aborted')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: 408,
+      category: 'TIMEOUT',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status >= 500 ||
+    lower.includes('500') ||
+    lower.includes('502') ||
+    lower.includes('503') ||
+    lower.includes('504') ||
+    lower.includes('service unavailable') ||
+    lower.includes('internal server error')
+  ) {
+    return {
+      provider: 'groq',
+      statusCode: err?.status || 503,
+      category: 'SERVER_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (lower.includes('malformed') || lower.includes('empty')) {
+    return {
+      provider: 'groq',
+      statusCode: 422,
+      category: 'MALFORMED_OUTPUT',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  return {
+    provider: 'groq',
+    statusCode: err?.status,
+    category: 'UNKNOWN_ERROR',
+    is404: false,
+    modelId,
+    reason: sanitized,
+    timestamp: new Date().toISOString(),
+  };
+}

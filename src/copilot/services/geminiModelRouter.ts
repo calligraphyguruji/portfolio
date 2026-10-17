@@ -43,9 +43,13 @@ export function classifyGeminiError(err: any): ErrorClassification {
   const msg = String(err?.message || err);
 
   if (
+    err?.status === 401 ||
+    err?.status === 403 ||
     msg.includes('GEMINI_AUTH_ERROR') ||
     msg.includes('401') ||
+    msg.includes('403') ||
     msg.includes('API_KEY_INVALID') ||
+    msg.includes('API key not valid') ||
     msg.includes('PERMISSION_DENIED')
   ) {
     return 'AUTH_ERROR';
@@ -56,6 +60,7 @@ export function classifyGeminiError(err: any): ErrorClassification {
   }
 
   if (
+    err?.status === 404 ||
     msg.includes('404') ||
     msg.includes('NOT_FOUND') ||
     msg.includes('is not found') ||
@@ -131,6 +136,41 @@ export function diagnoseGeminiFailure(err: any, modelId?: string): GeminiFailure
     .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
   const lower = sanitized.toLowerCase();
 
+  // Auth / Permissions (Check FIRST before 404/models pattern)
+  if (
+    err?.status === 401 ||
+    err?.status === 403 ||
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('api_key_invalid') ||
+    lower.includes('api key not valid') ||
+    lower.includes('permission_denied') ||
+    lower.includes('auth_error')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: err?.status || (lower.includes('403') ? 403 : 401),
+      category: 'AUTH_OR_PERMISSION_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Safety block
+  if (lower.includes('safety') || lower.includes('blocked')) {
+    return {
+      provider: 'gemini',
+      statusCode: 400,
+      category: 'SAFETY_BLOCKED',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   // Distinguish 404 subtypes
   const is404 =
     err?.status === 404 ||
@@ -194,27 +234,6 @@ export function diagnoseGeminiFailure(err: any, modelId?: string): GeminiFailure
       statusCode: 404,
       category: 'RESOURCE_NOT_FOUND',
       is404: true,
-      modelId,
-      reason: sanitized,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  // Auth / Permissions
-  if (
-    err?.status === 401 ||
-    err?.status === 403 ||
-    lower.includes('401') ||
-    lower.includes('403') ||
-    lower.includes('api_key_invalid') ||
-    lower.includes('permission_denied') ||
-    lower.includes('auth_error')
-  ) {
-    return {
-      provider: 'gemini',
-      statusCode: err?.status || (lower.includes('403') ? 403 : 401),
-      category: 'AUTH_OR_PERMISSION_ERROR',
-      is404: false,
       modelId,
       reason: sanitized,
       timestamp: new Date().toISOString(),

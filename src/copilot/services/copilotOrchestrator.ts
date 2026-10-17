@@ -4,7 +4,7 @@ import { analyzeQuery } from '../nlp/nlpProcessor.ts';
 import { HybridRetriever } from './retrievalService.ts';
 import { GeminiProvider, DeterministicFallbackProvider } from './llmProvider.ts';
 import { GeminiModelRouter, diagnoseGeminiFailure, type GeminiFailureDiagnostic } from './geminiModelRouter.ts';
-import { GroqProvider } from './groqProvider.ts';
+import { GroqProvider, diagnoseGroqFailure, type GroqFailureDiagnostic } from './groqProvider.ts';
 import { OllamaProvider } from './ollamaProvider.ts';
 import { conversationMemory } from './conversationMemory.ts';
 import { toolRegistry } from './toolRegistry.ts';
@@ -310,7 +310,7 @@ export class CopilotOrchestrator {
     let attempts = 1;
     let failoverOccurred = false;
     let failoverReason: string | undefined = undefined;
-    const providerDiagnostics: GeminiFailureDiagnostic[] = [];
+    const providerDiagnostics: Array<GeminiFailureDiagnostic | GroqFailureDiagnostic> = [];
     const isGeminiConfigured = this.geminiRouter.isConfigured() || this.geminiProvider?.isConfigured();
 
     // Step 7a. Primary: Google Gemini Router
@@ -375,13 +375,14 @@ export class CopilotOrchestrator {
           answer = groqAnswer.trim();
           usedModel = `groq:${this.groqProvider.getModelName()}`;
           failoverOccurred = true;
+          failoverReason = failoverReason || 'GEMINI_FAILOVER_TO_GROQ';
         }
       } catch (groqErr: any) {
-        const rawErrMsg = String(groqErr?.message || groqErr);
-        const sanitizedErr = rawErrMsg
-          .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
-          .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
-        console.warn('[CopilotOrchestrator] Groq fallback failed:', sanitizedErr);
+        const groqDiag = diagnoseGroqFailure(groqErr, this.groqProvider.getModelName());
+        providerDiagnostics.push(groqDiag);
+        failoverOccurred = true;
+        failoverReason = failoverReason ? `${failoverReason} -> GROQ_FAILED: ${groqDiag.category}` : `GROQ_FAILED: ${groqDiag.category}`;
+        console.warn('[CopilotOrchestrator] Groq fallback failed:', JSON.stringify(groqDiag));
       }
     } else if (!answer && generationError) {
       console.warn('[CopilotOrchestrator] Groq fallback skipped: GROQ_API_KEY is not configured.');

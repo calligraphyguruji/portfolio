@@ -71,9 +71,9 @@ Mantri is the production-grade, context-aware AI engineering assistant integrate
      ┌─────────────────────────────────────────────────────────────┐
      │              4-Tier Adaptive Inference Pipeline             │
      │  1. Primary: Multi-Model Google Gemini Router               │
-     │     • Primary: gemini-2.0-flash (fast, multi-turn reasoning)│
-     │     • Configurable Fallbacks: gemini-2.0-flash-lite,        │
-     │       gemini-1.5-flash, gemini-1.5-pro                      │
+     │     • Primary: gemini-2.5-flash (fast, multi-turn reasoning)│
+     │     • Configurable Fallbacks: gemini-2.5-flash-lite,        │
+     │       gemini-2.5-pro, gemini-3.8-flash                      │
      │     • Centralized circuit breaker & cooldown window         │
      │  2. Secondary: Official Groq API Fallback Provider          │
      │     • Low-latency inference powered by `groq-sdk`           │
@@ -97,8 +97,8 @@ Mantri utilizes official `@google/genai` and `groq-sdk` packages on the server/s
    ```bash
    # Primary: Google Gemini API
    GEMINI_API_KEY=your_gemini_api_key_here
-   GEMINI_PRIMARY_MODEL=gemini-2.0-flash
-   GEMINI_FALLBACK_MODELS=gemini-2.0-flash-lite,gemini-1.5-flash,gemini-1.5-pro
+   GEMINI_PRIMARY_MODEL=gemini-2.5-flash
+   GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite,gemini-2.5-pro,gemini-3.8-flash
    GEMINI_MAX_ATTEMPTS=4
    GEMINI_COOLDOWN_SECONDS=60
    REQUEST_TIMEOUT_MS=12000
@@ -113,12 +113,12 @@ Mantri utilizes official `@google/genai` and `groq-sdk` packages on the server/s
    ```
 3. **Security Invariant:** `GEMINI_API_KEY` and `GROQ_API_KEY` are read strictly on the server/serverless layer (`api/copilot.js` and `server/index.ts`). They are never prefixed with `VITE_`, logged, exposed in error diagnostics, or sent to the client.
 4. **Automated Multi-Provider Failover Rules:**
-   - **Gemini Model Failover:** Recoverable errors (429 Quota, 500/503 Server, Timeouts, 404 Model Not Found) place the failing model in cooldown (`GEMINI_COOLDOWN_SECONDS`) and cycle through configured Gemini fallbacks (`gemini-2.0-flash-lite`, `gemini-1.5-flash`, `gemini-1.5-pro`).
+   - **Gemini Model Failover:** Recoverable errors (429 Quota, 500/503 Server, Timeouts, 404 Model Not Found) place the failing model in cooldown (`GEMINI_COOLDOWN_SECONDS`) and cycle through configured Gemini fallbacks (`gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-3.8-flash`).
    - **Groq Provider Failover:** If all Gemini models fail, return HTTP 404 (model or endpoint not found), 401/403, 429 rate limit, or timeout, Mantri automatically invokes `GroqProvider` (`llama-3.3-70b-versatile`) with formatted RAG context, multi-turn history, and resolved entity references.
    - **Grounded Engine Fallback:** If Groq is unconfigured or encounters an API error, Mantri safely drops to the deterministic grounded knowledge engine without throwing raw SDK errors.
 
 ### 🧠 Complete Capabilities & Technical Invariants
-1. **Multi-Model Gemini Router (`GeminiModelRouter`):** Centralized health tracking, latency telemetry, automatic multi-model failover (`gemini-2.0-flash` → `gemini-2.0-flash-lite` → `gemini-1.5-flash` → `gemini-1.5-pro`), and circuit breaker cooldowns.
+1. **Multi-Model Gemini Router (`GeminiModelRouter`):** Centralized health tracking, latency telemetry, automatic multi-model failover (`gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.5-pro` → `gemini-3.8-flash`), and circuit breaker cooldowns.
 2. **Official Groq Fallback Provider (`GroqProvider`):** Production-grade fallback leveraging `groq-sdk` with streaming and non-streaming support, prompt structuring with strict identity boundaries, resolved query injection, and API key redaction.
 3. **Persistent Conversation Memory (`conversationMemory`):** Embedded SQLite database (`node:sqlite`) with WAL mode tracking multi-turn conversation threads, message timestamps, automated PII/key redaction, and contextual follow-up pronoun resolution (`"it"`, `"the second component"`).
 4. **Controlled Tool Registry (`toolRegistry`):** Sandboxed tool execution platform featuring an AST-based mathematical calculation parser (zero `eval()` / script injection risk), IST datetime resolver, and project metadata inspector.
