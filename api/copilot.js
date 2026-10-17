@@ -1261,7 +1261,8 @@ var CopilotOrchestrator = class {
     const retrievedResults = this.retriever.retrieve(nlpAnalysis, void 0, 4);
     const retrievalLatency = Date.now() - retrievalStart;
     const citations = this.retriever.generateCitations(retrievedResults);
-    let answer = "";
+    let usedModel = this.isGeminiActive ? "gemini:" + this.llmProvider.getModelName() : "deterministic-fallback";
+    let providerError = null;
     try {
       answer = await this.llmProvider.generateResponse(
         lastUserMessage,
@@ -1270,7 +1271,9 @@ var CopilotOrchestrator = class {
         request.messages
       );
     } catch (err) {
-      console.warn("[CopilotOrchestrator] Primary LLM failed, using deterministic fallback:", err);
+      providerError = err?.message || String(err);
+      console.warn("[CopilotOrchestrator] Primary LLM failed, using deterministic fallback:", providerError);
+      usedModel = "deterministic-fallback";
       const fallback = new DeterministicFallbackProvider();
       answer = await fallback.generateResponse(
         lastUserMessage,
@@ -1321,7 +1324,8 @@ var CopilotOrchestrator = class {
       mermaidDiagram,
       resumeCard,
       metadata: {
-        model: this.isGeminiActive ? "gemini:" + this.llmProvider.getModelName() : "deterministic-fallback",
+        model: usedModel,
+        providerError: providerError ? providerError.split(':')[0] : undefined,
         retrievalLatencyMs: retrievalLatency,
         totalLatencyMs: Date.now() - startTs,
         retrievedCount: retrievedResults.length
