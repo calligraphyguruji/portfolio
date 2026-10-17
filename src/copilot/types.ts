@@ -178,6 +178,8 @@ export interface CopilotChatResponse {
     totalLatencyMs: number;
     retrievedCount: number;
     providerError?: string;
+    provider?: string;
+    diagnostics?: any[];
   };
 }
 

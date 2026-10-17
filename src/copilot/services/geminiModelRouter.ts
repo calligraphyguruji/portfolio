@@ -96,6 +96,205 @@ export function classifyGeminiError(err: any): ErrorClassification {
   return 'UNKNOWN_ERROR';
 }
 
+export type Gemini404Subtype =
+  | 'MODEL_NOT_FOUND'
+  | 'UNSUPPORTED_OR_UNAVAILABLE_MODEL'
+  | 'INVALID_ENDPOINT_OR_VERSION'
+  | 'RESOURCE_NOT_FOUND';
+
+export interface GeminiFailureDiagnostic {
+  provider: 'gemini';
+  statusCode?: number;
+  category:
+    | Gemini404Subtype
+    | 'AUTH_OR_PERMISSION_ERROR'
+    | 'RATE_LIMIT_OR_QUOTA'
+    | 'TIMEOUT'
+    | 'SERVER_ERROR'
+    | 'SAFETY_BLOCKED'
+    | 'MALFORMED_OUTPUT'
+    | 'UNKNOWN_ERROR';
+  is404: boolean;
+  modelId?: string;
+  reason: string;
+  timestamp: string;
+}
+
+/**
+ * Distinguishes and safely classifies Gemini errors into granular diagnostics
+ * without exposing credentials or sensitive user queries.
+ */
+export function diagnoseGeminiFailure(err: any, modelId?: string): GeminiFailureDiagnostic {
+  const rawMsg = String(err?.message || err);
+  const sanitized = rawMsg
+    .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
+    .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
+  const lower = sanitized.toLowerCase();
+
+  // Distinguish 404 subtypes
+  const is404 =
+    err?.status === 404 ||
+    lower.includes('404') ||
+    lower.includes('not found') ||
+    lower.includes('gemini_model_error');
+
+  if (is404) {
+    if (
+      lower.includes('endpoint') ||
+      lower.includes('url') ||
+      lower.includes('v1beta') ||
+      lower.includes('v1alpha') ||
+      lower.includes('invalid route') ||
+      lower.includes('cannot post') ||
+      lower.includes('cannot get')
+    ) {
+      return {
+        provider: 'gemini',
+        statusCode: 404,
+        category: 'INVALID_ENDPOINT_OR_VERSION',
+        is404: true,
+        modelId,
+        reason: sanitized,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    if (
+      lower.includes('unsupported') ||
+      lower.includes('deprecated') ||
+      lower.includes('unavailable') ||
+      lower.includes('no longer available')
+    ) {
+      return {
+        provider: 'gemini',
+        statusCode: 404,
+        category: 'UNSUPPORTED_OR_UNAVAILABLE_MODEL',
+        is404: true,
+        modelId,
+        reason: sanitized,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    if (
+      lower.includes('models/') ||
+      lower.includes('model') ||
+      lower.includes('publisher model')
+    ) {
+      return {
+        provider: 'gemini',
+        statusCode: 404,
+        category: 'MODEL_NOT_FOUND',
+        is404: true,
+        modelId,
+        reason: sanitized,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    return {
+      provider: 'gemini',
+      statusCode: 404,
+      category: 'RESOURCE_NOT_FOUND',
+      is404: true,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Auth / Permissions
+  if (
+    err?.status === 401 ||
+    err?.status === 403 ||
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('api_key_invalid') ||
+    lower.includes('permission_denied') ||
+    lower.includes('auth_error')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: err?.status || (lower.includes('403') ? 403 : 401),
+      category: 'AUTH_OR_PERMISSION_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Rate limit / Quota
+  if (
+    err?.status === 429 ||
+    lower.includes('429') ||
+    lower.includes('quota') ||
+    lower.includes('resource_exhausted')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: 429,
+      category: 'RATE_LIMIT_OR_QUOTA',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Timeout
+  if (lower.includes('timeout') || lower.includes('aborterror') || lower.includes('aborted')) {
+    return {
+      provider: 'gemini',
+      statusCode: 408,
+      category: 'TIMEOUT',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Server error
+  if (
+    err?.status >= 500 ||
+    lower.includes('500') ||
+    lower.includes('502') ||
+    lower.includes('503') ||
+    lower.includes('504') ||
+    lower.includes('service unavailable')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: err?.status || 503,
+      category: 'SERVER_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (lower.includes('safety') || lower.includes('blocked')) {
+    return {
+      provider: 'gemini',
+      statusCode: 400,
+      category: 'SAFETY_BLOCKED',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  return {
+    provider: 'gemini',
+    statusCode: err?.status,
+    category: 'UNKNOWN_ERROR',
+    is404: false,
+    modelId,
+    reason: sanitized,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 /**
  * GeminiModelRouter
  * Manages model list selection, per-model health tracking, error classification,

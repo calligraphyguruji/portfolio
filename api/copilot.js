@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
 // src/copilot/data/verifiedKnowledge.ts
 var VERIFIED_KNOWLEDGE_DOCUMENTS = [
@@ -1426,7 +1427,7 @@ var GeminiProvider = class {
       if (errMsg.includes("404") || errMsg.includes("NOT_FOUND") || errMsg.includes("models/")) {
         throw new Error(`GEMINI_MODEL_ERROR: Model "${this.modelName}" not found or unsupported.`);
       }
-      throw new Error(`GEMINI_API_ERROR: ${errMsg.replace(/AIza[0-9A-Za-z\-_]{35}/g, "[REDACTED]")}`);
+      throw new Error(`GEMINI_API_ERROR: ${errMsg.replace(/AIza[0-9A-Za-z\-_]{20,}/g, "[REDACTED]")}`);
     }
   }
 };
@@ -1479,6 +1480,337 @@ function classifyGeminiError(err) {
   }
   return 'UNKNOWN_ERROR';
 }
+
+function diagnoseGeminiFailure(err, modelId) {
+  const rawMsg = String(err?.message || err);
+  const sanitized = rawMsg
+    .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
+    .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
+  const lower = sanitized.toLowerCase();
+
+  const is404 =
+    err?.status === 404 ||
+    lower.includes('404') ||
+    lower.includes('not found') ||
+    lower.includes('gemini_model_error');
+
+  if (is404) {
+    if (
+      lower.includes('endpoint') ||
+      lower.includes('url') ||
+      lower.includes('v1beta') ||
+      lower.includes('v1alpha') ||
+      lower.includes('invalid route') ||
+      lower.includes('cannot post') ||
+      lower.includes('cannot get')
+    ) {
+      return {
+        provider: 'gemini',
+        statusCode: 404,
+        category: 'INVALID_ENDPOINT_OR_VERSION',
+        is404: true,
+        modelId,
+        reason: sanitized,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    if (
+      lower.includes('unsupported') ||
+      lower.includes('deprecated') ||
+      lower.includes('unavailable') ||
+      lower.includes('no longer available')
+    ) {
+      return {
+        provider: 'gemini',
+        statusCode: 404,
+        category: 'UNSUPPORTED_OR_UNAVAILABLE_MODEL',
+        is404: true,
+        modelId,
+        reason: sanitized,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    if (
+      lower.includes('models/') ||
+      lower.includes('model') ||
+      lower.includes('publisher model')
+    ) {
+      return {
+        provider: 'gemini',
+        statusCode: 404,
+        category: 'MODEL_NOT_FOUND',
+        is404: true,
+        modelId,
+        reason: sanitized,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    return {
+      provider: 'gemini',
+      statusCode: 404,
+      category: 'RESOURCE_NOT_FOUND',
+      is404: true,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status === 401 ||
+    err?.status === 403 ||
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('api_key_invalid') ||
+    lower.includes('permission_denied') ||
+    lower.includes('auth_error')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: err?.status || (lower.includes('403') ? 403 : 401),
+      category: 'AUTH_OR_PERMISSION_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status === 429 ||
+    lower.includes('429') ||
+    lower.includes('quota') ||
+    lower.includes('resource_exhausted')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: 429,
+      category: 'RATE_LIMIT_OR_QUOTA',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (lower.includes('timeout') || lower.includes('aborterror') || lower.includes('aborted')) {
+    return {
+      provider: 'gemini',
+      statusCode: 408,
+      category: 'TIMEOUT',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (
+    err?.status >= 500 ||
+    lower.includes('500') ||
+    lower.includes('502') ||
+    lower.includes('503') ||
+    lower.includes('504') ||
+    lower.includes('service unavailable')
+  ) {
+    return {
+      provider: 'gemini',
+      statusCode: err?.status || 503,
+      category: 'SERVER_ERROR',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (lower.includes('safety') || lower.includes('blocked')) {
+    return {
+      provider: 'gemini',
+      statusCode: 400,
+      category: 'SAFETY_BLOCKED',
+      is404: false,
+      modelId,
+      reason: sanitized,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  return {
+    provider: 'gemini',
+    statusCode: err?.status,
+    category: 'UNKNOWN_ERROR',
+    is404: false,
+    modelId,
+    reason: sanitized,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+var GroqProvider = class {
+  name = 'groq';
+  apiKey = null;
+  modelName;
+  groqClient = null;
+  timeoutMs;
+
+  constructor(apiKey, modelName, timeoutMs = 12000) {
+    const rawKey =
+      apiKey ||
+      (typeof process !== 'undefined' ? process.env?.GROQ_API_KEY : '') ||
+      '';
+    const trimmed = rawKey.trim();
+    const isPlaceholder =
+      !trimmed ||
+      trimmed.length < 10 ||
+      /^(your_|change_me|dummy|placeholder|none|null|undefined|<)/i.test(trimmed);
+
+    this.modelName =
+      modelName ||
+      (typeof process !== 'undefined' && process.env?.GROQ_MODEL) ||
+      'llama-3.3-70b-versatile';
+
+    this.timeoutMs = timeoutMs;
+
+    if (!isPlaceholder) {
+      this.apiKey = trimmed;
+      try {
+        this.groqClient = new Groq({ apiKey: this.apiKey });
+      } catch (err) {
+        console.error('[GroqProvider] Initialization error:', err);
+        this.groqClient = null;
+      }
+    }
+  }
+
+  isConfigured() {
+    return this.apiKey !== null && this.groqClient !== null;
+  }
+
+  getModelName() {
+    return this.modelName;
+  }
+
+  setModelName(modelName) {
+    this.modelName = modelName;
+  }
+
+  setClient(client) {
+    this.groqClient = client;
+    if (client && !this.apiKey) {
+      this.apiKey = 'mock-configured-key';
+    }
+  }
+
+  formatMessages(query, retrievedResults, analysis, history = []) {
+    const messages = [];
+    messages.push({
+      role: 'system',
+      content: MANTRI_SYSTEM_PROMPT,
+    });
+
+    const recentHistory = history.slice(-8);
+    for (const msg of recentHistory) {
+      if (!msg.content || typeof msg.content !== 'string') continue;
+      messages.push({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content.trim(),
+      });
+    }
+
+    const contextBlocks = retrievedResults.map((r, idx) => {
+      return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]\n${r.chunk.content}`;
+    });
+    const contextText = contextBlocks.join('\n\n---\n\n');
+
+    const promptSections = [];
+    promptSections.push(
+      'CRITICAL INSTRUCTION: Answer the USER QUESTION directly using the provided RETRIEVED PORTFOLIO CONTEXT. Do NOT introduce yourself, do NOT say "Aman Mishra built me" or give your assistant bio unless the user explicitly asks about who you are or who built you.'
+    );
+
+    if (contextText && retrievedResults.length > 0) {
+      promptSections.push(`RETRIEVED PORTFOLIO CONTEXT:\n${contextText}`);
+    }
+    if (analysis.targetProject) {
+      promptSections.push(`TARGET PROJECT: ${analysis.targetProject}`);
+    }
+    if (analysis.intent) {
+      promptSections.push(`DETECTED INTENT: ${analysis.intent}`);
+    }
+    if (analysis.resolvedQuery && analysis.resolvedQuery !== query) {
+      promptSections.push(
+        `RESOLVED CONVERSATIONAL CONTEXT:\nThe user is asking a follow-up referring to the preceding conversation. Resolved interpretation: "${analysis.resolvedQuery}". Answer directly about this resolved subject using the retrieved context.`
+      );
+    }
+    promptSections.push(`USER QUESTION:\n${query}`);
+
+    messages.push({
+      role: 'user',
+      content: promptSections.join('\n\n'),
+    });
+
+    return messages;
+  }
+
+  async generateResponse(query, retrievedResults, analysis, history = []) {
+    if (!this.groqClient || !this.apiKey) {
+      throw new Error('GROQ_NOT_CONFIGURED: Missing valid Groq API key.');
+    }
+
+    const messages = this.formatMessages(query, retrievedResults, analysis, history);
+    const abortController = new AbortController();
+    const timeoutHandle = setTimeout(() => {
+      abortController.abort();
+    }, this.timeoutMs);
+
+    try {
+      const completion = await this.groqClient.chat.completions.create(
+        {
+          model: this.modelName,
+          messages,
+          temperature: 0.2,
+          max_tokens: 2048,
+        },
+        {
+          signal: abortController.signal,
+        }
+      );
+
+      clearTimeout(timeoutHandle);
+
+      const candidateText = completion.choices?.[0]?.message?.content;
+      if (candidateText && typeof candidateText === 'string' && candidateText.trim().length > 0) {
+        return candidateText.trim();
+      }
+
+      throw new Error('GROQ_MALFORMED_OUTPUT: Empty or invalid response content from Groq.');
+    } catch (err) {
+      clearTimeout(timeoutHandle);
+      const rawMsg = String(err?.message || err);
+      const sanitized = rawMsg
+        .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
+        .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
+
+      if (err?.name === 'AbortError' || sanitized.includes('aborted') || sanitized.includes('timeout')) {
+        throw new Error(`GROQ_TIMEOUT: Request exceeded timeout of ${this.timeoutMs}ms.`);
+      }
+
+      if (err?.status === 401 || sanitized.includes('401') || sanitized.includes('invalid_api_key')) {
+        throw new Error(`GROQ_AUTH_ERROR: ${sanitized}`);
+      }
+
+      if (err?.status === 429 || sanitized.includes('429') || sanitized.includes('rate_limit')) {
+        throw new Error(`GROQ_RATE_LIMIT: ${sanitized}`);
+      }
+
+      if (err?.status === 404 || sanitized.includes('404') || sanitized.includes('model_not_found')) {
+        throw new Error(`GROQ_MODEL_NOT_FOUND: ${sanitized}`);
+      }
+
+      throw new Error(`GROQ_API_ERROR: ${sanitized}`);
+    }
+  }
+};
 
 var GeminiModelRouter = class {
   apiKey;
@@ -1879,6 +2211,7 @@ var CopilotOrchestrator = class {
   chunks = [];
   retriever;
   geminiRouter;
+  groqProvider;
   fallbackProvider;
   isGeminiActive = false;
   startTime = Date.now();
@@ -1887,6 +2220,7 @@ var CopilotOrchestrator = class {
     this.initializeKnowledgeBase();
     this.geminiRouter = new GeminiModelRouter();
     this.isGeminiActive = this.geminiRouter.isConfigured();
+    this.groqProvider = new GroqProvider();
     this.fallbackProvider = new DeterministicFallbackProvider();
   }
   initializeKnowledgeBase() {
@@ -1906,13 +2240,16 @@ var CopilotOrchestrator = class {
       llmConfigured: this.isGeminiActive,
       primaryModel: this.geminiRouter.getPrimaryModel(),
       configuredModels: this.geminiRouter.getAllConfiguredModels(),
+      groqConfigured: this.groqProvider ? this.groqProvider.isConfigured() : false,
+      groqModel: this.groqProvider ? this.groqProvider.getModelName() : undefined,
       indexedChunks: this.chunks.length,
       features: {
         hybridRetrieval: true,
         recruiterMode: true,
         streaming: false,
         antiInjection: true,
-        multiModelFailover: true
+        multiModelFailover: true,
+        groqFallback: true
       }
     };
   }
@@ -2076,8 +2413,9 @@ var CopilotOrchestrator = class {
     let attempts = 1;
     let failoverOccurred = false;
     let failoverReason = void 0;
+    const diagnostics = [];
 
-    if (this.isGeminiActive) {
+    if (this.isGeminiActive && process.env.AI_PROVIDER !== 'groq') {
       try {
         const routerRes = await this.geminiRouter.generateResponseWithTelemetry(
           lastUserMessage,
@@ -2092,7 +2430,57 @@ var CopilotOrchestrator = class {
         failoverReason = routerRes.failoverReason;
       } catch (err) {
         providerError = err?.message || String(err);
-        console.warn("[CopilotOrchestrator] Gemini router failed all models, using deterministic fallback:", providerError);
+        const diag = diagnoseGeminiFailure(err, this.geminiRouter.getPrimaryModel());
+        diagnostics.push(diag);
+        failoverOccurred = true;
+        failoverReason = `${diag.category}: ${diag.reason}`;
+        console.warn("[CopilotOrchestrator] Gemini router failed:", diag.category, diag.reason);
+
+        // Invariant: Do not circumvent safety blocks by failing over to alternative LLM providers
+        if (diag.category === 'SAFETY_BLOCKED') {
+          return {
+            answer: "I am unable to fulfill this request as the content triggered safety and responsible AI restrictions.",
+            intent: nlpAnalysis.intent,
+            targetProject: nlpAnalysis.targetProject,
+            citations: [],
+            metadata: {
+              model: "gemini:" + this.geminiRouter.getPrimaryModel(),
+              provider: "gemini",
+              requestedModel: this.geminiRouter.getPrimaryModel(),
+              attempts: 1,
+              failoverOccurred: false,
+              providerError: 'SAFETY_BLOCKED',
+              diagnostics: [diag],
+              retrievalLatencyMs: retrievalLatency,
+              totalLatencyMs: Date.now() - startTs,
+              retrievedCount: retrievedResults.length
+            }
+          };
+        }
+      }
+    }
+
+    if (!answer && this.groqProvider && this.groqProvider.isConfigured()) {
+      try {
+        const previousHistory = request.messages.slice(0, -1);
+        const groqRes = await this.groqProvider.generateResponse(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          previousHistory
+        );
+        if (groqRes && groqRes.trim().length > 0) {
+          answer = groqRes.trim();
+          usedModel = "groq:" + this.groqProvider.getModelName();
+          failoverOccurred = true;
+          failoverReason = failoverReason || 'GEMINI_FAILOVER_TO_GROQ';
+        }
+      } catch (groqErr) {
+        const rawErrMsg = String(groqErr?.message || groqErr);
+        const sanitizedErr = rawErrMsg
+          .replace(/gsk_[0-9A-Za-z\-_]{20,}/g, '[REDACTED]')
+          .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[REDACTED]');
+        console.warn("[CopilotOrchestrator] Groq fallback failed, engaging deterministic fallback:", sanitizedErr);
       }
     }
 
@@ -2148,10 +2536,12 @@ var CopilotOrchestrator = class {
       resumeCard,
       metadata: {
         model: usedModel,
+        provider: usedModel.split(':')[0],
         requestedModel: this.geminiRouter.getPrimaryModel(),
         attempts,
         failoverOccurred,
         failoverReason,
+        diagnostics: diagnostics.length > 0 ? diagnostics : undefined,
         providerError: providerError ? providerError.split(':')[0] : undefined,
         retrievalLatencyMs: retrievalLatency,
         totalLatencyMs: Date.now() - startTs,

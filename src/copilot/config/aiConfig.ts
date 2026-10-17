@@ -61,6 +61,21 @@ export const AI_CONFIG = {
   aiProvider:
     (typeof process !== 'undefined' && process.env?.AI_PROVIDER) ||
     'gemini',
+  groqApiKey:
+    (typeof process !== 'undefined' && process.env?.GROQ_API_KEY) || '',
+  groqModel:
+    (typeof process !== 'undefined' && process.env?.GROQ_MODEL) ||
+    'llama-3.3-70b-versatile',
+  groqFallbackModels:
+    typeof process !== 'undefined' && process.env?.GROQ_FALLBACK_MODELS
+      ? process.env.GROQ_FALLBACK_MODELS.split(',').map((m) => m.trim()).filter(Boolean)
+      : ['llama-3.1-8b-instant'],
+  groqMaxAttempts: Number(
+    (typeof process !== 'undefined' && process.env?.GROQ_MAX_ATTEMPTS) || 2
+  ),
+  groqCooldownSeconds: Number(
+    (typeof process !== 'undefined' && process.env?.GROQ_COOLDOWN_SECONDS) || 60
+  ),
   ollamaBaseUrl:
     (typeof process !== 'undefined' && process.env?.OLLAMA_BASE_URL) || 'http://localhost:11434',
   ollamaModel:
