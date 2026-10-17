@@ -231,6 +231,7 @@ export const CopilotWidget: React.FC = () => {
         recruiterAlignment: data.recruiterAlignment,
         mermaidDiagram: data.mermaidDiagram,
         resumeCard: data.resumeCard,
+        metadata: data.metadata,
         timestamp: Date.now(),
       };
 
@@ -526,6 +527,11 @@ export const CopilotWidget: React.FC = () => {
                             </a>
                           ))}
                         </div>
+                      </div>
+                    )}
+                    {msg.metadata?.failoverOccurred && (
+                      <div className="mt-2 text-[10px] font-mono text-amber-500/80 dark:text-amber-400/80 flex items-center gap-1">
+                        <span>⚡ Responded via fallback model ({msg.metadata.model.replace('gemini:', '')})</span>
                       </div>
                     )}
                     {msg.isError && (

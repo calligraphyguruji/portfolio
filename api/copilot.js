@@ -912,6 +912,257 @@ var GeminiProvider = class {
     }
   }
 };
+
+function classifyGeminiError(err) {
+  const msg = String(err?.message || err);
+  if (
+    msg.includes('GEMINI_AUTH_ERROR') ||
+    msg.includes('401') ||
+    msg.includes('API_KEY_INVALID') ||
+    msg.includes('PERMISSION_DENIED')
+  ) {
+    return 'AUTH_ERROR';
+  }
+  if (msg.includes('SAFETY') || msg.includes('SAFETY_BLOCKED') || msg.includes('BLOCKED')) {
+    return 'SAFETY_BLOCKED';
+  }
+  if (
+    msg.includes('404') ||
+    msg.includes('NOT_FOUND') ||
+    msg.includes('is not found') ||
+    msg.includes('GEMINI_MODEL_ERROR')
+  ) {
+    return 'MODEL_NOT_FOUND';
+  }
+  if (
+    msg.includes('GEMINI_QUOTA_ERROR') ||
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('429') ||
+    msg.includes('quota')
+  ) {
+    return 'QUOTA_ERROR';
+  }
+  if (msg.includes('GEMINI_TIMEOUT') || msg.includes('AbortError') || msg.includes('timeout')) {
+    return 'TIMEOUT';
+  }
+  if (
+    msg.includes('500') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('504') ||
+    msg.includes('Service Unavailable') ||
+    msg.includes('Bad Gateway') ||
+    msg.includes('Internal Server Error')
+  ) {
+    return 'SERVER_ERROR';
+  }
+  if (msg.includes('MALFORMED') || msg.includes('empty response')) {
+    return 'MALFORMED_OUTPUT';
+  }
+  return 'UNKNOWN_ERROR';
+}
+
+var GeminiModelRouter = class {
+  apiKey;
+  primaryModel;
+  fallbackModels;
+  maxAttempts;
+  cooldownSeconds;
+  requestTimeoutMs;
+  stats = new Map();
+  providers = new Map();
+
+  constructor(options = {}) {
+    this.apiKey = options.apiKey || (typeof process !== 'undefined' && (process.env?.GEMINI_API_KEY || process.env?.GOOGLE_API_KEY)) || '';
+    this.primaryModel = options.primaryModel || (typeof process !== 'undefined' && (process.env?.GEMINI_PRIMARY_MODEL || process.env?.GEMINI_MODEL)) || 'gemini-2.0-flash';
+    const fallbackEnv = typeof process !== 'undefined' && process.env?.GEMINI_FALLBACK_MODELS;
+    this.fallbackModels = options.fallbackModels || (fallbackEnv ? fallbackEnv.split(',').map(m => m.trim()).filter(Boolean) : ['gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']);
+    this.maxAttempts = options.maxAttempts || (typeof process !== 'undefined' && process.env?.GEMINI_MAX_ATTEMPTS ? parseInt(process.env.GEMINI_MAX_ATTEMPTS, 10) : 4);
+    this.cooldownSeconds = options.cooldownSeconds || (typeof process !== 'undefined' && process.env?.GEMINI_COOLDOWN_SECONDS ? parseInt(process.env.GEMINI_COOLDOWN_SECONDS, 10) : 60);
+    this.requestTimeoutMs = options.requestTimeoutMs || (typeof process !== 'undefined' && process.env?.REQUEST_TIMEOUT_MS ? parseInt(process.env.REQUEST_TIMEOUT_MS, 10) : 12000);
+    this.initProviders();
+  }
+
+  initProviders() {
+    const allModels = [this.primaryModel, ...this.fallbackModels];
+    for (const model of allModels) {
+      if (!this.stats.has(model)) {
+        this.stats.set(model, {
+          modelId: model,
+          successCount: 0,
+          failureCount: 0,
+        });
+      }
+      if (!this.providers.has(model)) {
+        this.providers.set(model, new GeminiProvider(this.apiKey, model, this.requestTimeoutMs));
+      }
+    }
+  }
+
+  isConfigured() {
+    const primary = this.providers.get(this.primaryModel);
+    return primary ? primary.isConfigured() : false;
+  }
+
+  getPrimaryModel() {
+    return this.primaryModel;
+  }
+
+  getAllConfiguredModels() {
+    return [this.primaryModel, ...this.fallbackModels];
+  }
+
+  isModelEligible(modelId, now = Date.now()) {
+    const s = this.stats.get(modelId);
+    if (!s) return true;
+    if (s.cooldownUntil && s.cooldownUntil > now) return false;
+    return true;
+  }
+
+  getCandidateModels() {
+    const now = Date.now();
+    const all = [this.primaryModel, ...this.fallbackModels];
+    const eligible = [];
+    const inCooldown = [];
+    for (const m of all) {
+      if (this.isModelEligible(m, now)) {
+        eligible.push(m);
+      } else {
+        inCooldown.push(m);
+      }
+    }
+    if (eligible.length === 0) return all;
+    return [...eligible, ...inCooldown];
+  }
+
+  recordSuccess(modelId, latencyMs) {
+    const s = this.stats.get(modelId) || { modelId, successCount: 0, failureCount: 0 };
+    s.successCount += 1;
+    s.lastSuccessTimestamp = Date.now();
+    s.lastLatencyMs = latencyMs;
+    s.cooldownUntil = void 0;
+    this.stats.set(modelId, s);
+  }
+
+  recordFailure(modelId, errorType) {
+    const s = this.stats.get(modelId) || { modelId, successCount: 0, failureCount: 0 };
+    s.failureCount += 1;
+    s.lastFailureTimestamp = Date.now();
+    s.lastErrorType = errorType;
+    if (errorType === 'QUOTA_ERROR' || errorType === 'SERVER_ERROR' || errorType === 'TIMEOUT' || errorType === 'MODEL_NOT_FOUND') {
+      s.cooldownUntil = Date.now() + this.cooldownSeconds * 1000;
+    }
+    this.stats.set(modelId, s);
+  }
+
+  logEvent(event) {
+    console.warn(`[GeminiModelRouter] ${JSON.stringify(event)}`);
+  }
+
+  async generateResponseWithTelemetry(query, retrievedResults, analysis, history = []) {
+    const candidateModels = this.getCandidateModels();
+    const maxAttempts = Math.min(this.maxAttempts, candidateModels.length);
+    let lastError = null;
+    let failoverReason = void 0;
+    let failoverOccurred = false;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const modelId = candidateModels[attempt - 1];
+      let provider = this.providers.get(modelId);
+      if (!provider) {
+        provider = new GeminiProvider(this.apiKey, modelId, this.requestTimeoutMs);
+        this.providers.set(modelId, provider);
+      }
+      const startTs = Date.now();
+      try {
+        const text = await provider.generateResponse(query, retrievedResults, analysis, history);
+        const latencyMs = Date.now() - startTs;
+        this.recordSuccess(modelId, latencyMs);
+
+        if (attempt > 1) {
+          failoverOccurred = true;
+          this.logEvent({
+            event: 'gemini_model_success',
+            requestedModel: this.primaryModel,
+            activeModel: modelId,
+            attempt,
+            latencyMs,
+            reason: failoverReason,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        return {
+          answer: text,
+          modelUsed: modelId,
+          attempts: attempt,
+          failoverOccurred,
+          failoverReason
+        };
+      } catch (err) {
+        const latencyMs = Date.now() - startTs;
+        lastError = err;
+        const errorClass = classifyGeminiError(err);
+        this.recordFailure(modelId, errorClass);
+
+        if (errorClass === 'AUTH_ERROR') {
+          this.logEvent({
+            event: 'gemini_model_failover',
+            requestedModel: this.primaryModel,
+            failedModel: modelId,
+            reason: 'AUTH_ERROR_NON_RETRYABLE',
+            attempt,
+            latencyMs,
+            timestamp: new Date().toISOString()
+          });
+          throw err;
+        }
+
+        if (errorClass === 'SAFETY_BLOCKED') {
+          this.logEvent({
+            event: 'gemini_model_failover',
+            requestedModel: this.primaryModel,
+            failedModel: modelId,
+            reason: 'SAFETY_BLOCKED_NON_RETRYABLE',
+            attempt,
+            latencyMs,
+            timestamp: new Date().toISOString()
+          });
+          throw err;
+        }
+
+        failoverReason = `${errorClass}: ${err?.message || 'Failure'}`;
+        const nextModel = attempt < maxAttempts ? candidateModels[attempt] : void 0;
+        this.logEvent({
+          event: 'gemini_model_failover',
+          requestedModel: this.primaryModel,
+          failedModel: modelId,
+          nextModel,
+          reason: errorClass,
+          attempt,
+          latencyMs,
+          timestamp: new Date().toISOString()
+        });
+
+        if (attempt < maxAttempts) {
+          await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
+        }
+      }
+    }
+
+    this.logEvent({
+      event: 'gemini_all_models_failed',
+      requestedModel: this.primaryModel,
+      reason: failoverReason,
+      attempt: maxAttempts,
+      timestamp: new Date().toISOString()
+    });
+
+    throw new Error(
+      `GEMINI_ALL_MODELS_FAILED: Exhausted all ${maxAttempts} configured Gemini models. Last error: ${lastError?.message || 'Service Unavailable'}`
+    );
+  }
+};
 var DeterministicFallbackProvider = class {
   async generateEmbeddings(texts) {
     return texts.map((t) => {
@@ -1070,22 +1321,16 @@ var RESUME_CONFIG = {
 var CopilotOrchestrator = class {
   chunks = [];
   retriever;
-  llmProvider;
+  geminiRouter;
+  fallbackProvider;
   isGeminiActive = false;
   startTime = Date.now();
   constructor() {
     this.retriever = new HybridRetriever();
     this.initializeKnowledgeBase();
-    const apiKey = typeof process !== "undefined" && process.env?.GEMINI_API_KEY || typeof process !== "undefined" && process.env?.GOOGLE_API_KEY || "";
-    const modelName = typeof process !== "undefined" && process.env?.GEMINI_MODEL || "gemini-2.0-flash";
-    const provider = new GeminiProvider(apiKey, modelName);
-    if (provider.isConfigured()) {
-      this.llmProvider = provider;
-      this.isGeminiActive = true;
-    } else {
-      this.llmProvider = new DeterministicFallbackProvider();
-      this.isGeminiActive = false;
-    }
+    this.geminiRouter = new GeminiModelRouter();
+    this.isGeminiActive = this.geminiRouter.isConfigured();
+    this.fallbackProvider = new DeterministicFallbackProvider();
   }
   initializeKnowledgeBase() {
     const allChunks = [];
@@ -1102,12 +1347,15 @@ var CopilotOrchestrator = class {
       version: "1.0.0",
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1e3),
       llmConfigured: this.isGeminiActive,
+      primaryModel: this.geminiRouter.getPrimaryModel(),
+      configuredModels: this.geminiRouter.getAllConfiguredModels(),
       indexedChunks: this.chunks.length,
       features: {
         hybridRetrieval: true,
         recruiterMode: true,
         streaming: false,
-        antiInjection: true
+        antiInjection: true,
+        multiModelFailover: true
       }
     };
   }
@@ -1265,22 +1513,35 @@ var CopilotOrchestrator = class {
     const retrievedResults = this.retriever.retrieve(nlpAnalysis, void 0, 4);
     const retrievalLatency = Date.now() - retrievalStart;
     const citations = this.retriever.generateCitations(retrievedResults);
-    let usedModel = this.isGeminiActive ? "gemini:" + this.llmProvider.getModelName() : "deterministic-fallback";
+    let usedModel = "deterministic-fallback";
     let providerError = null;
     let answer = "";
-    try {
-      answer = await this.llmProvider.generateResponse(
-        lastUserMessage,
-        retrievedResults,
-        nlpAnalysis,
-        request.messages
-      );
-    } catch (err) {
-      providerError = err?.message || String(err);
-      console.warn("[CopilotOrchestrator] Primary LLM failed, using deterministic fallback:", providerError);
-      usedModel = "deterministic-fallback";
-      const fallback = new DeterministicFallbackProvider();
-      answer = await fallback.generateResponse(
+    let attempts = 1;
+    let failoverOccurred = false;
+    let failoverReason = void 0;
+
+    if (this.isGeminiActive) {
+      try {
+        const routerRes = await this.geminiRouter.generateResponseWithTelemetry(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          request.messages
+        );
+        answer = routerRes.answer;
+        usedModel = "gemini:" + routerRes.modelUsed;
+        attempts = routerRes.attempts;
+        failoverOccurred = routerRes.failoverOccurred;
+        failoverReason = routerRes.failoverReason;
+      } catch (err) {
+        providerError = err?.message || String(err);
+        console.warn("[CopilotOrchestrator] Gemini router failed all models, using deterministic fallback:", providerError);
+      }
+    }
+
+    if (!answer) {
+      usedModel = this.isGeminiActive ? "deterministic-fallback" : "deterministic-offline-engine";
+      answer = await this.fallbackProvider.generateResponse(
         lastUserMessage,
         retrievedResults,
         nlpAnalysis
@@ -1330,6 +1591,10 @@ var CopilotOrchestrator = class {
       resumeCard,
       metadata: {
         model: usedModel,
+        requestedModel: this.geminiRouter.getPrimaryModel(),
+        attempts,
+        failoverOccurred,
+        failoverReason,
         providerError: providerError ? providerError.split(':')[0] : undefined,
         retrievalLatencyMs: retrievalLatency,
         totalLatencyMs: Date.now() - startTs,

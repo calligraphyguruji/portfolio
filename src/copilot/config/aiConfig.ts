@@ -40,8 +40,23 @@ export const AI_CONFIG = {
     (typeof process !== 'undefined' &&
       (process.env?.GEMINI_API_KEY || process.env?.GOOGLE_API_KEY)) ||
     '',
+  geminiPrimaryModel:
+    (typeof process !== 'undefined' &&
+      (process.env?.GEMINI_PRIMARY_MODEL || process.env?.GEMINI_MODEL)) ||
+    'gemini-2.0-flash',
+  geminiFallbackModels:
+    typeof process !== 'undefined' && process.env?.GEMINI_FALLBACK_MODELS
+      ? process.env.GEMINI_FALLBACK_MODELS.split(',').map((m) => m.trim()).filter(Boolean)
+      : ['gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+  geminiMaxAttempts: Number(
+    (typeof process !== 'undefined' && process.env?.GEMINI_MAX_ATTEMPTS) || 4
+  ),
+  geminiCooldownSeconds: Number(
+    (typeof process !== 'undefined' && process.env?.GEMINI_COOLDOWN_SECONDS) || 60
+  ),
   geminiModel:
-    (typeof process !== 'undefined' && process.env?.GEMINI_MODEL) ||
+    (typeof process !== 'undefined' &&
+      (process.env?.GEMINI_PRIMARY_MODEL || process.env?.GEMINI_MODEL)) ||
     'gemini-2.0-flash',
   aiProvider:
     (typeof process !== 'undefined' && process.env?.AI_PROVIDER) ||

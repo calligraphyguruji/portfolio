@@ -3,6 +3,7 @@ import { chunkKnowledgeDocument } from './chunkingService.ts';
 import { analyzeQuery } from '../nlp/nlpProcessor.ts';
 import { HybridRetriever } from './retrievalService.ts';
 import { GeminiProvider, DeterministicFallbackProvider } from './llmProvider.ts';
+import { GeminiModelRouter } from './geminiModelRouter.ts';
 import { OllamaProvider } from './ollamaProvider.ts';
 import { conversationMemory } from './conversationMemory.ts';
 import { toolRegistry } from './toolRegistry.ts';
@@ -20,27 +21,47 @@ import type {
 /**
  * Orchestrator Service for Mantri AI Assistant
  * Implements a hybrid AI pipeline combining deterministic guards, NLP intent classification,
- * BM25/RRF hybrid RAG retrieval, and generative reasoning via the official Google Gemini API,
- * with graceful fallback to local Ollama and grounded deterministic synthesis.
+ * BM25/RRF hybrid RAG retrieval, and generative reasoning via the official Google Gemini API
+ * with multi-model automatic failover, local Ollama secondary inference, and grounded deterministic synthesis.
  */
 export class CopilotOrchestrator {
   private chunks: KnowledgeChunk[] = [];
   private retriever: HybridRetriever;
-  private geminiProvider: GeminiProvider;
+  private geminiRouter: GeminiModelRouter;
+  private _geminiProvider?: GeminiProvider;
   private ollamaProvider: OllamaProvider;
   private fallbackProvider: DeterministicFallbackProvider;
   private startTime: number = Date.now();
 
+  public get geminiProvider(): GeminiProvider {
+    return this.geminiRouter.getPrimaryProvider() || this._geminiProvider!;
+  }
+
+  public set geminiProvider(provider: GeminiProvider) {
+    this._geminiProvider = provider;
+    if (provider && this.geminiRouter) {
+      this.geminiRouter.setProvider(this.geminiRouter.getPrimaryModel(), provider);
+    }
+  }
+
   constructor(
     geminiApiKey = AI_CONFIG.geminiApiKey,
-    geminiModel = AI_CONFIG.geminiModel,
+    geminiModel = AI_CONFIG.geminiPrimaryModel,
     ollamaBaseUrl = AI_CONFIG.ollamaBaseUrl,
     ollamaModel = AI_CONFIG.ollamaModel
   ) {
     this.retriever = new HybridRetriever();
     this.initializeKnowledgeBase();
 
-    this.geminiProvider = new GeminiProvider(geminiApiKey, geminiModel, AI_CONFIG.requestTimeoutMs);
+    this.geminiRouter = new GeminiModelRouter({
+      apiKey: geminiApiKey,
+      primaryModel: geminiModel,
+      fallbackModels: AI_CONFIG.geminiFallbackModels,
+      maxAttempts: AI_CONFIG.geminiMaxAttempts,
+      cooldownSeconds: AI_CONFIG.geminiCooldownSeconds,
+      requestTimeoutMs: AI_CONFIG.requestTimeoutMs,
+    });
+    this._geminiProvider = new GeminiProvider(geminiApiKey, geminiModel, AI_CONFIG.requestTimeoutMs);
     this.ollamaProvider = new OllamaProvider(ollamaBaseUrl, ollamaModel);
     this.fallbackProvider = new DeterministicFallbackProvider();
   }
@@ -56,10 +77,10 @@ export class CopilotOrchestrator {
   }
 
   public getHealth(): CopilotHealthResponse {
-    const isGeminiConfigured = this.geminiProvider.isConfigured();
+    const isGeminiConfigured = this.geminiRouter.isConfigured();
     return {
       status: 'healthy',
-      version: '2.1.0-gemini-hybrid',
+      version: '2.2.0-gemini-multi-model',
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
       llmConfigured: isGeminiConfigured,
       indexedChunks: this.chunks.length,
@@ -78,11 +99,17 @@ export class CopilotOrchestrator {
       ...this.getHealth(),
       provider: AI_CONFIG.aiProvider,
       gemini: {
-        configured: this.geminiProvider.isConfigured(),
-        model: this.geminiProvider.getModelName(),
+        configured: this.geminiRouter.isConfigured(),
+        primaryModel: this.geminiRouter.getPrimaryModel(),
+        candidateModels: this.geminiRouter.getCandidateModels(),
+        modelStats: this.geminiRouter.getAllStats(),
       },
       ollama: ollamaHealth,
     };
+  }
+
+  public getGeminiRouter(): GeminiModelRouter {
+    return this.geminiRouter;
   }
 
   public getGeminiProvider(): GeminiProvider {
@@ -247,23 +274,31 @@ export class CopilotOrchestrator {
     // 6. Citations Assembly
     const citations = this.retriever.generateCitations(retrievedResults);
 
-    // 7. Generative LLM Response Generation (Gemini -> Ollama -> Grounded Fallback)
+    // 7. Generative LLM Response Generation (Gemini Router -> Ollama -> Grounded Fallback)
     let answer = '';
     let usedModel = 'deterministic-fallback';
     let generationError: string | null = null;
+    let attempts = 1;
+    let failoverOccurred = false;
+    let failoverReason: string | undefined = undefined;
+    const isGeminiConfigured = this.geminiRouter.isConfigured() || this.geminiProvider?.isConfigured();
 
-    if (this.geminiProvider.isConfigured() && AI_CONFIG.aiProvider !== 'ollama') {
+    if (isGeminiConfigured && AI_CONFIG.aiProvider !== 'ollama') {
       try {
-        answer = await this.geminiProvider.generateResponse(
+        const routerRes = await this.geminiRouter.generateResponseWithTelemetry(
           lastUserMessage,
           retrievedResults,
           nlpAnalysis,
           request.messages
         );
-        usedModel = `gemini:${this.geminiProvider.getModelName()}`;
+        answer = routerRes.answer;
+        usedModel = `gemini:${routerRes.modelUsed}`;
+        attempts = routerRes.attempts;
+        failoverOccurred = routerRes.failoverOccurred;
+        failoverReason = routerRes.failoverReason;
       } catch (err: any) {
         generationError = err?.message || String(err);
-        console.warn('[CopilotOrchestrator] Gemini generation failed, evaluating fallback chain:', generationError);
+        console.warn('[CopilotOrchestrator] Gemini router failed all models, evaluating secondary chain:', generationError);
       }
     }
 
@@ -284,7 +319,7 @@ export class CopilotOrchestrator {
 
     // Tertiary fallback: Grounded deterministic synthesis
     if (!answer) {
-      usedModel = this.geminiProvider.isConfigured()
+      usedModel = isGeminiConfigured
         ? 'deterministic-fallback'
         : 'deterministic-offline-engine';
       answer = await this.fallbackProvider.generateResponse(
@@ -361,9 +396,14 @@ export class CopilotOrchestrator {
       resumeCard,
       metadata: {
         model: usedModel,
+        requestedModel: this.geminiRouter.getPrimaryModel(),
+        attempts,
+        failoverOccurred,
+        failoverReason,
         retrievalLatencyMs: retrievalLatency,
         totalLatencyMs: Date.now() - startTs,
         retrievedCount: retrievedResults.length,
+        providerError: generationError ? generationError.split(':')[0] : undefined,
       },
     };
   }

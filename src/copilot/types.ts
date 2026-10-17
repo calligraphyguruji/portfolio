@@ -125,6 +125,7 @@ export interface ChatMessage {
   resumeCard?: ResumeCardData;
   isStreaming?: boolean;
   isError?: boolean;
+  metadata?: CopilotChatResponse['metadata'];
 }
 
 export interface CopilotChatRequest {
@@ -152,9 +153,14 @@ export interface CopilotChatResponse {
   resumeCard?: ResumeCardData;
   metadata: {
     model: string;
+    requestedModel?: string;
+    attempts?: number;
+    failoverOccurred?: boolean;
+    failoverReason?: string;
     retrievalLatencyMs: number;
     totalLatencyMs: number;
     retrievedCount: number;
+    providerError?: string;
   };
 }
 

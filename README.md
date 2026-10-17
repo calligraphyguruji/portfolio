@@ -70,29 +70,39 @@ Mantri is the production-grade, context-aware AI engineering assistant integrate
                     ▼
      ┌─────────────────────────────────────────────────────────────┐
      │              3-Tier Adaptive Inference Pipeline             │
-     │  1. Primary: Official Google Gemini API (@google/genai)     │
-     │     • Configurable via GEMINI_MODEL (gemini-2.0-flash)      │
-     │     • Multi-turn reasoning, grounded RAG, LaTeX, code       │
+     │  1. Primary: Multi-Model Google Gemini Router               │
+     │     • Primary: gemini-2.0-flash (fast, multi-turn reasoning)│
+     │     • Configurable Fallbacks: gemini-2.0-flash-lite,        │
+     │       gemini-1.5-flash, gemini-1.5-pro                      │
+     │     • Centralized circuit breaker & cooldown window         │
+     │     • Non-bypassable safety guard & auth abort              │
      │  2. Secondary: Local Ollama Daemon (llama3.2:3b / mistral)  │
      │  3. Tertiary: Deterministic Grounded Knowledge Engine       │
      │     • Zero crashes, zero external network dependency        │
      └─────────────────────────────────────────────────────────────┘
 ```
 
-### 🔑 Google Gemini API Setup & Configuration
-Mantri utilizes the official `@google/genai` SDK on the server-side to ensure zero API key leakage to browser bundles.
+### 🔑 Google Gemini API Setup & Multi-Model Configuration
+Mantri utilizes the official `@google/genai` SDK on the server-side with automated multi-model failover and circuit breaker protection:
 
 1. **Obtain an API Key:** Get a free API key from [Google AI Studio](https://aistudio.google.com/).
 2. **Environment Variables:** Add to your `.env` (or Vercel / server environment):
    ```bash
    GEMINI_API_KEY=your_gemini_api_key_here
-   GEMINI_MODEL=gemini-2.0-flash
+   GEMINI_PRIMARY_MODEL=gemini-2.0-flash
+   GEMINI_FALLBACK_MODELS=gemini-2.0-flash-lite,gemini-1.5-flash,gemini-1.5-pro
+   GEMINI_MAX_ATTEMPTS=4
+   GEMINI_COOLDOWN_SECONDS=60
+   REQUEST_TIMEOUT_MS=12000
    AI_PROVIDER=gemini
    ```
 3. **Security Invariant:** `GEMINI_API_KEY` is read strictly on the server/serverless layer (`api/copilot.js` and `server/index.ts`). It is never prefixed with `VITE_` or sent to the client.
+4. **Automated Failover Rules:**
+   - **Recoverable Errors (429 Quota, 500/503 Server, Timeouts, 404 Model Not Found):** Model is temporarily placed in cooldown (`GEMINI_COOLDOWN_SECONDS`), and the router attempts the next candidate model in the chain with jittered backoff.
+   - **Non-Retryable Errors (401 Auth, Safety Block):** Failover stops immediately. Safety filters are never circumvented by switching models, and invalid auth aborts early without wasting quotas.
 
 ### 🧠 Complete Capabilities & Technical Invariants
-1. **Official Gemini Provider (`GeminiProvider`):** Direct integration via `@google/genai` with model validation, 15-second request timeouts, categorized error mapping (`GEMINI_AUTH_ERROR`, `GEMINI_QUOTA_ERROR`, `GEMINI_TIMEOUT`), and streaming (`streamResponse`).
+1. **Multi-Model Gemini Router (`GeminiModelRouter`):** Centralized health tracking, latency telemetry, automatic multi-model failover (`gemini-2.0-flash` → `gemini-2.0-flash-lite` → `gemini-1.5-flash` → `gemini-1.5-pro`), and circuit breaker cooldowns.
 2. **Persistent Conversation Memory (`conversationMemory`):** Embedded SQLite database (`node:sqlite`) with WAL mode tracking multi-turn conversation threads, message timestamps, automated PII/key redaction, and contextual follow-up pronoun resolution (`"it"`, `"the second component"`).
 3. **Controlled Tool Registry (`toolRegistry`):** Sandboxed tool execution platform featuring an AST-based mathematical calculation parser (zero `eval()` / script injection risk), IST datetime resolver, and project metadata inspector.
 4. **Hybrid RAG Pipeline (`HybridRetriever`):** Combines exact word-boundary lexical matching with cosine vector embeddings using Reciprocal Rank Fusion ($RRF = \sum \frac{1}{k + rank}$) to synthesize verified citations without hallucination.
