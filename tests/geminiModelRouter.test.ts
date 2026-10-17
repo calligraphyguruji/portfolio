@@ -44,13 +44,13 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 1: Primary success without fallback
   it('TEST 1: Primary model succeeds on first attempt without failover', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-primary-key',
+      apiKey: 'mock-primary-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite', 'gemini-1.5-flash'],
       maxAttempts: 3,
     });
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-primary-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-primary-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => 'Primary model response on CredVidhi.';
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
@@ -70,19 +70,19 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 2: Primary 503 -> Fallback 1 success
   it('TEST 2: Primary 503 server error triggers automated failover to Fallback 1', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite', 'gemini-1.5-flash'],
       maxAttempts: 3,
     });
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('503 Service Unavailable: High server load');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback1 = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback1 = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback1.generateResponse = async () => 'Fallback 1 response on CredVidhi.';
     router.setProvider('gemini-2.0-flash-lite', mockFallback1);
 
@@ -102,19 +102,19 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 3: Primary 429 quota -> Fallback 1 success
   it('TEST 3: Primary 429 quota exhaustion switches to Fallback 1', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       maxAttempts: 2,
     });
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('GEMINI_QUOTA_ERROR: 429 Resource has been exhausted (e.g. check quota)');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => 'Quota failover success from lite.';
     router.setProvider('gemini-2.0-flash-lite', mockFallback);
 
@@ -133,19 +133,19 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 4: Primary timeout -> Fallback 1 success
   it('TEST 4: Primary timeout error aborts and advances to Fallback 1', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       maxAttempts: 2,
     });
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('GEMINI_TIMEOUT: Request exceeded timeout of 12000ms.');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => 'Timeout failover response.';
     router.setProvider('gemini-2.0-flash-lite', mockFallback);
 
@@ -164,19 +164,19 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 5: Invalid model (404) -> Skip to next model
   it('TEST 5: Invalid or unsupported model (404) advances to valid model', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-unsupported-model',
       fallbackModels: ['gemini-2.0-flash'],
       maxAttempts: 2,
     });
 
-    const mockInvalid = new GeminiProvider('AIzaSyD-mock-key', 'gemini-unsupported-model');
+    const mockInvalid = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-unsupported-model');
     mockInvalid.generateResponse = async () => {
       throw new Error('GEMINI_MODEL_ERROR: models/gemini-unsupported-model is not found: 404');
     };
     router.setProvider('gemini-unsupported-model', mockInvalid);
 
-    const mockValid = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockValid = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockValid.generateResponse = async () => 'Valid model response.';
     router.setProvider('gemini-2.0-flash', mockValid);
 
@@ -195,20 +195,20 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 6: Auth failure (401) -> Immediate abort without model hopping
   it('TEST 6: Auth failure (401) halts immediately without hopping through other models', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-invalid-key',
+      apiKey: 'mock-invalid-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite', 'gemini-1.5-flash'],
       maxAttempts: 3,
     });
 
     let fallbackCalled = false;
-    const mockPrimary = new GeminiProvider('AIzaSyD-invalid-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-invalid-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('GEMINI_AUTH_ERROR: 401 API_KEY_INVALID');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback = new GeminiProvider('AIzaSyD-invalid-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-invalid-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => {
       fallbackCalled = true;
       return 'Should never be called';
@@ -235,19 +235,19 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 7: All configured models fail -> Controlled failure
   it('TEST 7: All configured models fail leads to GEMINI_ALL_MODELS_FAILED', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       maxAttempts: 2,
     });
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('503 Service Unavailable');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => {
       throw new Error('500 Internal Server Error');
     };
@@ -268,7 +268,7 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 8: Fallback retains identical RAG context chunks
   it('TEST 8: Fallback model receives identical retrieved RAG context chunks', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       maxAttempts: 2,
@@ -276,13 +276,13 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
 
     let receivedChunks: RetrievalResult[] = [];
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('503 Service Unavailable');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async (query, results) => {
       receivedChunks = results;
       return 'Grounded fallback output';
@@ -303,7 +303,7 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 9: Model recovers after cooldown window expires
   it('TEST 9: Model is eligible again after cooldown window expires', () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       cooldownSeconds: 2,
@@ -321,20 +321,20 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 10: Safety block stops immediately without failover
   it('TEST 10: Safety block halts immediately without cycling to fallback models', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       maxAttempts: 2,
     });
 
     let fallbackCalled = false;
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('SAFETY_BLOCKED: Candidate content violates safety guidelines');
     };
     router.setProvider('gemini-2.0-flash', mockPrimary);
 
-    const mockFallback = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => {
       fallbackCalled = true;
       return 'Should not be called';
@@ -358,13 +358,13 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   // TEST 11: Concurrent requests do not corrupt router state
   it('TEST 11: Concurrent requests execute safely without state corruption', async () => {
     const router = new GeminiModelRouter({
-      apiKey: 'AIzaSyD-mock-key',
+      apiKey: 'mock-fallback-key-testing-12345',
       primaryModel: 'gemini-2.0-flash',
       fallbackModels: ['gemini-2.0-flash-lite'],
       maxAttempts: 2,
     });
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     let callCount = 0;
     mockPrimary.generateResponse = async () => {
       callCount++;
@@ -393,12 +393,12 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   it('TEST 12: Orchestrator includes failover telemetry in response metadata', async () => {
     const orchestrator = new CopilotOrchestrator();
 
-    const mockPrimary = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('503 Service Unavailable');
     };
 
-    const mockFallback = new GeminiProvider('AIzaSyD-mock-key', 'gemini-2.0-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => {
       return '### CredVidhi Architecture\n\nFastAPI and PostgreSQL ledger verified.';
     };

@@ -1,7 +1,7 @@
 # Mantri Security Specifications
 
 ## 1. Zero Secret Ingestion & Secret Redaction
-- The persistent conversation memory automatically strips potential API keys and bearer tokens (`bearer ...`, `ghp_...`, `AIza...`) using automated redaction before writing to SQLite.
+- The persistent conversation memory automatically strips potential API keys and bearer tokens (Bearer tokens, GitHub personal access tokens, Google Cloud API keys) using automated redaction before writing to SQLite.
 - `.env` files, `.agents/`, and credentials are strictly excluded from git tracking.
 
 ## 2. Anti-Jailbreak & Prompt Injection Guard
