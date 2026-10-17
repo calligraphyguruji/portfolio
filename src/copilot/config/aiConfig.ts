@@ -36,6 +36,16 @@ export const HARDWARE_TIERS: Record<string, HardwareTier> = {
 };
 
 export const AI_CONFIG = {
+  geminiApiKey:
+    (typeof process !== 'undefined' &&
+      (process.env?.GEMINI_API_KEY || process.env?.GOOGLE_API_KEY)) ||
+    '',
+  geminiModel:
+    (typeof process !== 'undefined' && process.env?.GEMINI_MODEL) ||
+    'gemini-2.0-flash',
+  aiProvider:
+    (typeof process !== 'undefined' && process.env?.AI_PROVIDER) ||
+    'gemini',
   ollamaBaseUrl:
     (typeof process !== 'undefined' && process.env?.OLLAMA_BASE_URL) || 'http://localhost:11434',
   ollamaModel:

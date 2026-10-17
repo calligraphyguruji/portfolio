@@ -105,7 +105,7 @@ export class ConversationMemory {
   ): void {
     // Sanitize: never store obvious secrets or auth headers
     const sanitizedContent = message.content.replace(
-      /(?:bearer\s+[a-zA-Z0-9_\-\.]{20,}|AIza[0-9A-Za-z\-_]{35}|ghp_[a-zA-Z0-9]{36})/gi,
+      /(?:bearer\s+[a-zA-Z0-9_\-\.]{20,}|AIza[0-9A-Za-z\-_]{20,}|ghp_[a-zA-Z0-9]{36})/gi,
       '[REDACTED_SECRET]'
     );
 

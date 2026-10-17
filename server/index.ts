@@ -105,7 +105,7 @@ export function createMantriServer(): http.Server {
     const pathname = reqUrl.pathname;
 
     // Fast-path health check (no rate limit)
-    if (req.method === 'GET' && pathname === '/api/health') {
+    if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/copilot')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(copilotOrchestrator.getHealth()));
       return;
@@ -141,8 +141,8 @@ export function createMantriServer(): http.Server {
         return;
       }
 
-      // 3. POST /api/chat
-      if (req.method === 'POST' && pathname === '/api/chat') {
+      // 3. POST /api/chat or /api/copilot
+      if (req.method === 'POST' && (pathname === '/api/chat' || pathname === '/api/copilot')) {
         const body = await parseJsonBody(req);
         if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -167,8 +167,8 @@ export function createMantriServer(): http.Server {
         return;
       }
 
-      // 4. POST /api/chat/stream (Server-Sent Events)
-      if (req.method === 'POST' && pathname === '/api/chat/stream') {
+      // 4. POST /api/chat/stream or /api/copilot/stream (Server-Sent Events)
+      if (req.method === 'POST' && (pathname === '/api/chat/stream' || pathname === '/api/copilot/stream')) {
         const body = await parseJsonBody(req);
         if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
           res.writeHead(400, { 'Content-Type': 'application/json' });

@@ -2,7 +2,7 @@ import { VERIFIED_KNOWLEDGE_DOCUMENTS } from '../data/verifiedKnowledge.ts';
 import { chunkKnowledgeDocument } from './chunkingService.ts';
 import { analyzeQuery } from '../nlp/nlpProcessor.ts';
 import { HybridRetriever } from './retrievalService.ts';
-import { DeterministicFallbackProvider } from './llmProvider.ts';
+import { GeminiProvider, DeterministicFallbackProvider } from './llmProvider.ts';
 import { OllamaProvider } from './ollamaProvider.ts';
 import { conversationMemory } from './conversationMemory.ts';
 import { toolRegistry } from './toolRegistry.ts';
@@ -19,23 +19,29 @@ import type {
 
 /**
  * Orchestrator Service for Mantri AI Assistant
- * Primary runtime uses self-hosted Ollama inference with zero mandatory external API keys.
+ * Implements a hybrid AI pipeline combining deterministic guards, NLP intent classification,
+ * BM25/RRF hybrid RAG retrieval, and generative reasoning via the official Google Gemini API,
+ * with graceful fallback to local Ollama and grounded deterministic synthesis.
  */
 export class CopilotOrchestrator {
   private chunks: KnowledgeChunk[] = [];
   private retriever: HybridRetriever;
-  private primaryProvider: OllamaProvider;
+  private geminiProvider: GeminiProvider;
+  private ollamaProvider: OllamaProvider;
   private fallbackProvider: DeterministicFallbackProvider;
   private startTime: number = Date.now();
 
   constructor(
+    geminiApiKey = AI_CONFIG.geminiApiKey,
+    geminiModel = AI_CONFIG.geminiModel,
     ollamaBaseUrl = AI_CONFIG.ollamaBaseUrl,
     ollamaModel = AI_CONFIG.ollamaModel
   ) {
     this.retriever = new HybridRetriever();
     this.initializeKnowledgeBase();
 
-    this.primaryProvider = new OllamaProvider(ollamaBaseUrl, ollamaModel);
+    this.geminiProvider = new GeminiProvider(geminiApiKey, geminiModel, AI_CONFIG.requestTimeoutMs);
+    this.ollamaProvider = new OllamaProvider(ollamaBaseUrl, ollamaModel);
     this.fallbackProvider = new DeterministicFallbackProvider();
   }
 
@@ -50,11 +56,12 @@ export class CopilotOrchestrator {
   }
 
   public getHealth(): CopilotHealthResponse {
+    const isGeminiConfigured = this.geminiProvider.isConfigured();
     return {
       status: 'healthy',
-      version: '2.0.0-local',
+      version: '2.1.0-gemini-hybrid',
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
-      llmConfigured: true,
+      llmConfigured: isGeminiConfigured,
       indexedChunks: this.chunks.length,
       features: {
         hybridRetrieval: true,
@@ -66,15 +73,28 @@ export class CopilotOrchestrator {
   }
 
   public async getDetailedStatus(): Promise<any> {
-    const ollamaHealth = await this.primaryProvider.health_check();
+    const ollamaHealth = await this.ollamaProvider.health_check();
     return {
       ...this.getHealth(),
+      provider: AI_CONFIG.aiProvider,
+      gemini: {
+        configured: this.geminiProvider.isConfigured(),
+        model: this.geminiProvider.getModelName(),
+      },
       ollama: ollamaHealth,
     };
   }
 
+  public getGeminiProvider(): GeminiProvider {
+    return this.geminiProvider;
+  }
+
   public getPrimaryProvider(): OllamaProvider {
-    return this.primaryProvider;
+    return this.ollamaProvider;
+  }
+
+  public getFallbackProvider(): DeterministicFallbackProvider {
+    return this.fallbackProvider;
   }
 
   public async handleChat(request: CopilotChatRequest): Promise<CopilotChatResponse> {
@@ -106,7 +126,7 @@ export class CopilotOrchestrator {
       }
     }
 
-    // Prompt Injection Interception
+    // 2. Prompt Injection Interception
     if (nlpAnalysis.isInappropriateOrInjection) {
       const injectionAnswer =
         "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?";
@@ -134,7 +154,7 @@ export class CopilotOrchestrator {
       };
     }
 
-    // Fast-path for safe math calculation tool if explicit math expression requested
+    // 3. Fast-path for safe math calculation tool
     const calcMatch = lastUserMessage.match(/^(?:calculate|compute|what is|eval)\s+([0-9\s\+\-\*\/\(\)\.\^\%]{3,})$/i);
     if (calcMatch && calcMatch[1]) {
       const calcResult = await toolRegistry.executeTool('calculate', { expression: calcMatch[1] });
@@ -154,7 +174,7 @@ export class CopilotOrchestrator {
       }
     }
 
-    // Deterministic Fast-Path: Identity, Purpose & Resume Action
+    // 4. Deterministic Fast-Path: Identity, Purpose & Resume Action
     const identityCitations = [
       {
         sourceId: 'mantri-identity-1',
@@ -201,7 +221,10 @@ export class CopilotOrchestrator {
       return makeIdentityResponse(answerText, 'ASSISTANT_IDENTITY');
     }
     if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator, 'CREATOR_IDENTITY');
+      return makeIdentityResponse(
+        MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator,
+        'CREATOR_IDENTITY'
+      );
     }
     if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
       return makeIdentityResponse(MANTRI_IDENTITY.responses.owner, 'OWNER_IDENTITY');
@@ -216,29 +239,54 @@ export class CopilotOrchestrator {
       return makeIdentityResponse(MANTRI_IDENTITY.responses.purpose, 'ASSISTANT_PURPOSE');
     }
 
-    // 2. Hybrid Retrieval
+    // 5. Hybrid Retrieval from Portfolio Knowledge Base
     const retrievalStart = Date.now();
     const retrievedResults = this.retriever.retrieve(nlpAnalysis, undefined, 4);
     const retrievalLatency = Date.now() - retrievalStart;
 
-    // 3. Citations Assembly
+    // 6. Citations Assembly
     const citations = this.retriever.generateCitations(retrievedResults);
 
-    // 4. Grounded Local LLM Response Generation
+    // 7. Generative LLM Response Generation (Gemini -> Ollama -> Grounded Fallback)
     let answer = '';
-    let usedModel = this.primaryProvider.getModelName();
+    let usedModel = 'deterministic-fallback';
+    let generationError: string | null = null;
 
-    try {
-      // First attempt local Ollama generation
-      answer = await this.primaryProvider.generateResponse(
-        lastUserMessage,
-        retrievedResults,
-        nlpAnalysis,
-        request.messages
-      );
-    } catch {
-      // Fallback to grounded deterministic knowledge generator without throwing
-      usedModel = 'deterministic-local-engine';
+    if (this.geminiProvider.isConfigured() && AI_CONFIG.aiProvider !== 'ollama') {
+      try {
+        answer = await this.geminiProvider.generateResponse(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          request.messages
+        );
+        usedModel = `gemini:${this.geminiProvider.getModelName()}`;
+      } catch (err: any) {
+        generationError = err?.message || String(err);
+        console.warn('[CopilotOrchestrator] Gemini generation failed, evaluating fallback chain:', generationError);
+      }
+    }
+
+    // Secondary attempt: Ollama if configured and primary failed or Ollama requested
+    if (!answer && (AI_CONFIG.aiProvider === 'ollama' || generationError)) {
+      try {
+        answer = await this.ollamaProvider.generateResponse(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          request.messages
+        );
+        usedModel = `ollama:${this.ollamaProvider.getModelName()}`;
+      } catch (ollamaErr) {
+        console.warn('[CopilotOrchestrator] Ollama offline or failed:', ollamaErr);
+      }
+    }
+
+    // Tertiary fallback: Grounded deterministic synthesis
+    if (!answer) {
+      usedModel = this.geminiProvider.isConfigured()
+        ? 'deterministic-fallback'
+        : 'deterministic-offline-engine';
       answer = await this.fallbackProvider.generateResponse(
         lastUserMessage,
         retrievedResults,
@@ -246,7 +294,7 @@ export class CopilotOrchestrator {
       );
     }
 
-    // 5. Recruiter Mode Structured Metadata
+    // 8. Recruiter Mode Structured Metadata
     let recruiterAlignment = undefined;
     if (nlpAnalysis.isRecruiterMode) {
       recruiterAlignment = {
@@ -263,7 +311,7 @@ export class CopilotOrchestrator {
       };
     }
 
-    // 6. Optional Mermaid Diagram for Architecture Queries
+    // 9. Optional Mermaid Diagram for Architecture Queries
     let mermaidDiagram = undefined;
     if (
       nlpAnalysis.intent === 'PROJECT_ARCHITECTURE' &&
@@ -275,10 +323,10 @@ export class CopilotOrchestrator {
   Gateway -->|Rate Limit Check| Redis[(Redis 7)]
   Gateway -->|ACID State Transition| FSM[Finite State Machine]
   FSM -->|Append-Only Audit| Postgres[(PostgreSQL 16 Ledger)]
-  Gateway -->|Guarded Guidance| Ollama[Local Ollama / Self-Hosted LLM]`;
+  Gateway -->|Guarded Guidance| Gemini[Google Gemini AI]`;
     }
 
-    // 7. Structured Resume Card Action
+    // 10. Structured Resume Card Action
     let resumeCard = undefined;
     if (nlpAnalysis.intent === 'RESUME_REQUEST') {
       resumeCard = {
@@ -291,7 +339,7 @@ export class CopilotOrchestrator {
       };
     }
 
-    // Record response in persistent conversation memory
+    // Record assistant response in persistent conversation memory
     if (request.conversationId) {
       conversationMemory.appendMessage(request.conversationId, {
         id: `asst-${Date.now()}`,
@@ -321,7 +369,7 @@ export class CopilotOrchestrator {
   }
 
   /**
-   * Stream tokens from local Ollama or fallback chunk-by-chunk
+   * Stream tokens from Gemini, local Ollama, or fallback chunk-by-chunk
    */
   public async *streamChat(request: CopilotChatRequest): AsyncIterable<string> {
     const lastUserMessage =
@@ -331,7 +379,7 @@ export class CopilotOrchestrator {
       request.messages.slice(0, -1)
     );
 
-    // Fast path: if identity or prompt injection, yield direct answer immediately
+    // Fast paths: prompt injection, identity, resume
     if (nlpAnalysis.isInappropriateOrInjection) {
       yield "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions.";
       return;
@@ -370,29 +418,52 @@ export class CopilotOrchestrator {
 
     const retrievedResults = this.retriever.retrieve(nlpAnalysis, undefined, 4);
 
-    try {
-      const contextBlocks = retrievedResults.map((r, idx) => {
-        return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]\n${r.chunk.content}`;
-      });
-      const promptText = `
+    // Primary: stream from Gemini if configured
+    if (this.geminiProvider.isConfigured() && AI_CONFIG.aiProvider !== 'ollama') {
+      try {
+        for await (const chunk of this.geminiProvider.streamResponse(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          request.messages
+        )) {
+          yield chunk;
+        }
+        return;
+      } catch (err) {
+        console.warn('[CopilotOrchestrator] Gemini streaming failed, engaging fallback stream:', err);
+      }
+    }
+
+    // Secondary: stream from Ollama if configured
+    if (AI_CONFIG.aiProvider === 'ollama') {
+      try {
+        const contextBlocks = retrievedResults.map((r, idx) => {
+          return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]\n${r.chunk.content}`;
+        });
+        const promptText = `
 USER QUERY: ${lastUserMessage}
 PORTFOLIO CONTEXT:
 ${contextBlocks.join('\n\n') || 'Rely only on verified foundational portfolio data.'}
 
 Provide an accurate, grounded, helpful response:
 `;
-      for await (const chunk of this.primaryProvider.stream_generate(promptText)) {
-        yield chunk;
+        for await (const chunk of this.ollamaProvider.stream_generate(promptText)) {
+          yield chunk;
+        }
+        return;
+      } catch {
+        // Continue to fallback
       }
-    } catch {
-      // Fallback: yield complete deterministic response
-      const fallbackAns = await this.fallbackProvider.generateResponse(
-        lastUserMessage,
-        retrievedResults,
-        nlpAnalysis
-      );
-      yield fallbackAns;
     }
+
+    // Tertiary: deterministic fallback
+    const fallbackAns = await this.fallbackProvider.generateResponse(
+      lastUserMessage,
+      retrievedResults,
+      nlpAnalysis
+    );
+    yield fallbackAns;
   }
 }
 

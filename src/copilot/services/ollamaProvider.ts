@@ -39,6 +39,7 @@ export interface GenerationOptions {
  * Self-hosted, private, and zero dependency on paid cloud LLMs.
  */
 export class OllamaProvider implements LLMProvider {
+  public readonly name = 'ollama';
   private baseUrl: string;
   private modelName: string;
   private embeddingModel: string;
@@ -52,6 +53,10 @@ export class OllamaProvider implements LLMProvider {
     this.baseUrl = baseUrl.replace(/\/$/, '');
     this.modelName = modelName;
     this.embeddingModel = embeddingModel;
+  }
+
+  public isConfigured(): boolean {
+    return true;
   }
 
   public getBaseUrl(): string {

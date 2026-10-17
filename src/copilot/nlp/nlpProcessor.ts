@@ -29,6 +29,8 @@ const PROJECT_ALIASES: Record<string, string> = {
   'youtube clone': 'youtube-clone',
   youtube: 'youtube-clone',
   'youtube-clone': 'youtube-clone',
+  'document verification': 'credvidhi',
+  kyc: 'credvidhi',
 };
 
 const TECH_ENTITIES = [
@@ -62,7 +64,7 @@ const PROMPT_INJECTION_PATTERNS = [
   /system\s+prompt/i,
   /you\s+are\s+now\s+in\s+dan\s+mode/i,
   /bypass\s+all\s+rules/i,
-  /(reveal|print|show|dump)\s+(api\s+key|secret|password|token)/i,
+  /(reveal|print|show|dump)\s+(me\s+)?(all\s+)?(your\s+|the\s+)?(api\s+key|secret|password|token)/i,
   /delete\s+all\s+database/i,
   /sudo\s+rm\s+-rf/i,
   /jailbreak/i,
@@ -252,7 +254,9 @@ export function analyzeQuery(
 
   if (!targetProject && conversationHistory.length > 0) {
     isFollowUp =
-      /\b(it|this|that|project|system|platform|app|clone)\b/i.test(lowerQuery) ||
+      /\b(it|this|that|project|system|platform|app|clone|component|components|layer|layers|step|steps|phase|phases|stage|stages|service|services|module|modules|part|parts|second|first|third|verification|underwriting|fsm|failure|fails)\b/i.test(
+        lowerQuery
+      ) ||
       /\b(what\s*technologies\s*does\s*it\s*use|what\s*tech\s*stack\s*does\s*it\s*use|what\s*database\s*does\s*it\s*use|what\s*about\s*its\s*backend|how\s*does\s*it\s*work)\b/i.test(
         lowerQuery
       );
@@ -302,7 +306,7 @@ export function analyzeQuery(
     );
 
   const isTechnicalQuery =
-    /\b(what\s*is\s*rag|explain\s*rag|what\s*is\s*a\s*vector\s*database|binary\s*search\s*in\s*c\+\+|difference\s*between\s*(a\s*)?process\s*and\s*(a\s*)?thread|mutex\s*in\s*c\+\+|time\s*complexity|space\s*complexity)\b/i.test(
+    /\b(what\s*is\s*rag|explain\s*rag|what\s*is\s*a\s*vector\s*database|binary\s*search\s*in\s*c\+\+|difference\s*between\s*(a\s*)?process\s*and\s*(a\s*)?thread|mutex\s*in\s*c\+\+|time\s*complexity|space\s*complexity|dijkstra|dijkstra's\s*algorithm|depth\s*first\s*search|breadth\s*first\s*search|dynamic\s*programming)\b/i.test(
       lowerQuery
     );
 

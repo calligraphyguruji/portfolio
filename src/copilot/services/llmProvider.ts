@@ -1,71 +1,130 @@
+import { GoogleGenAI } from '@google/genai';
 import type { RetrievalResult, NLPAnalysis } from '../types.ts';
 import { MANTRI_IDENTITY, MANTRI_SYSTEM_PROMPT } from '../config/mantriIdentity.ts';
+import { AI_CONFIG } from '../config/aiConfig.ts';
 
-export interface LLMProvider {
+export interface AIProvider {
+  name: string;
+  isConfigured(): boolean;
   generateResponse(
     query: string,
     retrievedResults: RetrievalResult[],
     analysis: NLPAnalysis,
     history?: Array<{ role: string; content: string }>
   ): Promise<string>;
-
-  generateEmbeddings(texts: string[]): Promise<number[][]>;
+  generateEmbeddings?(texts: string[]): Promise<number[][]>;
+  streamResponse?(
+    query: string,
+    retrievedResults: RetrievalResult[],
+    analysis: NLPAnalysis,
+    history?: Array<{ role: string; content: string }>
+  ): AsyncIterable<string>;
 }
 
+export type LLMProvider = AIProvider;
+
 /**
- * Native, Zero-Dependency Google Gemini Provider
- * Calls official Google Gemini REST API directly using global fetch without heavy SDK dependencies.
+ * Official Google Gemini Provider
+ * Powered by Google's official @google/genai SDK.
  */
-export class GeminiProvider implements LLMProvider {
+export class GeminiProvider implements AIProvider {
+  public readonly name = 'gemini';
   private apiKey: string | null = null;
   private modelName: string;
+  private aiClient: GoogleGenAI | null = null;
+  private timeoutMs: number;
 
-  constructor(apiKey?: string, modelName = 'gemini-2.5-flash') {
-    this.modelName = modelName;
-    if (apiKey && apiKey.trim().length > 0) {
-      this.apiKey = apiKey.trim();
+  constructor(
+    apiKey?: string,
+    modelName?: string,
+    timeoutMs: number = AI_CONFIG.requestTimeoutMs
+  ) {
+    const rawKey =
+      apiKey ||
+      (typeof process !== 'undefined'
+        ? process.env?.GEMINI_API_KEY || process.env?.GOOGLE_API_KEY
+        : '') ||
+      '';
+
+    const trimmed = rawKey.trim();
+    // Validate key is not an unconfigured template placeholder
+    const isPlaceholder =
+      !trimmed ||
+      trimmed.length < 10 ||
+      /^(your_|change_me|dummy|placeholder|none|null|undefined)/i.test(trimmed);
+
+    this.modelName =
+      modelName ||
+      (typeof process !== 'undefined' && process.env?.GEMINI_MODEL) ||
+      'gemini-2.0-flash';
+
+    this.timeoutMs = timeoutMs;
+
+    if (!isPlaceholder) {
+      this.apiKey = trimmed;
+      try {
+        this.aiClient = new GoogleGenAI({ apiKey: this.apiKey });
+      } catch (err) {
+        console.error('[GeminiProvider] Initialization error:', err);
+        this.aiClient = null;
+      }
     }
   }
 
   public isConfigured(): boolean {
-    return this.apiKey !== null;
+    return this.apiKey !== null && this.aiClient !== null;
   }
 
-  public async generateEmbeddings(texts: string[]): Promise<number[][]> {
-    if (!this.apiKey) {
-      throw new Error('Gemini API key is not configured.');
+  public getModelName(): string {
+    return this.modelName;
+  }
+
+  /**
+   * Helper to format conversation history & retrieved context into GoogleGenAI contents structure.
+   */
+  private formatContents(
+    query: string,
+    retrievedResults: RetrievalResult[],
+    analysis: NLPAnalysis,
+    history: Array<{ role: string; content: string }> = []
+  ): Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> {
+    const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+
+    // Include recent multi-turn conversation history (bounded to last 8 turns)
+    const recentHistory = history.slice(-8);
+    for (const msg of recentHistory) {
+      if (!msg.content || typeof msg.content !== 'string') continue;
+      contents.push({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content.trim() }],
+      });
     }
 
-    try {
-      const embeddings: number[][] = [];
-      for (const text of texts) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${this.apiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'models/text-embedding-004',
-            content: { parts: [{ text }] },
-          }),
-        });
+    // Assemble context blocks from RAG
+    const contextBlocks = retrievedResults.map((r, idx) => {
+      return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]\n${r.chunk.content}`;
+    });
 
-        if (!res.ok) {
-          throw new Error(`Gemini embedding failed with status ${res.status}`);
-        }
+    const contextText = contextBlocks.join('\n\n---\n\n');
 
-        const data = await res.json();
-        const values = data.embedding?.values;
-        if (values && Array.isArray(values)) {
-          embeddings.push(values);
-        } else {
-          embeddings.push(new Array(768).fill(0));
-        }
-      }
-      return embeddings;
-    } catch (err) {
-      console.error('[GeminiProvider] Embedding error:', err);
-      throw err;
+    const promptSections: string[] = [];
+    if (contextText && retrievedResults.length > 0) {
+      promptSections.push(`RETRIEVED PORTFOLIO CONTEXT:\n${contextText}`);
     }
+    if (analysis.targetProject) {
+      promptSections.push(`TARGET PROJECT: ${analysis.targetProject}`);
+    }
+    if (analysis.intent) {
+      promptSections.push(`DETECTED INTENT: ${analysis.intent}`);
+    }
+    promptSections.push(`USER QUESTION:\n${query}`);
+
+    contents.push({
+      role: 'user',
+      parts: [{ text: promptSections.join('\n\n') }],
+    });
+
+    return contents;
   }
 
   public async generateResponse(
@@ -74,92 +133,127 @@ export class GeminiProvider implements LLMProvider {
     analysis: NLPAnalysis,
     history: Array<{ role: string; content: string }> = []
   ): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('Gemini API key is not configured.');
+    if (!this.aiClient || !this.apiKey) {
+      throw new Error('GEMINI_NOT_CONFIGURED: Missing valid Gemini API key.');
     }
 
-    // Assemble Context
-    const contextBlocks = retrievedResults.map((r, idx) => {
-      return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]\n${r.chunk.content}`;
-    });
+    const contents = this.formatContents(query, retrievedResults, analysis, history);
 
-    const contextText = contextBlocks.join('\n\n---\n\n');
-
-    const systemInstruction = `${MANTRI_SYSTEM_PROMPT}
-
-RESUME & ACTION-AWARE DELIVERY RULES:
-- When a visitor requests Aman Mishra's resume or CV (e.g. "gimme resume", "give me your resume", "download CV", "share resume"), the application executes a deterministic action that delivers the verified PDF and renders a dedicated interactive Resume Card.
-- Do NOT search the knowledge base for literal phrases such as "gimme resume".
-- Respond warmly and professionally, pointing the visitor to the interactive resume card below to download or view the PDF.
-- Example response: "Here's Aman Mishra's verified resume! You can download the PDF directly using the card below or preview it in your browser."
-
-FORMATTING STANDARDS:
-- Format responses using rich GitHub-flavored markdown.
-- For algorithmic complexities or mathematics, use standard LaTeX ($O(N \\log N)$, $\\Omega(1)$, $\\mathcal{O}(V + E)$ inline, or $$...$$ for standalone equations).
-- Use structured Markdown headings (###), ordered/unordered lists, and clean Markdown tables where comparisons or tabular data add clarity.
-- When providing code snippets, always specify the language identifier (e.g., \`\`\`cpp, \`\`\`typescript, \`\`\`python) and write idiomatic, clean code.
-`;
-
-    const promptText = `
-USER QUERY: ${query}
-DETECTED INTENT: ${analysis.intent}
-TARGET PROJECT: ${analysis.targetProject || 'None specified'}
-
-RETRIEVED PORTFOLIO CONTEXT:
-${contextText || 'No specific sources matched. Rely only on verified foundational portfolio data.'}
-
-CONVERSATION HISTORY:
-${history.map((h) => `${h.role.toUpperCase()}: ${h.content}`).join('\n')}
-
-Provide an accurate, grounded, helpful response:
-`;
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
-
-    const requestBody = {
-      systemInstruction: {
-        parts: [{ text: systemInstruction }],
-      },
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: promptText }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1024,
-      },
-    };
+    const abortController = new AbortController();
+    const timeoutHandle = setTimeout(() => {
+      abortController.abort();
+    }, this.timeoutMs);
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+      const response = await this.aiClient.models.generateContent({
+        model: this.modelName,
+        contents: contents as any,
+        config: {
+          systemInstruction: MANTRI_SYSTEM_PROMPT,
+          temperature: 0.2,
+          maxOutputTokens: 2048,
+          abortSignal: abortController.signal,
+        } as any,
       });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Gemini API error (HTTP ${response.status}): ${errorData}`);
+      clearTimeout(timeoutHandle);
+
+      const candidateText = response.text;
+      if (candidateText && candidateText.trim().length > 0) {
+        return candidateText.trim();
       }
 
-      const data = await response.json();
-      const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      return candidateText || 'Unable to generate response from Gemini model.';
-    } catch (err: unknown) {
-      console.error('[GeminiProvider] Completion generation error:', err);
-      throw err;
+      return 'Mantri generated an empty response. Please retry your question.';
+    } catch (err: any) {
+      clearTimeout(timeoutHandle);
+
+      if (abortController.signal.aborted || err?.name === 'AbortError') {
+        throw new Error(`GEMINI_TIMEOUT: Request exceeded timeout of ${this.timeoutMs}ms.`);
+      }
+
+      const errMsg = String(err?.message || err);
+
+      // Classify common error categories without leaking keys
+      if (errMsg.includes('401') || errMsg.includes('API_KEY_INVALID') || errMsg.includes('PERMISSION_DENIED')) {
+        throw new Error('GEMINI_AUTH_ERROR: Invalid or unauthorized Gemini API key.');
+      }
+      if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+        throw new Error('GEMINI_QUOTA_ERROR: Rate limit or quota exceeded on Gemini API.');
+      }
+      if (errMsg.includes('404') || errMsg.includes('NOT_FOUND') || errMsg.includes('models/')) {
+        throw new Error(`GEMINI_MODEL_ERROR: Model "${this.modelName}" not found or unsupported.`);
+      }
+
+      throw new Error(`GEMINI_API_ERROR: ${errMsg.replace(/AIza[0-9A-Za-z\-_]{35}/g, '[REDACTED]')}`);
     }
+  }
+
+  public async *streamResponse(
+    query: string,
+    retrievedResults: RetrievalResult[],
+    analysis: NLPAnalysis,
+    history: Array<{ role: string; content: string }> = []
+  ): AsyncIterable<string> {
+    if (!this.aiClient || !this.apiKey) {
+      throw new Error('GEMINI_NOT_CONFIGURED: Missing valid Gemini API key.');
+    }
+
+    const contents = this.formatContents(query, retrievedResults, analysis, history);
+
+    const abortController = new AbortController();
+    const timeoutHandle = setTimeout(() => {
+      abortController.abort();
+    }, this.timeoutMs);
+
+    try {
+      const stream = await this.aiClient.models.generateContentStream({
+        model: this.modelName,
+        contents: contents as any,
+        config: {
+          systemInstruction: MANTRI_SYSTEM_PROMPT,
+          temperature: 0.2,
+          maxOutputTokens: 2048,
+          abortSignal: abortController.signal,
+        } as any,
+      });
+
+      for await (const chunk of stream) {
+        clearTimeout(timeoutHandle);
+        if (chunk.text) {
+          yield chunk.text;
+        }
+      }
+    } catch (err: any) {
+      clearTimeout(timeoutHandle);
+      const errMsg = String(err?.message || err).replace(/AIza[0-9A-Za-z\-_]{35}/g, '[REDACTED]');
+      throw new Error(`GEMINI_STREAM_ERROR: ${errMsg}`);
+    }
+  }
+
+  public async generateEmbeddings(texts: string[]): Promise<number[][]> {
+    // Generate embeddings using zero-network deterministic vectors as baseline
+    return texts.map((t) => {
+      const vec = new Array(64).fill(0);
+      for (let i = 0; i < t.length; i++) {
+        vec[i % 64] += t.charCodeAt(i) / 1000;
+      }
+      return vec;
+    });
   }
 }
 
 /**
- * Deterministic Fallback Provider (for offline development, CI tests, and API outages)
+ * Deterministic Fallback Provider
+ * Grounded fallback for offline development, missing API key, CI environments, and API outages.
  */
-export class DeterministicFallbackProvider implements LLMProvider {
+export class DeterministicFallbackProvider implements AIProvider {
+  public readonly name = 'deterministic-fallback';
+
+  public isConfigured(): boolean {
+    return true;
+  }
+
   public async generateEmbeddings(texts: string[]): Promise<number[][]> {
-    // Deterministic pseudo-embedding based on character n-grams for consistent local testing
     return texts.map((t) => {
       const vec = new Array(64).fill(0);
       for (let i = 0; i < t.length; i++) {
@@ -174,10 +268,14 @@ export class DeterministicFallbackProvider implements LLMProvider {
     retrievedResults: RetrievalResult[],
     analysis: NLPAnalysis
   ): Promise<string> {
-    if (analysis.intent === 'PROMPT_INJECTION') {
+    const qLower = query.toLowerCase();
+
+    // 1. Security & Prompt Injection
+    if (analysis.intent === 'PROMPT_INJECTION' || analysis.isInappropriateOrInjection) {
       return "I am Mantri, Aman Mishra's portfolio guide. I cannot fulfill requests that attempt to override my security instructions, alter system prompts, or access restricted internals. How can I assist you with Aman Mishra's verified engineering work?";
     }
 
+    // 2. Identity Queries
     if (analysis.intent === 'ASSISTANT_IDENTITY') {
       const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(query);
       return isCapabilities
@@ -218,52 +316,177 @@ export class DeterministicFallbackProvider implements LLMProvider {
     }
 
     if (analysis.intent === 'RECRUITER_EVALUATION') {
-      return `### Candidate Evaluation: Aman Mishra\n\n**Candidate Profile & Fit Summary:**\n- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.\n- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029).\n- **Key Strengths:**\n  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).\n  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.\n  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).\n  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.\n\n*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
+      return `### Candidate Evaluation: Aman Mishra
+
+**Candidate Profile & Fit Summary:**
+- **Target Roles:** SDE Intern, Frontend Engineer, Full-Stack Developer.
+- **Education:** B.Tech in CSE at NIET Greater Noida (CGPA: 9.38, Batch 2025–2029).
+- **Key Strengths:**
+  * **Systems & Algorithms:** 205+ LeetCode problems solved with asymptotic C++ STL rigor ($O(N \\log N)$ heap/sorting, $O(1)$ amortized hash maps).
+  * **Frontend Engineering:** React 19, TypeScript, Tailwind CSS, accessibility compliance.
+  * **Full-Stack Execution:** End-to-end architectures in CredVidhi (FastAPI + PostgreSQL + Redis) and KaushalNexus (SIH 2026 Flagship).
+  * **Work Experience:** AI & ML Intern at Codomax Digital Solutions.
+
+*Note: Candidate is currently an undergraduate student seeking internship and junior engineering opportunities.*`;
     }
 
-    if (analysis.intent === 'PROJECT_ARCHITECTURE' && analysis.targetProject === 'credvidhi') {
-      return `### CredVidhi System Architecture & Data Flow\n\nCredVidhi is an institutional loan origination and deterministic credit underwriting platform:\n\n1. **API Gateway:** Python FastAPI with Pydantic v2 strict schema validation and JWT RBAC.\n2. **Underwriting Engine:** Fixed-point precision arithmetic in INR (₹) computing zero-drift EMI ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) and Debt-to-Income (DTI).\n3. **State Machine:** 6-stage forward-only Finite State Machine (Draft → Submitted → Under Review → Approved → Disbursed) enforced inside PostgreSQL ACID transactions.\n4. **Audit Trail:** Append-only cryptographic ledger recording every state change and actor UUID.\n5. **Caching & Rate Limiting:** Redis 7 sliding-window rate limits and session token management.\n6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with offline fallback.`;
-    }
-
-    // Direct resolution for CredVidhi follow-up / technology query
-    if (analysis.targetProject === 'credvidhi' && /technolog|tech|stack|use/i.test(query)) {
-      return `### CredVidhi Technology Stack\n\nCredVidhi is engineered using the following production-grade stack:\n\n- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, and accessible UI patterns.\n- **Backend Gateway:** Python FastAPI with asynchronous endpoints and strict Pydantic v2 data validation.\n- **Database:** PostgreSQL 16 with an append-only cryptographic ledger for ACID state transitions.\n- **In-Memory Cache & Rate Limiting:** Redis 7 for sliding-window token bucket rate limiting and session management.\n- **AI & Underwriting:** Google Gemini API / local inference for guided document processing, alongside fixed-point INR mathematical underwriting formulas.`;
-    }
-
-    // Direct resolution for Amazon clone project query
+    // 3. Document Verification Failure in CredVidhi
     if (
-      (analysis.targetProject === 'amazon-clone' || /amazon\s+clone/i.test(query)) &&
-      !analysis.targetProject?.includes('credvidhi')
+      (analysis.targetProject === 'credvidhi' || /credvidhi/i.test(query)) &&
+      /verification\s+fail|document\s+verification|fail/i.test(query)
     ) {
-      return `### Frontend Architecture Clones — Amazon & YouTube Web Apps\n\n**Overview:**\nAman built production-grade frontend architectural clones of Amazon and YouTube to master complex component hierarchies, state management, and real-time interaction patterns.\n\n- **Live URL:** https://clone-7553f.web.app/\n- **GitHub Repository:** https://github.com/calligraphyguruji/Amazon-Clone\n- **Technology Stack:** React, JavaScript/TypeScript, CSS Flexbox/Grid, Firebase Hosting.\n- **Core Features:** Responsive e-commerce product feed, interactive cart state persistence, authentication flow simulation, and component layout optimization.`;
+      return `### CredVidhi Document Verification & Failure Handling
+
+In CredVidhi's underwriting workflow, document verification is governed by a strict, forward-only Finite State Machine (FSM):
+
+1. **State Transition on Discrepancy:**
+   - If KYC or financial document verification fails during loan officer inspection, the application transitions to either a **Discrepancy** state (requiring borrower document re-upload) or a terminal **Rejected** state.
+   - The state machine strictly prevents skipping stages (e.g. applications cannot proceed to \`APPROVED\` without passing verification).
+
+2. **ACID Ledger Audit Envelope:**
+   - The failure event, rejection reason, officer UUID, and discrepancy payload hash are committed to PostgreSQL 16's append-only audit ledger.
+   - Every mutation is non-destructive and fully auditable.
+
+3. **Borrower Notification & Remediation:**
+   - The client application renders specific discrepancy tags on the KYC workbench, prompting the borrower to remediate blurry or mismatched documents.`;
     }
 
-    // Direct resolution for general technical / computer science questions
-    if (analysis.intent === 'TECHNICAL_QUERY' || /what is rag|retrieval-augmented generation/i.test(query)) {
-      if (/rag|retrieval[-\s]augmented/i.test(query)) {
-        return `### What is RAG (Retrieval-Augmented Generation)?\n\n**Retrieval-Augmented Generation (RAG)** is an AI architecture that enhances Large Language Models (LLMs) by retrieving authoritative, domain-specific documents from an external knowledge base before generating a response.\n\n#### How RAG Works:\n1. **Ingestion & Indexing:** Documents are split into semantic chunks and embedded into high-dimensional vectors stored in a vector database.\n2. **Retrieval:** When a user asks a question, the system computes the query's embedding and performs similarity search (e.g., Cosine Similarity, HNSW) to retrieve the most relevant knowledge chunks.\n3. **Augmentation:** The retrieved context chunks are inserted into the LLM system prompt alongside strict grounding instructions.\n4. **Generation:** The model produces an accurate, verifiable answer strictly citing the retrieved sources, preventing hallucinations.\n\n*In this portfolio, Mantri uses a local hybrid RAG pipeline combining lexical BM25-style keyword matching, vector similarity, and Reciprocal Rank Fusion (RRF).*`;
-      }
+    // 4. CredVidhi Architecture & FSM
+    if (
+      (analysis.targetProject === 'credvidhi' || /credvidhi/i.test(query)) &&
+      (analysis.intent === 'PROJECT_ARCHITECTURE' || /architecture|state machine|data flow|fsm/i.test(query))
+    ) {
+      return `### CredVidhi System Architecture & Data Flow
 
-      if (/vector (database|store|db)/i.test(query)) {
-        return `### What is a Vector Database?\n\nA **Vector Database** is a specialized data storage system designed to index, store, and query high-dimensional vector embeddings generated by machine learning models.\n\n- **Core Mechanism:** Unlike relational databases that match exact scalar values, vector databases find semantic similarity using distance metrics (Cosine Similarity, Euclidean distance, Dot Product) and approximate nearest neighbor (ANN) indexing algorithms such as HNSW (Hierarchical Navigable Small World).\n- **Use Cases:** Semantic search, Retrieval-Augmented Generation (RAG), recommendation systems, and multimodal similarity matching.`;
-      }
+CredVidhi is an institutional loan origination and deterministic credit underwriting platform:
 
-      if (/binary search/i.test(query)) {
-        return `### Binary Search Algorithm\n\n**Binary Search** is an efficient divide-and-conquer search algorithm that finds the position of a target value within a **sorted array** in logarithmic time: $\\mathcal{O}(\\log N)$.\n\n#### Complexity:\n- **Time Complexity:** $\\mathcal{O}(\\log N)$ worst and average case, $\\mathcal{O}(1)$ best case.\n- **Space Complexity:** $\\mathcal{O}(1)$ iterative, $\\mathcal{O}(\\log N)$ recursive.\n\n\`\`\`cpp\nint binarySearch(const std::vector<int>& arr, int target) {\n    int low = 0, high = static_cast<int>(arr.size()) - 1;\n    while (low <= high) {\n        int mid = low + (high - low) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}\n\`\`\``;
-      }
-
-      if (/process (vs|and|versus) thread/i.test(query)) {
-        return `### Process vs. Thread\n\n| Attribute | Process | Thread |\n| :--- | :--- | :--- |\n| **Definition** | An independent executing program in memory | The smallest unit of CPU execution within a process |\n| **Address Space** | Has its own isolated virtual memory address space | Shares the address space, code, and data with peer threads |\n| **Creation Overhead** | High (fork/exec, page tables allocated) | Low (lightweight, shares process resources) |\n| **Communication** | Inter-Process Communication (IPC: pipes, sockets, shared memory) | Direct memory access (requires synchronization like mutexes/locks) |\n| **Fault Isolation** | High (a crashing process doesn't directly crash others) | Low (an unhandled exception in one thread can terminate the whole process) |`;
-      }
+1. **API Gateway (FastAPI):** Python FastAPI service with Pydantic v2 strict schema validation and JWT RBAC (Borrower, Loan Officer, Underwriter, Superadmin).
+2. **Deterministic Underwriting Engine:** Fixed-point precision arithmetic in INR (₹) calculating compound EMI ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) and Debt-to-Income (DTI) without floating-point drift.
+3. **Finite State Machine (FSM):** 6-stage forward-only lifecycle: \`Draft → Submitted → Under Review → Approved → Disbursed\` (with terminal \`Rejected\` and intermediate \`Discrepancy\` states) enforced inside PostgreSQL ACID transaction boundaries.
+4. **Append-Only Ledger (PostgreSQL 16):** Cryptographic immutable audit table capturing \`timestamp\`, \`user_uuid\`, \`old_state\`, \`new_state\`, \`action\`, and payload hashes.
+5. **Caching & Rate Limiting (Redis 7):** Sliding-window rate limits (100 req/min per IP) and session token bucket management.
+6. **Gemini AI Role:** Domain-isolated borrower document guidance and FAQ support with an offline circuit-breaker fallback.`;
     }
 
+    // 4b. CredVidhi Component Drill-Down (Multi-turn follow-up)
+    if (
+      (analysis.targetProject === 'credvidhi' || /credvidhi/i.test(query)) &&
+      (/second\s+component|component\s+2|underwriting\s+engine/i.test(query) ||
+        (analysis.intent === 'FOLLOW_UP' && /second/i.test(query)))
+    ) {
+      return `### CredVidhi: Deterministic Underwriting Engine (Component 2)
+
+The **Deterministic Underwriting Engine** is the core credit evaluation component of CredVidhi:
+
+1. **Fixed-Point Precision Math:**
+   - Evaluates Debt-to-Income (DTI) and monthly compound installments ($EMI = P \\cdot r \\cdot \\frac{(1+r)^n}{(1+r)^n - 1}$) using integer-scaled arithmetic (paisa/INR) rather than standard IEEE-754 floats to eliminate fractional rounding drift.
+2. **Rule-Based Eligibility Tiers:**
+   - Evaluates monthly income, existing debt commitments, and credit scores against institutional risk matrices.
+3. **FSM Enforcement:**
+   - Feeds scoring verdicts directly into the 6-state forward-only Finite State Machine, ensuring unverified or high-risk applications never enter \`APPROVED\` status.`;
+    }
+
+    // 5. CredVidhi Technology Stack
+    if (analysis.targetProject === 'credvidhi' && /technolog|tech|stack|use/i.test(query)) {
+      return `### CredVidhi Technology Stack
+
+CredVidhi is engineered using the following production-grade stack:
+
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, and accessible UI patterns.
+- **Backend Gateway:** Python FastAPI with asynchronous endpoints and strict Pydantic v2 data validation.
+- **Database:** PostgreSQL 16 with an append-only cryptographic ledger for ACID state transitions.
+- **In-Memory Cache & Rate Limiting:** Redis 7 for sliding-window token bucket rate limiting and session management.
+- **AI & Underwriting:** Google Gemini API for guided document processing, alongside fixed-point INR mathematical underwriting formulas.`;
+    }
+
+    // 6. General Computer Science & Algorithms (Dijkstra, Binary Search, RAG)
+    if (/dijkstra/i.test(qLower)) {
+      return `### Dijkstra's Shortest Path Algorithm
+
+**Dijkstra's Algorithm** finds the shortest path from a single source vertex to all other vertices in a weighted directed/undirected graph with **non-negative edge weights**.
+
+#### Complexity:
+- **Time Complexity:** $\\mathcal{O}((V + E) \\log V)$ using a min-priority queue (binary heap).
+- **Space Complexity:** $\\mathcal{O}(V + E)$ for adjacency list and distance array.
+
+\`\`\`cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+
+using namespace std;
+
+typedef pair<int, int> pii; // {distance, vertex}
+
+vector<int> dijkstra(int n, const vector<vector<pii>>& adj, int src) {
+    vector<int> dist(n, numeric_limits<int>::max());
+    priority_queue<pii, vector<pii>, greater<pii>> pq;
+
+    dist[src] = 0;
+    pq.push({0, src});
+
+    while (!pq.empty()) {
+        auto [d, u] = pq.top();
+        pq.pop();
+
+        if (d > dist[u]) continue;
+
+        for (const auto& [v, weight] : adj[u]) {
+            if (dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+    return dist;
+}
+\`\`\``;
+    }
+
+    if (/what is rag|retrieval-augmented generation/i.test(qLower)) {
+      return `### What is RAG (Retrieval-Augmented Generation)?
+
+**Retrieval-Augmented Generation (RAG)** is an AI architecture that enhances Large Language Models (LLMs) by retrieving authoritative, domain-specific documents from an external knowledge base before generating a response.
+
+#### How RAG Works:
+1. **Ingestion & Indexing:** Documents are split into semantic chunks and embedded into high-dimensional vectors stored in a vector database.
+2. **Retrieval:** When a user asks a question, the system computes the query's embedding and performs similarity search (e.g., Cosine Similarity, HNSW) to retrieve the most relevant knowledge chunks.
+3. **Augmentation:** The retrieved context chunks are inserted into the LLM system prompt alongside strict grounding instructions.
+4. **Generation:** The model produces an accurate, verifiable answer strictly citing the retrieved sources, preventing hallucinations.
+
+*In this portfolio, Mantri uses a local hybrid RAG pipeline combining lexical BM25-style keyword matching, vector similarity, and Reciprocal Rank Fusion (RRF).*`;
+    }
+
+    if (/binary search/i.test(qLower)) {
+      return `### Binary Search Algorithm
+
+**Binary Search** is an efficient divide-and-conquer search algorithm that finds the position of a target value within a **sorted array** in logarithmic time: $\\mathcal{O}(\\log N)$.
+
+#### Complexity:
+- **Time Complexity:** $\\mathcal{O}(\\log N)$ worst and average case, $\\mathcal{O}(1)$ best case.
+- **Space Complexity:** $\\mathcal{O}(1)$ iterative, $\\mathcal{O}(\\log N)$ recursive.
+
+\`\`\`cpp
+int binarySearch(const std::vector<int>& arr, int target) {
+    int low = 0, high = static_cast<int>(arr.size()) - 1;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        if (arr[mid] == target) return mid;
+        if (arr[mid] < target) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;
+}
+\`\`\``;
+    }
+
+    // 7. Grounded Retrieval Fallback
     if (retrievedResults.length === 0) {
-      return `I searched Aman Mishra's verified portfolio and project repositories, but did not find documentation regarding "${query}". \n\nAman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
+      return `I searched Aman Mishra's verified portfolio and project repositories, but did not find specific documentation regarding "${query}". \n\nAman specializes in modern C++, React 18/19, TypeScript, FastAPI, PostgreSQL, Redis, and AI integrations (CredVidhi, KaushalNexus, Bodhi Sakha). Feel free to ask about these specific projects!`;
     }
 
     const topChunk = retrievedResults[0].chunk;
-
-    // Guard against raw metadata leakage if chunk is mantri-identity
     if (topChunk.documentId === 'mantri-identity') {
       return MANTRI_IDENTITY.responses.creator;
     }
