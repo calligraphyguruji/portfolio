@@ -109,7 +109,7 @@ export class CopilotOrchestrator {
 
     return {
       status: llmConfigured ? 'healthy' : 'degraded',
-      version: '3.1.0-dynamic-model-switching',
+      version: '3.1.1-active-model-failover',
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
       llmConfigured,
       indexedChunks: this.chunks.length,

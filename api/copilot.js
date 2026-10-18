@@ -4201,7 +4201,7 @@ var CopilotOrchestrator = class {
     const primaryProvider = isGeminiConfigured ? "gemini" : isGroqConfigured ? "groq" : "none";
     return {
       status: llmConfigured ? "healthy" : "degraded",
-      version: "3.1.0-dynamic-model-switching",
+      version: "3.1.1-active-model-failover",
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1e3),
       llmConfigured,
       indexedChunks: this.chunks.length,
