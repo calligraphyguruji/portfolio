@@ -71,14 +71,14 @@ Mantri is the production-grade, context-aware AI engineering assistant integrate
      ┌─────────────────────────────────────────────────────────────┐
      │              4-Tier Adaptive Inference Pipeline             │
      │  1. Primary: Multi-Model Google Gemini Router               │
-     │     • Primary: gemini-2.5-flash (fast, multi-turn reasoning)│
-     │     • Configurable Fallbacks: gemini-2.5-flash-lite,        │
-     │       gemini-2.5-pro, gemini-3.8-flash                      │
+     │     • Primary: gemini-2.0-flash / gemini-flash-latest       │
+     │     • Configurable Fallbacks: gemini-flash-lite-latest,     │
+     │       gemini-1.5-flash, gemini-1.5-pro                      │
      │     • Centralized circuit breaker & cooldown window         │
      │  2. Secondary: Official Groq API Fallback Provider          │
      │     • Low-latency inference powered by `groq-sdk`           │
-     │     • Flagship: llama-3.3-70b-versatile (128k context)      │
-     │     • Fast failover: llama-3.1-8b-instant                   │
+     │     • Dynamic discovery: llama-3.3-70b-versatile,           │
+     │       llama-3.1-8b-instant, open-source models              │
      │     • Auto-triggered on Gemini 404, 401/403, 429, timeouts, │
      │       or 5xx upstream failures                              │
      │  3. Tertiary: Local Ollama Daemon (llama3.2:3b / mistral)   │
