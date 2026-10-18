@@ -168,6 +168,7 @@ export interface CopilotChatResponse {
   };
   mermaidDiagram?: string;
   resumeCard?: ResumeCardData;
+  isError?: boolean;
   metadata: {
     model: string;
     requestedModel?: string;
@@ -189,6 +190,8 @@ export interface CopilotHealthResponse {
   uptimeSeconds: number;
   llmConfigured: boolean;
   indexedChunks: number;
+  primaryProvider?: 'gemini' | 'groq' | 'none';
+  availableProviders?: string[];
   features: {
     hybridRetrieval: boolean;
     recruiterMode: boolean;

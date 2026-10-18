@@ -106,15 +106,10 @@ export const CopilotWidget: React.FC = () => {
   const [conversationId, setConversationId] = useState<string>(
     () => 'conv-' + Math.random().toString(36).slice(2, 10)
   );
-  const [healthStatus, setHealthStatus] = useState<{
-    status: 'checking' | 'connected' | 'offline';
-    llmConfigured: boolean;
-    indexedChunks: number;
-  }>({
-    status: 'checking',
-    llmConfigured: false,
-    indexedChunks: 0,
-  });
+  const [providerStatus, setProviderStatus] = useState<
+    'checking' | 'gemini' | 'groq' | 'unavailable'
+  >('checking');
+  const [indexedChunks, setIndexedChunks] = useState(24);
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -139,18 +134,21 @@ export const CopilotWidget: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
-            setHealthStatus({
-              status: 'connected',
-              llmConfigured: !!data.llmConfigured,
-              indexedChunks: data.indexedChunks || 24,
-            });
+            setIndexedChunks(data.indexedChunks || 24);
+            if (data.primaryProvider === 'groq') {
+              setProviderStatus('groq');
+            } else if (data.primaryProvider === 'gemini' || data.llmConfigured) {
+              setProviderStatus('gemini');
+            } else {
+              setProviderStatus('unavailable');
+            }
           }
         } else if (isMounted) {
-          setHealthStatus({ status: 'offline', llmConfigured: false, indexedChunks: 0 });
+          setProviderStatus('unavailable');
         }
       } catch {
         if (isMounted) {
-          setHealthStatus({ status: 'offline', llmConfigured: false, indexedChunks: 0 });
+          setProviderStatus('unavailable');
         }
       }
     };
@@ -222,6 +220,14 @@ export const CopilotWidget: React.FC = () => {
 
       const data = (await res.json()) as unknown as CopilotChatResponse;
 
+      if (data.isError || data.metadata?.provider === 'none' || data.metadata?.model === 'unavailable') {
+        setProviderStatus('unavailable');
+      } else if (data.metadata?.provider === 'groq' || data.metadata?.model?.startsWith('groq:')) {
+        setProviderStatus('groq');
+      } else if (data.metadata?.provider === 'gemini' || data.metadata?.model?.startsWith('gemini:')) {
+        setProviderStatus('gemini');
+      }
+
       const assistantMsg: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
@@ -233,6 +239,7 @@ export const CopilotWidget: React.FC = () => {
         resumeCard: data.resumeCard,
         metadata: data.metadata,
         timestamp: Date.now(),
+        isError: data.isError,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -251,6 +258,7 @@ export const CopilotWidget: React.FC = () => {
       }
 
       console.error('[Mantri UI] Error:', err);
+      setProviderStatus('unavailable');
       let errorText =
         "I encountered a temporary connection issue. You can explore Aman's verified projects directly via the **Projects** section or re-try your question.";
       if (err?.message === 'RATE_LIMIT') {
@@ -339,28 +347,32 @@ export const CopilotWidget: React.FC = () => {
                     <h3 className="text-xs font-bold text-[#171717] dark:text-white uppercase tracking-wider font-mono">
                       Mantri
                     </h3>
-                    {healthStatus.status === 'connected' ? (
+                    {providerStatus === 'gemini' ? (
                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>
-                          {healthStatus.llmConfigured
-                            ? 'Knowledge & Gemini connected'
-                            : 'Knowledge connected (Grounded fallback)'}
-                        </span>
+                        <span>Gemini • Connected</span>
                       </div>
-                    ) : healthStatus.status === 'checking' ? (
+                    ) : providerStatus === 'groq' ? (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono border border-amber-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        <span>Groq • Fallback active</span>
+                      </div>
+                    ) : providerStatus === 'checking' ? (
                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono border border-amber-500/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                         <span>Checking system...</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        <span>Offline mode</span>
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-mono border border-rose-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span>AI temporarily unavailable</span>
                       </div>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans truncate max-w-[260px] sm:max-w-[320px]">
+                  <p
+                    title={`${indexedChunks} verified knowledge chunks indexed`}
+                    className="text-[10px] text-slate-500 dark:text-slate-400 font-sans truncate max-w-[260px] sm:max-w-[320px]"
+                  >
                     Your AI guide to Aman Mishra's engineering work.
                   </p>
                 </div>
@@ -529,11 +541,15 @@ export const CopilotWidget: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {msg.metadata?.failoverOccurred && (
+                    {msg.metadata?.provider === 'groq' ? (
                       <div className="mt-2 text-[10px] font-mono text-amber-500/80 dark:text-amber-400/80 flex items-center gap-1">
-                        <span>⚡ Responded via fallback model ({msg.metadata.model.replace('gemini:', '')})</span>
+                        <span>⚡ Responded via Groq fallback ({msg.metadata.model.replace('groq:', '')})</span>
                       </div>
-                    )}
+                    ) : msg.metadata?.provider === 'gemini' && msg.metadata?.failoverOccurred ? (
+                      <div className="mt-2 text-[10px] font-mono text-amber-500/80 dark:text-amber-400/80 flex items-center gap-1">
+                        <span>⚡ Responded via Gemini fallback model ({msg.metadata.model.replace('gemini:', '')})</span>
+                      </div>
+                    ) : null}
                     {msg.isError && (
                       <div className="mt-2 pt-2 border-t border-rose-500/20">
                         <button

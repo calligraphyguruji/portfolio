@@ -5,6 +5,8 @@ import { HybridRetriever } from '../src/copilot/services/retrievalService.ts';
 import { chunkKnowledgeDocument } from '../src/copilot/services/chunkingService.ts';
 import { VERIFIED_KNOWLEDGE_DOCUMENTS } from '../src/copilot/data/verifiedKnowledge.ts';
 import { CopilotOrchestrator } from '../src/copilot/services/copilotOrchestrator.ts';
+import { GeminiModelRouter } from '../src/copilot/services/geminiModelRouter.ts';
+import { GeminiProvider } from '../src/copilot/services/llmProvider.ts';
 
 describe('AI Portfolio Copilot - NLP, RAG & Security Test Suite', () => {
   it('1. Query Normalization cleans whitespace and smart punctuation', () => {
@@ -81,6 +83,39 @@ describe('AI Portfolio Copilot - NLP, RAG & Security Test Suite', () => {
 
   it('7. Copilot Orchestrator processes chat end-to-end with citation grounding', async () => {
     const orchestrator = new CopilotOrchestrator();
+    const mockRouter = new GeminiModelRouter({
+      apiKey: 'mock-gemini-test-key-12345',
+      primaryModel: 'gemini-2.5-flash',
+      fallbackModels: [],
+    });
+    const mockGemini = new GeminiProvider('mock-gemini-test-key-12345', 'gemini-2.5-flash');
+    mockGemini.generateResponse = async (query, retrievedResults, analysis) => {
+      const qLower = query.toLowerCase();
+      if (analysis.intent === 'RECRUITER_EVALUATION' || qLower.includes('evaluate candidate')) {
+        return "Candidate Aman Mishra demonstrates deep full-stack and systems engineering expertise with production systems like CredVidhi.";
+      }
+      if (analysis.intent === 'CREATOR_IDENTITY' || qLower.includes('who build you') || qLower.includes('who created mantri') || qLower.includes('who is the creator')) {
+        return "Aman Mishra built me! I'm Mantri, his personal AI portfolio assistant.";
+      }
+      if (analysis.intent === 'ASSISTANT_IDENTITY' || qLower.includes('who are you') || qLower.includes('what can you do')) {
+        return "I am Mantri, Aman Mishra's AI assistant.";
+      }
+      if (analysis.targetProject === 'amazon-clone' || qLower.includes('amazon')) {
+        return "The Amazon clone project is a full-stack e-commerce replica built by Aman Mishra.";
+      }
+      if (analysis.intent === 'OWNER_IDENTITY' || qLower.includes('owner') || qLower.includes('owns')) {
+        return "Aman Mishra owns this portfolio. I'm Mantri, his AI assistant, designed to help visitors explore his projects, technical skills, and engineering work.";
+      }
+      if (analysis.intent === 'ASSISTANT_PURPOSE' || qLower.includes('purpose')) {
+        return "I'm here to help you explore Aman Mishra's projects, technical skills, system architectures, and engineering experience.";
+      }
+      if (analysis.intent === 'RESUME_REQUEST' || qLower.includes('resume')) {
+        return "Here is Aman Mishra's resume for your review.";
+      }
+      return "CredVidhi is an institutional loan processing platform built by Aman Mishra.";
+    };
+    mockRouter.setProvider('gemini-2.5-flash', mockGemini);
+    orchestrator.setGeminiRouter(mockRouter);
 
     // Verify health
     const health = orchestrator.getHealth();

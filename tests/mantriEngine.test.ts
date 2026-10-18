@@ -5,6 +5,8 @@ import { conversationMemory } from '../src/copilot/services/conversationMemory.t
 import { toolRegistry } from '../src/copilot/services/toolRegistry.ts';
 import { localVectorStore } from '../src/copilot/services/localVectorStore.ts';
 import { copilotOrchestrator } from '../src/copilot/services/copilotOrchestrator.ts';
+import { GeminiModelRouter } from '../src/copilot/services/geminiModelRouter.ts';
+import { GeminiProvider } from '../src/copilot/services/llmProvider.ts';
 import { createMantriServer } from '../server/index.ts';
 import type { Server } from 'node:http';
 
@@ -14,6 +16,39 @@ describe('Mantri Self-Hosted AI Engine Test Suite', () => {
   const BASE_URL = `http://127.0.0.1:${TEST_PORT}`;
 
   before(async () => {
+    const mockRouter = new GeminiModelRouter({
+      apiKey: 'mock-gemini-key-test-12345',
+      primaryModel: 'gemini-2.5-flash',
+      fallbackModels: [],
+    });
+    const mockGemini = new GeminiProvider('mock-gemini-key-test-12345', 'gemini-2.5-flash');
+    mockGemini.generateResponse = async (query, retrievedResults, analysis) => {
+      if (analysis.intent === 'CREATOR_IDENTITY' || query.toLowerCase().includes('who built you')) {
+        return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant.";
+      }
+      if (analysis.intent === 'ASSISTANT_IDENTITY' || query.toLowerCase().includes('who are you')) {
+        return "I'm Mantri, Aman Mishra's AI portfolio assistant. I can explain his technical skills, projects, and architecture.";
+      }
+      if (analysis.intent === 'OWNER_IDENTITY') {
+        return "Aman Mishra owns this portfolio. I'm Mantri, his AI assistant.";
+      }
+      if (query.toLowerCase().includes('what can you do')) {
+        return "I'm Mantri. I can explain Aman's capabilities, projects, modern C++ systems, and architecture.";
+      }
+      if (analysis.targetProject === 'amazon-clone' || query.toLowerCase().includes('amazon')) {
+        return "The Amazon clone is an e-commerce prototype with shopping cart and product catalog.";
+      }
+      if (query.toLowerCase().includes('rag')) {
+        return "Retrieval-Augmented Generation (RAG) is an architecture that grounds model generation using retrieved domain documents.";
+      }
+      if (analysis.targetProject === 'credvidhi') {
+        return "CredVidhi is built with FastAPI, PostgreSQL 16, and React 19.";
+      }
+      return "Response for: " + query;
+    };
+    mockRouter.setProvider('gemini-2.5-flash', mockGemini);
+    copilotOrchestrator.setGeminiRouter(mockRouter);
+
     server = createMantriServer();
     await new Promise<void>((resolve) => {
       server.listen(TEST_PORT, '127.0.0.1', () => resolve());

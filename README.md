@@ -82,8 +82,10 @@ Mantri is the production-grade, context-aware AI engineering assistant integrate
      │     • Auto-triggered on Gemini 404, 401/403, 429, timeouts, │
      │       or 5xx upstream failures                              │
      │  3. Tertiary: Local Ollama Daemon (llama3.2:3b / mistral)   │
-     │  4. Quaternary: Deterministic Grounded Knowledge Engine     │
-     │     • Zero crashes, zero external network dependency        │
+     │  4. Honest Fallback & Truthful Provider Status              │
+     │     • Zero fabricated responses when APIs fail              │
+     │     • Live widget badges: Gemini • Connected, Groq •        │
+     │       Fallback active, or AI temporarily unavailable        │
      └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -98,7 +100,7 @@ Mantri utilizes official `@google/genai` and `groq-sdk` packages on the server/s
    # Primary: Google Gemini API
    GEMINI_API_KEY=your_gemini_api_key_here
    GEMINI_PRIMARY_MODEL=gemini-2.5-flash
-   GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite,gemini-2.5-pro,gemini-3.8-flash
+   GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite,gemini-2.5-pro,gemini-2.0-flash
    GEMINI_MAX_ATTEMPTS=4
    GEMINI_COOLDOWN_SECONDS=60
    REQUEST_TIMEOUT_MS=12000
@@ -113,9 +115,9 @@ Mantri utilizes official `@google/genai` and `groq-sdk` packages on the server/s
    ```
 3. **Security Invariant:** `GEMINI_API_KEY` and `GROQ_API_KEY` are read strictly on the server/serverless layer (`api/copilot.js` and `server/index.ts`). They are never prefixed with `VITE_`, logged, exposed in error diagnostics, or sent to the client.
 4. **Automated Multi-Provider Failover Rules:**
-   - **Gemini Model Failover:** Recoverable errors (429 Quota, 500/503 Server, Timeouts, 404 Model Not Found) place the failing model in cooldown (`GEMINI_COOLDOWN_SECONDS`) and cycle through configured Gemini fallbacks (`gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-3.8-flash`).
+   - **Gemini Model Failover:** Recoverable errors (429 Quota, 500/503 Server, Timeouts, 404 Model Not Found) place the failing model in cooldown (`GEMINI_COOLDOWN_SECONDS`) and cycle through configured Gemini fallbacks (`gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-2.0-flash`).
    - **Groq Provider Failover:** If all Gemini models fail, return HTTP 404 (model or endpoint not found), 401/403, 429 rate limit, or timeout, Mantri automatically invokes `GroqProvider` (`llama-3.3-70b-versatile`) with formatted RAG context, multi-turn history, and resolved entity references.
-   - **Grounded Engine Fallback:** If Groq is unconfigured or encounters an API error, Mantri safely drops to the deterministic grounded knowledge engine without throwing raw SDK errors.
+   - **Honest Status Reporting:** If both Gemini and Groq are unconfigured or fail, Mantri returns a clear, user-friendly error with `isError: true` and `provider: 'none'` without fabricating artificial responses.
 
 ### 🧠 Complete Capabilities & Technical Invariants
 1. **Multi-Model Gemini Router (`GeminiModelRouter`):** Centralized health tracking, latency telemetry, automatic multi-model failover (`gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.5-pro` → `gemini-3.8-flash`), and circuit breaker cooldowns.

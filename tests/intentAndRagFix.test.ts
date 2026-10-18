@@ -5,9 +5,60 @@ import { CopilotOrchestrator } from '../src/copilot/services/copilotOrchestrator
 import { HybridRetriever } from '../src/copilot/services/retrievalService.ts';
 import { chunkKnowledgeDocument } from '../src/copilot/services/chunkingService.ts';
 import { VERIFIED_KNOWLEDGE_DOCUMENTS } from '../src/copilot/data/verifiedKnowledge.ts';
+import { GeminiModelRouter } from '../src/copilot/services/geminiModelRouter.ts';
+import { GeminiProvider } from '../src/copilot/services/llmProvider.ts';
 
 describe('Phase 8: Intent, RAG & Question Answering Regression Test Suite', () => {
   const orchestrator = new CopilotOrchestrator();
+  const mockRouter = new GeminiModelRouter({
+    apiKey: 'mock-gemini-test-key-12345',
+    primaryModel: 'gemini-2.5-flash',
+    fallbackModels: [],
+  });
+  const mockGemini = new GeminiProvider('mock-gemini-test-key-12345', 'gemini-2.5-flash');
+  mockGemini.generateResponse = async (query, retrievedResults, analysis) => {
+    const qLower = query.toLowerCase();
+    if (analysis.intent === 'CREATOR_IDENTITY' || qLower.includes('who built you')) {
+      return "Aman Mishra built me! I'm Mantri, his AI portfolio assistant.";
+    }
+    if (analysis.intent === 'ASSISTANT_IDENTITY' || qLower.includes('who are you')) {
+      return "I'm Mantri, Aman Mishra's AI portfolio assistant. I help visitors explore his engineering projects, technical skills, and experience.";
+    }
+    if (analysis.intent === 'PROJECT_LIST' || qLower.includes('projects')) {
+      return "Aman has built several full-stack and systems projects: CredVidhi (enterprise loan underwriting platform), KaushalNexus, and Bodhi Sakha.";
+    }
+    if (analysis.targetProject === 'credvidhi') {
+      if (analysis.intent === 'PROJECT_ARCHITECTURE' || qLower.includes('architecture')) {
+        return "CredVidhi architecture uses FastAPI, PostgreSQL 16 ACID ledger, and a 6-stage forward-only FSM.";
+      }
+      if (qLower.includes('second component') || qLower.includes('underwriting engine')) {
+        return "The second core component is the deterministic underwriting engine with fixed-point math.";
+      }
+      return "CredVidhi is an institutional loan processing and underwriting platform.";
+    }
+    if (analysis.intent === 'TECHNICAL_SKILLS' || qLower.includes('technologies')) {
+      return "Aman knows C++, React 19, TypeScript, FastAPI, and PostgreSQL.";
+    }
+    if (analysis.intent === 'EDUCATION' || qLower.includes('education')) {
+      return "Aman is studying B.Tech in CSE at NIET Greater Noida (Batch 2025–2029) with a 9.38 CGPA.";
+    }
+    if (analysis.intent === 'INTERNSHIP' || qLower.includes('internship')) {
+      return "Aman worked as an AI & ML Intern at Codomax Digital Solutions.";
+    }
+    if (qLower.includes('rag')) {
+      return "Retrieval-Augmented Generation (RAG) is an AI architecture that enhances LLM generation by retrieving verified domain documents.";
+    }
+    if (qLower.includes('binary search')) {
+      return "Binary search is a search algorithm with O(log N) time complexity.";
+    }
+    if (analysis.intent === 'GENERAL_CONVERSATION' || qLower === 'hello') {
+      return "Hello! I am Mantri, Aman Mishra's AI engineering guide. How can I help you today?";
+    }
+    return "Here is verified information regarding your query: " + query;
+  };
+  mockRouter.setProvider('gemini-2.5-flash', mockGemini);
+  orchestrator.setGeminiRouter(mockRouter);
+
   const chunks = VERIFIED_KNOWLEDGE_DOCUMENTS.flatMap((d) => chunkKnowledgeDocument(d));
   const retriever = new HybridRetriever(chunks);
 

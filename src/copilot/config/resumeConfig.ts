@@ -12,6 +12,7 @@ export const RESUME_CONFIG = {
   subtitle: 'Software Development | Full-Stack | AI/ML',
   fileType: 'PDF Document',
   fileSize: '63 KB',
+  isAvailable: true,
   lastUpdated: '2026-10-14',
   description: 'Verified ATS-friendly resume detailing C++ systems, React 19/TypeScript architecture, DSA, and full-stack projects.',
 };

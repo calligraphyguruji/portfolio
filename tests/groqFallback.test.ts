@@ -122,8 +122,9 @@ describe('Groq Fallback Provider & Multi-Provider Resilience Test Suite', () => 
     });
 
     assert.ok(res.answer && res.answer.length > 0);
-    assert.strictEqual(res.metadata.model, 'deterministic-fallback');
-    assert.strictEqual(res.metadata.failoverOccurred, true);
+    assert.strictEqual(res.metadata.model, 'unavailable');
+    assert.strictEqual(res.metadata.provider, 'none');
+    assert.strictEqual(res.isError, true);
     assert.strictEqual(res.answer.includes('gsk_'), false);
     assert.strictEqual(res.answer.includes('AIza'), false);
   });
@@ -279,7 +280,9 @@ describe('Groq Fallback Provider & Multi-Provider Resilience Test Suite', () => 
     });
 
     assert.ok(res.answer && res.answer.length > 0);
-    assert.strictEqual(res.metadata.model, 'deterministic-fallback');
+    assert.strictEqual(res.metadata.model, 'unavailable');
+    assert.strictEqual(res.metadata.provider, 'none');
+    assert.strictEqual(res.isError, true);
     assert.strictEqual(res.answer.includes('GROQ_API_ERROR'), false);
     assert.strictEqual(res.answer.includes('gsk_'), false);
     assert.strictEqual(res.answer.includes('AIza'), false);
@@ -365,7 +368,9 @@ describe('Groq Fallback Provider & Multi-Provider Resilience Test Suite', () => 
     });
 
     assert.ok(res.answer && res.answer.trim().length > 0);
-    assert.strictEqual(res.metadata.model, 'deterministic-fallback');
+    assert.strictEqual(res.isError, true);
+    assert.strictEqual(res.metadata.model, 'unavailable');
+    assert.strictEqual(res.metadata.provider, 'none');
   });
 
   // Scenario 12: Secret sanitization test

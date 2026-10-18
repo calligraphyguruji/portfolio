@@ -9,14 +9,12 @@ import { OllamaProvider } from './ollamaProvider.ts';
 import { conversationMemory } from './conversationMemory.ts';
 import { toolRegistry } from './toolRegistry.ts';
 import { RESUME_CONFIG } from '../config/resumeConfig.ts';
-import { MANTRI_IDENTITY } from '../config/mantriIdentity.ts';
 import { AI_CONFIG } from '../config/aiConfig.ts';
 import type {
   CopilotChatRequest,
   CopilotChatResponse,
   KnowledgeChunk,
   CopilotHealthResponse,
-  QueryIntent,
 } from '../types.ts';
 
 /**
@@ -91,12 +89,25 @@ export class CopilotOrchestrator {
 
   public getHealth(): CopilotHealthResponse {
     const isGeminiConfigured = this.geminiRouter.isConfigured();
+    const isGroqConfigured = this.groqProvider ? this.groqProvider.isConfigured() : false;
+    const llmConfigured = isGeminiConfigured || isGroqConfigured;
+    const primaryProvider: 'gemini' | 'groq' | 'none' = isGeminiConfigured
+      ? 'gemini'
+      : isGroqConfigured
+      ? 'groq'
+      : 'none';
+
     return {
-      status: 'healthy',
-      version: '2.2.0-gemini-multi-model',
+      status: llmConfigured ? 'healthy' : 'degraded',
+      version: '3.0.0-dynamic-multiprovider',
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
-      llmConfigured: isGeminiConfigured,
+      llmConfigured,
       indexedChunks: this.chunks.length,
+      primaryProvider,
+      availableProviders: [
+        ...(isGeminiConfigured ? ['gemini'] : []),
+        ...(isGroqConfigured ? ['groq'] : []),
+      ],
       features: {
         hybridRetrieval: true,
         recruiterMode: true,
@@ -230,69 +241,17 @@ export class CopilotOrchestrator {
       }
     }
 
-    // 4. Deterministic Fast-Path: Identity, Purpose & Resume Action
-    const identityCitations = [
-      {
-        sourceId: 'mantri-identity-1',
-        title: 'Mantri - AI Portfolio Assistant Identity & Creator',
-        section: 'Identity',
-        url: MANTRI_IDENTITY.portfolioUrl,
-        relevanceScore: 1.0,
-      },
-    ];
-
-    const makeIdentityResponse = (
-      answerText: string,
-      intentType: QueryIntent
-    ): CopilotChatResponse => {
-      if (request.conversationId) {
-        conversationMemory.appendMessage(request.conversationId, {
-          id: `asst-${Date.now()}`,
-          role: 'assistant',
-          content: answerText,
-          intent: intentType,
-          citations: identityCitations,
-          timestamp: Date.now(),
-        });
-      }
-
-      return {
-        answer: answerText,
-        intent: intentType,
-        citations: identityCitations,
-        metadata: {
-          model: 'deterministic-identity',
-          retrievalLatencyMs: 0,
-          totalLatencyMs: Date.now() - startTs,
-          retrievedCount: 1,
-        },
+    // 4. Action Card attachments (Resume PDF card)
+    let resumeCard = undefined;
+    if (nlpAnalysis.intent === 'RESUME_REQUEST' || nlpAnalysis.intent === 'RESUME') {
+      resumeCard = {
+        title: RESUME_CONFIG.title,
+        subtitle: RESUME_CONFIG.subtitle,
+        filename: RESUME_CONFIG.filename,
+        downloadUrl: RESUME_CONFIG.downloadUrl,
+        fileSize: RESUME_CONFIG.fileSize,
+        isAvailable: RESUME_CONFIG.isAvailable,
       };
-    };
-
-    if (nlpAnalysis.intent === 'ASSISTANT_IDENTITY') {
-      const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(lastUserMessage);
-      const answerText = isCapabilities
-        ? MANTRI_IDENTITY.responses.capabilities
-        : MANTRI_IDENTITY.responses.assistant;
-      return makeIdentityResponse(answerText, 'ASSISTANT_IDENTITY');
-    }
-    if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
-      return makeIdentityResponse(
-        MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator,
-        'CREATOR_IDENTITY'
-      );
-    }
-    if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.owner, 'OWNER_IDENTITY');
-    }
-    if (nlpAnalysis.intent === 'DEVELOPER_IDENTITY') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.developer, 'DEVELOPER_IDENTITY');
-    }
-    if (nlpAnalysis.intent === 'PORTFOLIO_IDENTITY' || nlpAnalysis.intent === 'PORTFOLIO_OVERVIEW') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.portfolio, nlpAnalysis.intent);
-    }
-    if (nlpAnalysis.intent === 'ASSISTANT_PURPOSE') {
-      return makeIdentityResponse(MANTRI_IDENTITY.responses.purpose, 'ASSISTANT_PURPOSE');
     }
 
     // 5. Hybrid Retrieval from Portfolio Knowledge Base
@@ -303,9 +262,9 @@ export class CopilotOrchestrator {
     // 6. Citations Assembly
     const citations = this.retriever.generateCitations(retrievedResults);
 
-    // 7. Generative LLM Response Generation (Gemini Router -> Groq Fallback -> Ollama -> Grounded Fallback)
+    // 7. Generative LLM Response Generation (Gemini Router -> Groq Fallback -> Ollama -> Honest Error)
     let answer = '';
-    let usedModel = 'deterministic-fallback';
+    let usedModel = 'unavailable';
     let generationError: string | null = null;
     let attempts = 1;
     let failoverOccurred = false;
@@ -403,16 +362,17 @@ export class CopilotOrchestrator {
       }
     }
 
-    // Step 7d. Quaternary Fallback: Grounded deterministic synthesis
+    // Step 7d. Terminal State: Clear, honest error message if both providers fail
+    let isError = false;
     if (!answer) {
-      usedModel = isGeminiConfigured || (this.groqProvider && this.groqProvider.isConfigured())
-        ? 'deterministic-fallback'
-        : 'deterministic-offline-engine';
-      answer = await this.fallbackProvider.generateResponse(
-        lastUserMessage,
-        retrievedResults,
-        nlpAnalysis
-      );
+      if (resumeCard) {
+        answer = "Here is Aman Mishra's verified resume card. You can view or download his official ATS-friendly PDF directly below.";
+      } else {
+        isError = true;
+        usedModel = 'unavailable';
+        answer =
+          "I am currently unable to reach my configured AI reasoning providers (Google Gemini and Groq). Please verify that GEMINI_API_KEY or GROQ_API_KEY is configured in your server environment, or try again in a few moments.";
+      }
     }
 
     // 8. Recruiter Mode Structured Metadata
@@ -447,18 +407,6 @@ export class CopilotOrchestrator {
   Gateway -->|Guarded Guidance| Gemini[Google Gemini AI]`;
     }
 
-    // 10. Structured Resume Card Action
-    let resumeCard = undefined;
-    if (nlpAnalysis.intent === 'RESUME_REQUEST' || nlpAnalysis.intent === 'RESUME') {
-      resumeCard = {
-        title: RESUME_CONFIG.title,
-        subtitle: RESUME_CONFIG.subtitle,
-        filename: RESUME_CONFIG.filename,
-        downloadUrl: RESUME_CONFIG.downloadUrl,
-        fileSize: RESUME_CONFIG.fileSize,
-        isAvailable: true,
-      };
-    }
 
     // Record assistant response in persistent conversation memory
     if (request.conversationId) {
@@ -480,9 +428,10 @@ export class CopilotOrchestrator {
       recruiterAlignment,
       mermaidDiagram,
       resumeCard,
+      isError: isError || undefined,
       metadata: {
         model: usedModel,
-        provider: usedModel.split(':')[0],
+        provider: usedModel === 'unavailable' ? 'none' : usedModel.split(':')[0],
         requestedModel: this.geminiRouter.getPrimaryModel(),
         attempts,
         failoverOccurred,
@@ -513,43 +462,13 @@ export class CopilotOrchestrator {
       return;
     }
 
-    if (nlpAnalysis.intent === 'ASSISTANT_IDENTITY') {
-      const isCapabilities = /what can you do|capabilities|what do you do|features/i.test(lastUserMessage);
-      yield isCapabilities ? MANTRI_IDENTITY.responses.capabilities : MANTRI_IDENTITY.responses.assistant;
-      return;
-    }
-
-    if (nlpAnalysis.intent === 'CREATOR_IDENTITY') {
-      yield MANTRI_IDENTITY.responses.creatorExact || MANTRI_IDENTITY.responses.creator;
-      return;
-    }
-
-    if (nlpAnalysis.intent === 'OWNER_IDENTITY') {
-      yield MANTRI_IDENTITY.responses.owner;
-      return;
-    }
-
-    if (nlpAnalysis.intent === 'DEVELOPER_IDENTITY') {
-      yield MANTRI_IDENTITY.responses.developer;
-      return;
-    }
-
-    if (nlpAnalysis.intent === 'PORTFOLIO_IDENTITY' || nlpAnalysis.intent === 'PORTFOLIO_OVERVIEW') {
-      yield MANTRI_IDENTITY.responses.portfolio;
-      return;
-    }
-
-    if (nlpAnalysis.intent === 'ASSISTANT_PURPOSE') {
-      yield MANTRI_IDENTITY.responses.purpose;
-      return;
-    }
-
     const retrievedResults = this.retriever.retrieve(nlpAnalysis, undefined, 4);
 
     // Primary: stream from Gemini if configured
-    if (this.geminiProvider.isConfigured() && AI_CONFIG.aiProvider !== 'ollama' && AI_CONFIG.aiProvider !== 'groq') {
+    const activeGemini = this.geminiRouter?.getPrimaryProvider() || this.geminiProvider;
+    if (activeGemini && activeGemini.isConfigured() && AI_CONFIG.aiProvider !== 'ollama' && AI_CONFIG.aiProvider !== 'groq') {
       try {
-        for await (const chunk of this.geminiProvider.streamResponse(
+        for await (const chunk of activeGemini.streamResponse(
           lastUserMessage,
           retrievedResults,
           nlpAnalysis,
@@ -604,13 +523,8 @@ Provide an accurate, grounded, helpful response:
       }
     }
 
-    // Tertiary: deterministic fallback
-    const fallbackAns = await this.fallbackProvider.generateResponse(
-      lastUserMessage,
-      retrievedResults,
-      nlpAnalysis
-    );
-    yield fallbackAns;
+    // Terminal error when no provider is available
+    yield "Mantri's AI reasoning services are temporarily unavailable. Neither Google Gemini nor Groq could be reached, or valid API credentials were not configured on the server.";
   }
 }
 
