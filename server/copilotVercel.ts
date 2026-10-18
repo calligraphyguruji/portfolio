@@ -58,10 +58,22 @@ export default async function handler(req: any, res: any) {
   try {
     if (req.method === 'GET') {
       const health = copilotOrchestrator.getHealth();
-      if (res?.status) {
-        return res.status(200).json(health);
+      const diagnostics: any = {};
+      const discovery = copilotOrchestrator.adaptiveRouter.getDiscoveryService();
+      diagnostics.configuredProviders = discovery.getConfiguredProviders();
+      try {
+        const models = await copilotOrchestrator.adaptiveRouter.discoverAllModels();
+        diagnostics.discoveredModels = models.map((m) => `${m.provider}:${m.id}`);
+      } catch (dErr: any) {
+        diagnostics.discoveryError = dErr?.message || String(dErr);
       }
-      return new Response(JSON.stringify(health), {
+
+      const responsePayload = { ...health, diagnostics };
+
+      if (res?.status) {
+        return res.status(200).json(responsePayload);
+      }
+      return new Response(JSON.stringify(responsePayload), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
