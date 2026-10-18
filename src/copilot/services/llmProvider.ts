@@ -79,6 +79,14 @@ export class GeminiProvider implements AIProvider {
     return this.modelName;
   }
 
+  public getClient(): any {
+    return this.aiClient;
+  }
+
+  public getApiKey(): string | null {
+    return this.apiKey;
+  }
+
   /**
    * Helper to format conversation history & retrieved context into GoogleGenAI contents structure.
    */
@@ -185,7 +193,8 @@ export class GeminiProvider implements AIProvider {
         errMsg.includes('403') ||
         errMsg.includes('API_KEY_INVALID') ||
         errMsg.includes('API key not valid') ||
-        errMsg.includes('PERMISSION_DENIED')
+        errMsg.includes('PERMISSION_DENIED') ||
+        (errMsg.includes('400') && errMsg.includes('API key'))
       ) {
         throw new Error('GEMINI_AUTH_ERROR: Invalid or unauthorized Gemini API key.');
       }

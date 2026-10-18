@@ -1382,13 +1382,13 @@ var AI_CONFIG = {
   groqModelHint: typeof process !== "undefined" && process.env?.GROQ_MODEL || "",
   // Backward-compatible properties for existing consumers & tests
   get geminiPrimaryModel() {
-    return this.geminiModelHint || "gemini-2.5-flash";
+    return this.geminiModelHint || "gemini-2.0-flash";
   },
   get geminiModel() {
-    return this.geminiModelHint || "gemini-2.5-flash";
+    return this.geminiModelHint || "gemini-2.0-flash";
   },
   get geminiFallbackModels() {
-    return ["gemini-2.5-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash"];
+    return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash-lite"];
   },
   get groqModel() {
     return this.groqModelHint || "llama-3.3-70b-versatile";
@@ -1449,6 +1449,12 @@ var GeminiProvider = class {
   }
   getModelName() {
     return this.modelName;
+  }
+  getClient() {
+    return this.aiClient;
+  }
+  getApiKey() {
+    return this.apiKey;
   }
   /**
    * Helper to format conversation history & retrieved context into GoogleGenAI contents structure.
@@ -1524,7 +1530,7 @@ ${query}`);
         throw new Error(`GEMINI_TIMEOUT: Request exceeded timeout of ${this.timeoutMs}ms.`);
       }
       const errMsg = String(err?.message || err);
-      if (err?.status === 401 || err?.status === 403 || errMsg.includes("401") || errMsg.includes("403") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("API key not valid") || errMsg.includes("PERMISSION_DENIED")) {
+      if (err?.status === 401 || err?.status === 403 || errMsg.includes("401") || errMsg.includes("403") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("API key not valid") || errMsg.includes("PERMISSION_DENIED") || errMsg.includes("400") && errMsg.includes("API key")) {
         throw new Error("GEMINI_AUTH_ERROR: Invalid or unauthorized Gemini API key.");
       }
       if (err?.status === 429 || errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
@@ -1971,14 +1977,22 @@ var GeminiModelRouter = class {
     }
   }
   isConfigured() {
-    const primary = this.providers.get(this.primaryModel);
-    return primary ? primary.isConfigured() : false;
+    for (const p of this.providers.values()) {
+      if (p.isConfigured()) return true;
+    }
+    return false;
   }
   getPrimaryModel() {
     return this.primaryModel;
   }
   getPrimaryProvider() {
     return this.providers.get(this.primaryModel);
+  }
+  getProvider(modelId) {
+    return this.providers.get(modelId);
+  }
+  getApiKey() {
+    return this.apiKey;
   }
   setProvider(modelId, provider) {
     this.providers.set(modelId, provider);
@@ -1991,7 +2005,12 @@ var GeminiModelRouter = class {
     }
   }
   getAllConfiguredModels() {
-    return [this.primaryModel, ...this.fallbackModels];
+    const configuredKeys = Array.from(this.providers.entries()).filter(([_, p]) => p.isConfigured()).map(([k]) => k);
+    if (configuredKeys.length > 0) {
+      return configuredKeys;
+    }
+    const set = /* @__PURE__ */ new Set([this.primaryModel, ...this.fallbackModels, ...this.providers.keys()]);
+    return Array.from(set);
   }
   getModelStats(modelId) {
     return this.stats.get(modelId);
@@ -2218,6 +2237,12 @@ var GroqProvider = class {
   }
   getModelName() {
     return this.modelName;
+  }
+  getClient() {
+    return this.groqClient;
+  }
+  getApiKey() {
+    return this.apiKey;
   }
   setModelName(modelName) {
     this.modelName = modelName;
@@ -3185,8 +3210,8 @@ var GeminiDiscoveryAdapter = class {
     return [
       {
         provider: "gemini",
-        id: "gemini-2.5-flash",
-        displayName: "Gemini 2.5 Flash",
+        id: "gemini-2.0-flash",
+        displayName: "Gemini 2.0 Flash",
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -3198,8 +3223,8 @@ var GeminiDiscoveryAdapter = class {
       },
       {
         provider: "gemini",
-        id: "gemini-2.5-flash-lite",
-        displayName: "Gemini 2.5 Flash-Lite",
+        id: "gemini-1.5-flash",
+        displayName: "Gemini 1.5 Flash",
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -3211,8 +3236,8 @@ var GeminiDiscoveryAdapter = class {
       },
       {
         provider: "gemini",
-        id: "gemini-2.5-pro",
-        displayName: "Gemini 2.5 Pro",
+        id: "gemini-1.5-pro",
+        displayName: "Gemini 1.5 Pro",
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -3224,8 +3249,8 @@ var GeminiDiscoveryAdapter = class {
       },
       {
         provider: "gemini",
-        id: "gemini-2.0-flash",
-        displayName: "Gemini 2.0 Flash",
+        id: "gemini-2.0-flash-lite",
+        displayName: "Gemini 2.0 Flash-Lite",
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -3287,7 +3312,7 @@ var GeminiDiscoveryAdapter = class {
       return discovered;
     } catch (err) {
       const msg = String(err?.message || err);
-      if (err?.status === 401 || err?.status === 403 || /api_key_invalid|permission_denied|unauthorized/i.test(msg)) {
+      if (err?.status === 401 || err?.status === 403 || /api_key_invalid|permission_denied|unauthorized|api key not valid/i.test(msg) || err?.status === 400 && /api key/i.test(msg)) {
         console.warn("[GeminiDiscoveryAdapter] Authentication failed during discovery:", msg.replace(/AIza[a-zA-Z0-9_\-]{10,}/g, "[REDACTED_API_KEY]"));
         return [];
       }
@@ -3740,7 +3765,7 @@ function classifyProviderError(err) {
       reason: "Content triggered safety policy and was blocked."
     };
   }
-  if (status === 401 || status === 403 || lower.includes("api_key_invalid") || lower.includes("api key not valid") || lower.includes("unauthorized") || lower.includes("permission_denied") || lower.includes("forbidden")) {
+  if (status === 401 || status === 403 || lower.includes("api_key_invalid") || lower.includes("api key not valid") || lower.includes("unauthorized") || lower.includes("permission_denied") || lower.includes("forbidden") || lower.includes("gemini_auth_error") || lower.includes("groq_auth_error") || lower.includes("invalid_api_key")) {
     return {
       category: "AUTH_OR_PERMISSION_ERROR",
       statusCode: status || 401,
@@ -3833,8 +3858,10 @@ var AdaptiveAIRouter = class {
         if (this.customGeminiRouter.providers?.has(modelId)) {
           return this.customGeminiRouter.providers.get(modelId);
         }
-        const primary = this.customGeminiRouter.getPrimaryProvider?.();
-        if (primary) return primary;
+        const routerKey = this.customGeminiRouter.getApiKey?.() || AI_CONFIG.geminiApiKey;
+        instance = new GeminiProvider(routerKey, modelId);
+        this.geminiProviders.set(modelId, instance);
+        return instance;
       }
       instance = new GeminiProvider(AI_CONFIG.geminiApiKey, modelId);
       this.geminiProviders.set(modelId, instance);
@@ -3844,7 +3871,16 @@ var AdaptiveAIRouter = class {
       let instance = this.groqProviders.get(modelId);
       if (instance) return instance;
       if (this.customGroqProvider) {
-        return this.customGroqProvider;
+        if (this.customGroqProvider.getModelName?.() === modelId) {
+          return this.customGroqProvider;
+        }
+        const groqKey = this.customGroqProvider.getApiKey?.() || AI_CONFIG.groqApiKey;
+        instance = new GroqProvider(groqKey, modelId);
+        if (typeof this.customGroqProvider.getClient === "function" && this.customGroqProvider.getClient()) {
+          instance.setClient(this.customGroqProvider.getClient());
+        }
+        this.groqProviders.set(modelId, instance);
+        return instance;
       }
       instance = new GroqProvider(AI_CONFIG.groqApiKey, modelId);
       this.groqProviders.set(modelId, instance);
@@ -3874,46 +3910,49 @@ var AdaptiveAIRouter = class {
     return this.discoveryService.getConfiguredProviders().length > 0;
   }
   /**
-   * Discovers candidate models across configured providers, respecting any custom router overrides.
+   * Discovers candidate models across configured providers, respecting any custom router overrides
+   * and merging dynamic discovery results so all eligible models are candidates for selection.
    */
   async discoverAllModels(forceRefresh = false) {
     const list = [];
-    if (this.customGeminiRouter) {
-      if (this.customGeminiRouter.isConfigured()) {
-        const configured = this.customGeminiRouter.getAllConfiguredModels?.() || [
-          this.customGeminiRouter.getPrimaryModel?.() || "gemini-2.5-flash"
-        ];
-        for (const id of configured) {
-          list.push({
-            provider: "gemini",
-            id,
-            displayName: `Gemini ${id}`,
-            capabilities: { textGeneration: true, streaming: true, toolCalling: true },
-            discoveredAt: Date.now()
-          });
-        }
+    const seen = /* @__PURE__ */ new Set();
+    const addModel = (m) => {
+      const key = `${m.provider}:${m.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(m);
       }
-    } else {
-      const geminiModels = await this.discoveryService.getAvailableModels("gemini", forceRefresh);
-      list.push(...geminiModels);
-    }
-    if (this.customGroqProvider) {
-      if (this.customGroqProvider.isConfigured()) {
-        const modelName = this.customGroqProvider.getModelName?.() || "llama-3.3-70b-versatile";
-        list.push({
-          provider: "groq",
-          id: modelName,
-          displayName: `Groq ${modelName}`,
+    };
+    if (this.customGeminiRouter && this.customGeminiRouter.isConfigured()) {
+      const configured = this.customGeminiRouter.getAllConfiguredModels?.() || [
+        this.customGeminiRouter.getPrimaryModel?.() || "gemini-2.0-flash"
+      ];
+      for (const id of configured) {
+        addModel({
+          provider: "gemini",
+          id,
+          displayName: `Gemini ${id}`,
           capabilities: { textGeneration: true, streaming: true, toolCalling: true },
           discoveredAt: Date.now()
         });
       }
-    } else {
-      const groqModels = await this.discoveryService.getAvailableModels("groq", forceRefresh);
-      list.push(...groqModels);
     }
+    const geminiDiscovered = await this.discoveryService.getAvailableModels("gemini", forceRefresh);
+    for (const m of geminiDiscovered) addModel(m);
+    if (this.customGroqProvider && this.customGroqProvider.isConfigured()) {
+      const modelName = this.customGroqProvider.getModelName?.() || "llama-3.3-70b-versatile";
+      addModel({
+        provider: "groq",
+        id: modelName,
+        displayName: `Groq ${modelName}`,
+        capabilities: { textGeneration: true, streaming: true, toolCalling: true },
+        discoveredAt: Date.now()
+      });
+    }
+    const groqDiscovered = await this.discoveryService.getAvailableModels("groq", forceRefresh);
+    for (const m of groqDiscovered) addModel(m);
     const ollamaModels = await this.discoveryService.getAvailableModels("ollama", forceRefresh);
-    list.push(...ollamaModels);
+    for (const m of ollamaModels) addModel(m);
     return list;
   }
   /**

@@ -70,13 +70,13 @@ export const AI_CONFIG = {
 
   // Backward-compatible properties for existing consumers & tests
   get geminiPrimaryModel(): string {
-    return this.geminiModelHint || 'gemini-2.5-flash';
+    return this.geminiModelHint || 'gemini-2.0-flash';
   },
   get geminiModel(): string {
-    return this.geminiModelHint || 'gemini-2.5-flash';
+    return this.geminiModelHint || 'gemini-2.0-flash';
   },
   get geminiFallbackModels(): string[] {
-    return ['gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+    return ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-lite'];
   },
   get groqModel(): string {
     return this.groqModelHint || 'llama-3.3-70b-versatile';

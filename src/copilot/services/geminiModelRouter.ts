@@ -372,8 +372,10 @@ export class GeminiModelRouter implements AIProvider {
   }
 
   public isConfigured(): boolean {
-    const primary = this.providers.get(this.primaryModel);
-    return primary ? primary.isConfigured() : false;
+    for (const p of this.providers.values()) {
+      if (p.isConfigured()) return true;
+    }
+    return false;
   }
 
   public getPrimaryModel(): string {
@@ -382,6 +384,14 @@ export class GeminiModelRouter implements AIProvider {
 
   public getPrimaryProvider(): GeminiProvider | undefined {
     return this.providers.get(this.primaryModel);
+  }
+
+  public getProvider(modelId: string): GeminiProvider | undefined {
+    return this.providers.get(modelId);
+  }
+
+  public getApiKey(): string {
+    return this.apiKey;
   }
 
   public setProvider(modelId: string, provider: GeminiProvider): void {
@@ -396,7 +406,16 @@ export class GeminiModelRouter implements AIProvider {
   }
 
   public getAllConfiguredModels(): string[] {
-    return [this.primaryModel, ...this.fallbackModels];
+    const configuredKeys = Array.from(this.providers.entries())
+      .filter(([_, p]) => p.isConfigured())
+      .map(([k]) => k);
+
+    if (configuredKeys.length > 0) {
+      return configuredKeys;
+    }
+
+    const set = new Set<string>([this.primaryModel, ...this.fallbackModels, ...this.providers.keys()]);
+    return Array.from(set);
   }
 
   public getModelStats(modelId: string): ModelStats | undefined {

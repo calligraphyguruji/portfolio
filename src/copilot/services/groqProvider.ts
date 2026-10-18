@@ -58,6 +58,14 @@ export class GroqProvider implements AIProvider {
     return this.modelName;
   }
 
+  public getClient(): any {
+    return this.groqClient;
+  }
+
+  public getApiKey(): string | null {
+    return this.apiKey;
+  }
+
   public setModelName(modelName: string): void {
     this.modelName = modelName;
   }

@@ -64,8 +64,8 @@ export class GeminiDiscoveryAdapter implements ProviderDiscoveryAdapter {
     return [
       {
         provider: 'gemini',
-        id: 'gemini-2.5-flash',
-        displayName: 'Gemini 2.5 Flash',
+        id: 'gemini-2.0-flash',
+        displayName: 'Gemini 2.0 Flash',
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -77,8 +77,8 @@ export class GeminiDiscoveryAdapter implements ProviderDiscoveryAdapter {
       },
       {
         provider: 'gemini',
-        id: 'gemini-2.5-flash-lite',
-        displayName: 'Gemini 2.5 Flash-Lite',
+        id: 'gemini-1.5-flash',
+        displayName: 'Gemini 1.5 Flash',
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -90,8 +90,8 @@ export class GeminiDiscoveryAdapter implements ProviderDiscoveryAdapter {
       },
       {
         provider: 'gemini',
-        id: 'gemini-2.5-pro',
-        displayName: 'Gemini 2.5 Pro',
+        id: 'gemini-1.5-pro',
+        displayName: 'Gemini 1.5 Pro',
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -103,8 +103,8 @@ export class GeminiDiscoveryAdapter implements ProviderDiscoveryAdapter {
       },
       {
         provider: 'gemini',
-        id: 'gemini-2.0-flash',
-        displayName: 'Gemini 2.0 Flash',
+        id: 'gemini-2.0-flash-lite',
+        displayName: 'Gemini 2.0 Flash-Lite',
         capabilities: {
           textGeneration: true,
           streaming: true,
@@ -197,7 +197,8 @@ export class GeminiDiscoveryAdapter implements ProviderDiscoveryAdapter {
       if (
         err?.status === 401 ||
         err?.status === 403 ||
-        /api_key_invalid|permission_denied|unauthorized/i.test(msg)
+        /api_key_invalid|permission_denied|unauthorized|api key not valid/i.test(msg) ||
+        (err?.status === 400 && /api key/i.test(msg))
       ) {
         console.warn('[GeminiDiscoveryAdapter] Authentication failed during discovery:', msg.replace(/AIza[a-zA-Z0-9_\-]{10,}/g, '[REDACTED_API_KEY]'));
         return [];

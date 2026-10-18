@@ -80,7 +80,10 @@ export function classifyProviderError(err: any): {
     lower.includes('api key not valid') ||
     lower.includes('unauthorized') ||
     lower.includes('permission_denied') ||
-    lower.includes('forbidden')
+    lower.includes('forbidden') ||
+    lower.includes('gemini_auth_error') ||
+    lower.includes('groq_auth_error') ||
+    lower.includes('invalid_api_key')
   ) {
     return {
       category: 'AUTH_OR_PERMISSION_ERROR',
@@ -229,8 +232,10 @@ export class AdaptiveAIRouter {
         if (this.customGeminiRouter.providers?.has(modelId)) {
           return this.customGeminiRouter.providers.get(modelId);
         }
-        const primary = this.customGeminiRouter.getPrimaryProvider?.();
-        if (primary) return primary;
+        const routerKey = this.customGeminiRouter.getApiKey?.() || AI_CONFIG.geminiApiKey;
+        instance = new GeminiProvider(routerKey, modelId);
+        this.geminiProviders.set(modelId, instance);
+        return instance;
       }
 
       instance = new GeminiProvider(AI_CONFIG.geminiApiKey, modelId);
@@ -243,7 +248,18 @@ export class AdaptiveAIRouter {
       if (instance) return instance;
 
       if (this.customGroqProvider) {
-        return this.customGroqProvider;
+        // If customGroqProvider was configured with this exact model, reuse it
+        if (this.customGroqProvider.getModelName?.() === modelId) {
+          return this.customGroqProvider;
+        }
+        // If customGroqProvider has a client or apiKey, create an instance for the requested model
+        const groqKey = this.customGroqProvider.getApiKey?.() || AI_CONFIG.groqApiKey;
+        instance = new GroqProvider(groqKey, modelId);
+        if (typeof this.customGroqProvider.getClient === 'function' && this.customGroqProvider.getClient()) {
+          instance.setClient(this.customGroqProvider.getClient());
+        }
+        this.groqProviders.set(modelId, instance);
+        return instance;
       }
 
       instance = new GroqProvider(AI_CONFIG.groqApiKey, modelId);
@@ -279,51 +295,56 @@ export class AdaptiveAIRouter {
   }
 
   /**
-   * Discovers candidate models across configured providers, respecting any custom router overrides.
+   * Discovers candidate models across configured providers, respecting any custom router overrides
+   * and merging dynamic discovery results so all eligible models are candidates for selection.
    */
   public async discoverAllModels(forceRefresh: boolean = false): Promise<DiscoveredModel[]> {
     const list: DiscoveredModel[] = [];
+    const seen = new Set<string>();
 
-    // Custom Gemini Router integration
-    if (this.customGeminiRouter) {
-      if (this.customGeminiRouter.isConfigured()) {
-        const configured = this.customGeminiRouter.getAllConfiguredModels?.() || [
-          this.customGeminiRouter.getPrimaryModel?.() || 'gemini-2.5-flash',
-        ];
-        for (const id of configured) {
-          list.push({
-            provider: 'gemini',
-            id,
-            displayName: `Gemini ${id}`,
-            capabilities: { textGeneration: true, streaming: true, toolCalling: true },
-            discoveredAt: Date.now(),
-          });
-        }
+    const addModel = (m: DiscoveredModel) => {
+      const key = `${m.provider}:${m.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(m);
       }
-    } else {
-      const geminiModels = await this.discoveryService.getAvailableModels('gemini', forceRefresh);
-      list.push(...geminiModels);
-    }
+    };
 
-    // Custom Groq Provider integration
-    if (this.customGroqProvider) {
-      if (this.customGroqProvider.isConfigured()) {
-        const modelName = this.customGroqProvider.getModelName?.() || 'llama-3.3-70b-versatile';
-        list.push({
-          provider: 'groq',
-          id: modelName,
-          displayName: `Groq ${modelName}`,
+    // 1. Gemini candidate discovery
+    if (this.customGeminiRouter && this.customGeminiRouter.isConfigured()) {
+      const configured = this.customGeminiRouter.getAllConfiguredModels?.() || [
+        this.customGeminiRouter.getPrimaryModel?.() || 'gemini-2.0-flash',
+      ];
+      for (const id of configured) {
+        addModel({
+          provider: 'gemini',
+          id,
+          displayName: `Gemini ${id}`,
           capabilities: { textGeneration: true, streaming: true, toolCalling: true },
           discoveredAt: Date.now(),
         });
       }
-    } else {
-      const groqModels = await this.discoveryService.getAvailableModels('groq', forceRefresh);
-      list.push(...groqModels);
     }
+    const geminiDiscovered = await this.discoveryService.getAvailableModels('gemini', forceRefresh);
+    for (const m of geminiDiscovered) addModel(m);
 
+    // 2. Groq candidate discovery
+    if (this.customGroqProvider && this.customGroqProvider.isConfigured()) {
+      const modelName = this.customGroqProvider.getModelName?.() || 'llama-3.3-70b-versatile';
+      addModel({
+        provider: 'groq',
+        id: modelName,
+        displayName: `Groq ${modelName}`,
+        capabilities: { textGeneration: true, streaming: true, toolCalling: true },
+        discoveredAt: Date.now(),
+      });
+    }
+    const groqDiscovered = await this.discoveryService.getAvailableModels('groq', forceRefresh);
+    for (const m of groqDiscovered) addModel(m);
+
+    // 3. Ollama local candidates
     const ollamaModels = await this.discoveryService.getAvailableModels('ollama', forceRefresh);
-    list.push(...ollamaModels);
+    for (const m of ollamaModels) addModel(m);
 
     return list;
   }

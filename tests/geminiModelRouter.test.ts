@@ -393,27 +393,27 @@ describe('Gemini Multi-Model Router & Failover Test Suite', () => {
   it('TEST 12: Orchestrator includes failover telemetry in response metadata', async () => {
     const orchestrator = new CopilotOrchestrator();
 
-    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.5-flash');
+    const mockPrimary = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash');
     mockPrimary.generateResponse = async () => {
       throw new Error('503 Service Unavailable');
     };
 
-    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.5-flash-lite');
+    const mockFallback = new GeminiProvider('mock-fallback-key-testing-12345', 'gemini-2.0-flash-lite');
     mockFallback.generateResponse = async () => {
       return '### CredVidhi Architecture\n\nFastAPI and PostgreSQL ledger verified.';
     };
 
     const router = (orchestrator as any).geminiRouter as GeminiModelRouter;
-    router.setProvider('gemini-2.5-flash', mockPrimary);
-    router.setProvider('gemini-2.5-flash-lite', mockFallback);
+    router.setProvider('gemini-2.0-flash', mockPrimary);
+    router.setProvider('gemini-2.0-flash-lite', mockFallback);
 
     const res = await orchestrator.handleChat({
       messages: [{ role: 'user', content: 'Explain CredVidhi architecture in detail' }],
     });
 
     assert.ok(res.answer.includes('CredVidhi'));
-    assert.strictEqual(res.metadata.model, 'gemini:gemini-2.5-flash-lite');
-    assert.strictEqual(res.metadata.requestedModel, 'gemini-2.5-flash');
+    assert.strictEqual(res.metadata.model, 'gemini:gemini-2.0-flash-lite');
+    assert.strictEqual(res.metadata.requestedModel, 'gemini-2.0-flash');
     assert.strictEqual(res.metadata.attempts, 2);
     assert.strictEqual(res.metadata.failoverOccurred, true);
     assert.ok(res.metadata.failoverReason?.includes('SERVER_ERROR'));
