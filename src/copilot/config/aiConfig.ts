@@ -1,6 +1,8 @@
 /**
- * Mantri Self-Hosted AI Engine Configuration
- * Single source of truth for local inference, vector storage, and memory.
+ * Mantri AI Engine Configuration
+ * Single source of truth for dynamic provider discovery, inference, vector storage, and memory.
+ * No predefined primary, secondary, fallback, or default models are required.
+ * API keys alone enable their corresponding providers.
  */
 
 export interface HardwareTier {
@@ -36,50 +38,64 @@ export const HARDWARE_TIERS: Record<string, HardwareTier> = {
 };
 
 export const AI_CONFIG = {
+  // Provider API Keys — Keys alone enable the corresponding provider
   geminiApiKey:
     (typeof process !== 'undefined' &&
       (process.env?.GEMINI_API_KEY || process.env?.GOOGLE_API_KEY)) ||
     '',
-  geminiPrimaryModel:
-    (typeof process !== 'undefined' &&
-      (process.env?.GEMINI_MODEL || process.env?.GEMINI_PRIMARY_MODEL)) ||
-    'gemini-2.5-flash',
-  geminiFallbackModels:
-    typeof process !== 'undefined' && process.env?.GEMINI_FALLBACK_MODELS
-      ? process.env.GEMINI_FALLBACK_MODELS.split(',').map((m) => m.trim()).filter(Boolean)
-      : ['gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'],
-  geminiMaxAttempts: Number(
-    (typeof process !== 'undefined' && process.env?.GEMINI_MAX_ATTEMPTS) || 4
-  ),
-  geminiCooldownSeconds: Number(
-    (typeof process !== 'undefined' && process.env?.GEMINI_COOLDOWN_SECONDS) || 60
-  ),
-  geminiModel:
-    (typeof process !== 'undefined' &&
-      (process.env?.GEMINI_MODEL || process.env?.GEMINI_PRIMARY_MODEL)) ||
-    'gemini-2.5-flash',
-  aiProvider:
-    (typeof process !== 'undefined' && process.env?.AI_PROVIDER) ||
-    'gemini',
   groqApiKey:
     (typeof process !== 'undefined' && process.env?.GROQ_API_KEY) || '',
-  groqModel:
-    (typeof process !== 'undefined' && process.env?.GROQ_MODEL) ||
-    'llama-3.3-70b-versatile',
-  groqFallbackModels:
-    typeof process !== 'undefined' && process.env?.GROQ_FALLBACK_MODELS
-      ? process.env.GROQ_FALLBACK_MODELS.split(',').map((m) => m.trim()).filter(Boolean)
-      : ['llama-3.1-8b-instant'],
-  groqMaxAttempts: Number(
-    (typeof process !== 'undefined' && process.env?.GROQ_MAX_ATTEMPTS) || 2
-  ),
-  groqCooldownSeconds: Number(
-    (typeof process !== 'undefined' && process.env?.GROQ_COOLDOWN_SECONDS) || 60
-  ),
   ollamaBaseUrl:
     (typeof process !== 'undefined' && process.env?.OLLAMA_BASE_URL) || 'http://localhost:11434',
-  ollamaModel:
-    (typeof process !== 'undefined' && process.env?.OLLAMA_MODEL) || 'llama3.2:3b',
+
+  // Dynamic Discovery & Selection Architecture Settings
+  discoveryTtlMs: 15 * 60 * 1000, // 15 minutes internal discovery cache
+  maxAttempts: Number(
+    (typeof process !== 'undefined' && process.env?.AI_MAX_ATTEMPTS) || 4
+  ),
+  cooldownSeconds: Number(
+    (typeof process !== 'undefined' && process.env?.AI_COOLDOWN_SECONDS) || 60
+  ),
+  requestTimeoutMs: Number(
+    (typeof process !== 'undefined' && process.env?.REQUEST_TIMEOUT_MS) || 15000
+  ),
+
+  // Non-mandatory discovery hints (optional overrides if explicitly provided)
+  geminiModelHint:
+    (typeof process !== 'undefined' &&
+      (process.env?.GEMINI_MODEL || process.env?.GEMINI_PRIMARY_MODEL)) ||
+    '',
+  groqModelHint:
+    (typeof process !== 'undefined' && process.env?.GROQ_MODEL) || '',
+
+  // Backward-compatible properties for existing consumers & tests
+  get geminiPrimaryModel(): string {
+    return this.geminiModelHint || 'gemini-2.5-flash';
+  },
+  get geminiModel(): string {
+    return this.geminiModelHint || 'gemini-2.5-flash';
+  },
+  get geminiFallbackModels(): string[] {
+    return ['gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+  },
+  get groqModel(): string {
+    return this.groqModelHint || 'llama-3.3-70b-versatile';
+  },
+  get groqFallbackModels(): string[] {
+    return ['llama-3.1-8b-instant'];
+  },
+  get aiProvider(): string {
+    return (typeof process !== 'undefined' && process.env?.AI_PROVIDER) || 'auto';
+  },
+  get ollamaModel(): string {
+    return (typeof process !== 'undefined' && process.env?.OLLAMA_MODEL) || 'llama3.2:3b';
+  },
+  geminiMaxAttempts: 4,
+  geminiCooldownSeconds: 60,
+  groqMaxAttempts: 2,
+  groqCooldownSeconds: 60,
+
+  // Local Vector & Conversation Memory Persistence
   embeddingModel:
     (typeof process !== 'undefined' && process.env?.EMBEDDING_MODEL) || 'nomic-embed-text',
   vectorDbPath:
@@ -92,7 +108,6 @@ export const AI_CONFIG = {
   backendPort: Number(
     (typeof process !== 'undefined' && process.env?.MANTRI_PORT) || 3001
   ),
-  requestTimeoutMs: 30000,
   maxOutputTokens: 2048,
   temperature: 0.2,
   rateLimitMaxRequests: 30,

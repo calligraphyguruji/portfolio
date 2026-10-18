@@ -89,47 +89,52 @@ Mantri is the production-grade, context-aware AI engineering assistant integrate
      └─────────────────────────────────────────────────────────────┘
 ```
 
-### 🔑 Google Gemini & Groq Multi-Provider Configuration
-Mantri utilizes official `@google/genai` and `groq-sdk` packages on the server/serverless layer with automated multi-model failover, error diagnosis, and circuit breaker protection:
+#### 🔑 Dynamic Multi-Provider AI Architecture (Gemini, Groq, Ollama)
+Mantri features an intelligent, provider-independent model discovery and dynamic switching system:
 
-1. **Obtain API Keys:**
-   - **Google Gemini:** Get a key from [Google AI Studio](https://aistudio.google.com/).
-   - **Groq:** Get a key from [Groq Console](https://console.groq.com/).
+1. **Minimal Configuration (API Keys Only):**
+   - **No Hardcoded Priority:** Models and providers are discovered dynamically via official provider endpoints (`models.list()`). No `PRIMARY_MODEL`, `SECONDARY_MODEL`, or `FALLBACK_MODEL` environment variables are required.
+   - **Google Gemini:** Set `GEMINI_API_KEY` to enable Gemini text-generation models dynamically.
+   - **Groq Cloud:** Set `GROQ_API_KEY` to enable Groq models dynamically.
+   - **Local Ollama:** Set `OLLAMA_BASE_URL` (optional, defaults to `http://localhost:11434`) for local zero-network inference.
 2. **Environment Variables:** Add to your `.env` (or Vercel / server environment):
    ```bash
-   # Primary: Google Gemini API
-   GEMINI_API_KEY=your_gemini_api_key_here
-   GEMINI_PRIMARY_MODEL=gemini-2.5-flash
-   GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite,gemini-2.5-pro,gemini-2.0-flash
-   GEMINI_MAX_ATTEMPTS=4
-   GEMINI_COOLDOWN_SECONDS=60
-   REQUEST_TIMEOUT_MS=12000
-   AI_PROVIDER=gemini
+   # Provider API Keys — Keys alone enable the corresponding provider
+   GEMINI_API_KEY=your_gemini_api_key
+   GROQ_API_KEY=your_groq_api_key
 
-   # Fallback: Official Groq API
-   GROQ_API_KEY=your_groq_api_key_here
-   GROQ_MODEL=llama-3.3-70b-versatile
-   GROQ_FALLBACK_MODELS=llama-3.1-8b-instant
-   GROQ_MAX_ATTEMPTS=2
-   GROQ_COOLDOWN_SECONDS=60
+   # Optional local fallback endpoint
+   OLLAMA_BASE_URL=http://localhost:11434
    ```
-3. **Security Invariant:** `GEMINI_API_KEY` and `GROQ_API_KEY` are read strictly on the server/serverless layer (`api/copilot.js` and `server/index.ts`). They are never prefixed with `VITE_`, logged, exposed in error diagnostics, or sent to the client.
-4. **Automated Multi-Provider Failover Rules:**
-   - **Gemini Model Failover:** Recoverable errors (429 Quota, 500/503 Server, Timeouts, 404 Model Not Found) place the failing model in cooldown (`GEMINI_COOLDOWN_SECONDS`) and cycle through configured Gemini fallbacks (`gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-2.0-flash`).
-   - **Groq Provider Failover:** If all Gemini models fail, return HTTP 404 (model or endpoint not found), 401/403, 429 rate limit, or timeout, Mantri automatically invokes `GroqProvider` (`llama-3.3-70b-versatile`) with formatted RAG context, multi-turn history, and resolved entity references.
-   - **Honest Status Reporting:** If both Gemini and Groq are unconfigured or fail, Mantri returns a clear, user-friendly error with `isError: true` and `provider: 'none'` without fabricating artificial responses.
+3. **Dynamic Model Discovery (`ModelDiscoveryService`):**
+   - Discovers available models via provider APIs (`aiClient.models.list()`, `groq.models.list()`, `/api/tags`).
+   - Filters out embedding-only, image, audio, and unsupported models.
+   - Caches discovery results in-memory with a 15-minute TTL.
+   - Automatically invalidates candidate models upon encountering HTTP 404 (Model Not Found), triggering immediate discovery refresh.
+4. **Intelligent Dynamic Selection (`DynamicModelSelector` & `ModelHealthTracker`):**
+   - Evaluates candidates dynamically using Laplace-smoothed reliability scoring: $\text{reliability} = \frac{S + 1}{S + F + 1}$.
+   - Applies consecutive-failure penalties and dynamic latency bonuses.
+   - Tracks error classifications: `AUTH_OR_PERMISSION_ERROR`, `MODEL_NOT_FOUND`, `RATE_LIMIT_OR_QUOTA`, `SERVER_ERROR`, `TIMEOUT`, `MALFORMED_OUTPUT`, and `SAFETY_BLOCKED`.
+   - Enforces dynamic exponential backoff and respects HTTP `Retry-After` headers on 429 rate limits.
+   - Prevents invalid API keys or offline providers from failing healthy providers.
+5. **Adaptive Multi-Provider Failover (`AdaptiveAIRouter`):**
+   - Cycles through discovered candidates up to a bounded retry limit (`maxAttempts = 4`).
+   - If a Gemini model fails or is rate-limited, Mantri automatically fails over to other compatible models or Groq without dropping conversational history or RAG context.
+   - Invariant: Safety blocks (`SAFETY_BLOCKED`) are never circumvented by switching providers.
+   - Terminal State: If all providers fail or are unconfigured, returns an honest diagnostic error with `isError: true` without fabricating artificial responses.
 
 ### 🧠 Complete Capabilities & Technical Invariants
-1. **Multi-Model Gemini Router (`GeminiModelRouter`):** Centralized health tracking, latency telemetry, automatic multi-model failover (`gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.5-pro` → `gemini-3.8-flash`), and circuit breaker cooldowns.
-2. **Official Groq Fallback Provider (`GroqProvider`):** Production-grade fallback leveraging `groq-sdk` with streaming and non-streaming support, prompt structuring with strict identity boundaries, resolved query injection, and API key redaction.
-3. **Persistent Conversation Memory (`conversationMemory`):** Embedded SQLite database (`node:sqlite`) with WAL mode tracking multi-turn conversation threads, message timestamps, automated PII/key redaction, and contextual follow-up pronoun resolution (`"it"`, `"the second component"`).
-4. **Controlled Tool Registry (`toolRegistry`):** Sandboxed tool execution platform featuring an AST-based mathematical calculation parser (zero `eval()` / script injection risk), IST datetime resolver, and project metadata inspector.
-5. **Hybrid RAG Pipeline (`HybridRetriever`):** Combines exact word-boundary lexical matching with cosine vector embeddings using Reciprocal Rank Fusion ($RRF = \sum \frac{1}{k + rank}$) to synthesize verified citations without hallucination.
-6. **Incremental SHA-256 Vector Cache (`localVectorStore`):** Document chunks are fingerprinted with SHA-256 hashes so unchanged documents reuse existing embeddings instantly on boot.
-7. **Strict Identity & Anti-Leakage Invariant:** High-priority NLP classification intercepts identity queries ("Who are you?", "Who built you?", "What can you do?") and returns verified author identity (**Aman Mishra**) without hallucinating model creators or leaking unrelated project URLs.
-8. **Question-Driven Intent Routing & RAG Relevance Isolation:** Dedicated intent detection (`PROJECT_LIST`, `PROJECT_ARCHITECTURE`, `TECHNICAL_SKILLS`, `EDUCATION`, `INTERNSHIP`, `CODING_QUESTION`, `TECHNICAL_QUERY`) with plural stemming regex matching. Non-identity queries (e.g., `"explain projects"`, `"what technologies does Aman know"`) strictly isolate and answer the question without regurgitating creator intros, and filter out `mantri-identity` from retrieval and citations.
-9. **Production UI Craft:** Complete KaTeX mathematical typesetting for algorithmic asymptotic notations ($\mathcal{O}((V + E) \log V)$), syntax-highlighted code blocks with 1-click clipboard copy, streaming response generation, Stop generation, and Retry buttons.
-10. **Conversational Follow-Up & Contextual Query Rewriting (`contextResolver`):** Multi-turn conversational reasoning engine resolving distributive references (`"explain anyone of them"`, `"pick one"`), collective references (`"explain all of them"`), ordinals (`"the second one"`), subcomponent drill-downs (`"explain its second component"`, `"what about its backend?"`), and elaborations (`"tell me more"`). Resolves pronouns and references against verified project history (`CredVidhi`, `KaushalNexus`, `Bodhi Sakha`), injects contextual prompt framing to Gemini and Groq, guarantees fallback chunk retrieval, and provides graceful clarification prompts for ambiguous context.
+1. **Adaptive AI Router (`AdaptiveAIRouter`):** Unified multi-provider engine integrating dynamic discovery, latency and health tracking, streaming support, and bounded retries across Gemini, Groq, and Ollama.
+2. **Dynamic Model Discovery (`ModelDiscoveryService`):** Provider adapters discovering text-generation models with TTL caching and automated 404 cache invalidation.
+3. **Model Health Tracker (`ModelHealthTracker`):** Real-time error categorization, consecutive failure penalties, and cooldown management (handling 429 Retry-After, 5xx server backoff).
+4. **Persistent Conversation Memory (`conversationMemory`):** Embedded SQLite database (`node:sqlite`) with WAL mode tracking multi-turn conversation threads, message timestamps, automated PII/key redaction, and contextual follow-up pronoun resolution (`"it"`, `"the second component"`).
+5. **Controlled Tool Registry (`toolRegistry`):** Sandboxed tool execution platform featuring an AST-based mathematical calculation parser (zero `eval()` / script injection risk), IST datetime resolver, and project metadata inspector.
+6. **Hybrid RAG Pipeline (`HybridRetriever`):** Combines exact word-boundary lexical matching with cosine vector embeddings using Reciprocal Rank Fusion ($RRF = \sum \frac{1}{k + rank}$) to synthesize verified citations without hallucination.
+7. **Incremental SHA-256 Vector Cache (`localVectorStore`):** Document chunks are fingerprinted with SHA-256 hashes so unchanged documents reuse existing embeddings instantly on boot.
+8. **Strict Identity & Anti-Leakage Invariant:** High-priority NLP classification intercepts identity queries ("Who are you?", "Who built you?", "What can you do?") and returns verified author identity (**Aman Mishra**) without hallucinating model creators or leaking unrelated project URLs.
+9. **Question-Driven Intent Routing & RAG Relevance Isolation:** Dedicated intent detection (`PROJECT_LIST`, `PROJECT_ARCHITECTURE`, `TECHNICAL_SKILLS`, `EDUCATION`, `INTERNSHIP`, `CODING_QUESTION`, `TECHNICAL_QUERY`) with plural stemming regex matching. Non-identity queries (e.g., `"explain projects"`, `"what technologies does Aman know"`) strictly isolate and answer the question without regurgitating creator intros, and filter out `mantri-identity` from retrieval and citations.
+10. **Production UI Craft:** Complete KaTeX mathematical typesetting for algorithmic asymptotic notations ($\mathcal{O}((V + E) \log V)$), syntax-highlighted code blocks with 1-click clipboard copy, streaming response generation, Stop generation, and Retry buttons.
+11. **Conversational Follow-Up & Contextual Query Rewriting (`contextResolver`):** Multi-turn conversational reasoning engine resolving distributive references (`"explain anyone of them"`, `"pick one"`), collective references (`"explain all of them"`), ordinals (`"the second one"`), subcomponent drill-downs (`"explain its second component"`, `"what about its backend?"`), and elaborations (`"tell me more"`). Resolves pronouns and references against verified project history (`CredVidhi`, `KaushalNexus`, `Bodhi Sakha`), injects contextual prompt framing, guarantees fallback chunk retrieval, and provides graceful clarification prompts for ambiguous context.
 
 ---
 

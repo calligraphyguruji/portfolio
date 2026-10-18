@@ -3,13 +3,14 @@ import { chunkKnowledgeDocument } from './chunkingService.ts';
 import { analyzeQuery } from '../nlp/nlpProcessor.ts';
 import { HybridRetriever } from './retrievalService.ts';
 import { GeminiProvider, DeterministicFallbackProvider } from './llmProvider.ts';
-import { GeminiModelRouter, diagnoseGeminiFailure, type GeminiFailureDiagnostic } from './geminiModelRouter.ts';
-import { GroqProvider, diagnoseGroqFailure, type GroqFailureDiagnostic } from './groqProvider.ts';
+import { GeminiModelRouter } from './geminiModelRouter.ts';
+import { GroqProvider } from './groqProvider.ts';
 import { OllamaProvider } from './ollamaProvider.ts';
 import { conversationMemory } from './conversationMemory.ts';
 import { toolRegistry } from './toolRegistry.ts';
 import { RESUME_CONFIG } from '../config/resumeConfig.ts';
 import { AI_CONFIG } from '../config/aiConfig.ts';
+import { AdaptiveAIRouter } from './adaptiveAIRouter.ts';
 import type {
   CopilotChatRequest,
   CopilotChatResponse,
@@ -20,12 +21,13 @@ import type {
 /**
  * Orchestrator Service for Mantri AI Assistant
  * Implements a hybrid AI pipeline combining deterministic guards, NLP intent classification,
- * BM25/RRF hybrid RAG retrieval, and generative reasoning via the official Google Gemini API
- * with multi-model automatic failover, local Ollama secondary inference, and grounded deterministic synthesis.
+ * BM25/RRF hybrid RAG retrieval, and dynamic model discovery, ranking, and resilient
+ * multi-provider automatic failover across Google Gemini, Groq, and local Ollama.
  */
 export class CopilotOrchestrator {
   private chunks: KnowledgeChunk[] = [];
   private retriever: HybridRetriever;
+  public adaptiveRouter: AdaptiveAIRouter;
   private geminiRouter: GeminiModelRouter;
   private _geminiProvider?: GeminiProvider;
   private _groqProvider: GroqProvider;
@@ -41,6 +43,7 @@ export class CopilotOrchestrator {
     this._geminiProvider = provider;
     if (provider && this.geminiRouter) {
       this.geminiRouter.setProvider(this.geminiRouter.getPrimaryModel(), provider);
+      this.adaptiveRouter.setCustomGeminiRouter(this.geminiRouter);
     }
   }
 
@@ -50,7 +53,9 @@ export class CopilotOrchestrator {
 
   public set groqProvider(provider: GroqProvider) {
     this._groqProvider = provider;
+    this.adaptiveRouter.setCustomGroqProvider(provider);
   }
+
 
   constructor(
     geminiApiKey = AI_CONFIG.geminiApiKey,
@@ -75,6 +80,10 @@ export class CopilotOrchestrator {
     this._groqProvider = new GroqProvider(groqApiKey, groqModel, AI_CONFIG.requestTimeoutMs);
     this.ollamaProvider = new OllamaProvider(ollamaBaseUrl, ollamaModel);
     this.fallbackProvider = new DeterministicFallbackProvider();
+
+    this.adaptiveRouter = new AdaptiveAIRouter();
+    this.adaptiveRouter.setCustomGeminiRouter(this.geminiRouter);
+    this.adaptiveRouter.setCustomGroqProvider(this._groqProvider);
   }
 
   private initializeKnowledgeBase(): void {
@@ -88,8 +97,9 @@ export class CopilotOrchestrator {
   }
 
   public getHealth(): CopilotHealthResponse {
-    const isGeminiConfigured = this.geminiRouter.isConfigured();
-    const isGroqConfigured = this.groqProvider ? this.groqProvider.isConfigured() : false;
+    const configuredProviders = this.adaptiveRouter.getDiscoveryService().getConfiguredProviders();
+    const isGeminiConfigured = configuredProviders.includes('gemini') || this.geminiRouter.isConfigured();
+    const isGroqConfigured = configuredProviders.includes('groq') || (this.groqProvider?.isConfigured() ?? false);
     const llmConfigured = isGeminiConfigured || isGroqConfigured;
     const primaryProvider: 'gemini' | 'groq' | 'none' = isGeminiConfigured
       ? 'gemini'
@@ -99,7 +109,7 @@ export class CopilotOrchestrator {
 
     return {
       status: llmConfigured ? 'healthy' : 'degraded',
-      version: '3.0.0-dynamic-multiprovider',
+      version: '3.1.0-dynamic-model-switching',
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
       llmConfigured,
       indexedChunks: this.chunks.length,
@@ -142,6 +152,7 @@ export class CopilotOrchestrator {
 
   public setGeminiRouter(router: GeminiModelRouter): void {
     this.geminiRouter = router;
+    this.adaptiveRouter.setCustomGeminiRouter(router);
   }
 
   public getGeminiProvider(): GeminiProvider {
@@ -153,7 +164,8 @@ export class CopilotOrchestrator {
   }
 
   public setGroqProvider(provider: GroqProvider): void {
-    this.groqProvider = provider;
+    this._groqProvider = provider;
+    this.adaptiveRouter.setCustomGroqProvider(provider);
   }
 
   public getPrimaryProvider(): OllamaProvider {
@@ -262,116 +274,51 @@ export class CopilotOrchestrator {
     // 6. Citations Assembly
     const citations = this.retriever.generateCitations(retrievedResults);
 
-    // 7. Generative LLM Response Generation (Gemini Router -> Groq Fallback -> Ollama -> Honest Error)
-    let answer = '';
-    let usedModel = 'unavailable';
-    let generationError: string | null = null;
-    let attempts = 1;
-    let failoverOccurred = false;
-    let failoverReason: string | undefined = undefined;
-    const providerDiagnostics: Array<GeminiFailureDiagnostic | GroqFailureDiagnostic> = [];
-    const isGeminiConfigured = this.geminiRouter.isConfigured() || this.geminiProvider?.isConfigured();
+    // 7. Dynamic AI Generation with Intelligent Model Selection & Multi-Provider Failover
+    const adaptiveRes = await this.adaptiveRouter.generateResponse(
+      lastUserMessage,
+      retrievedResults,
+      nlpAnalysis,
+      request.messages
+    );
 
-    // Step 7a. Primary: Google Gemini Router
-    if (isGeminiConfigured && AI_CONFIG.aiProvider !== 'ollama' && AI_CONFIG.aiProvider !== 'groq') {
-      try {
-        const routerRes = await this.geminiRouter.generateResponseWithTelemetry(
-          lastUserMessage,
-          retrievedResults,
-          nlpAnalysis,
-          request.messages
-        );
-        answer = routerRes.answer;
-        usedModel = `gemini:${routerRes.modelUsed}`;
-        attempts = routerRes.attempts;
-        failoverOccurred = routerRes.failoverOccurred;
-        failoverReason = routerRes.failoverReason;
-      } catch (err: any) {
-        generationError = err?.message || String(err);
-        const diag = diagnoseGeminiFailure(err, this.geminiRouter.getPrimaryModel());
-        providerDiagnostics.push(diag);
-        failoverOccurred = true;
-        failoverReason = `${diag.category}: ${diag.reason}`;
-        console.warn('[CopilotOrchestrator] Gemini failed, evaluating Groq fallback:', JSON.stringify(diag));
+    let answer = adaptiveRes.answer;
+    let usedModel = adaptiveRes.modelUsed;
+    let attempts = adaptiveRes.attempts;
+    let failoverOccurred = adaptiveRes.failoverOccurred;
+    let failoverReason = adaptiveRes.failoverReason;
+    const providerDiagnostics = adaptiveRes.diagnostics;
+    let isError = Boolean(adaptiveRes.isError);
 
-        // Invariant: Do not circumvent safety blocks by failing over to alternative LLM providers
-        if (diag.category === 'SAFETY_BLOCKED') {
-          return {
-            answer: "I am unable to fulfill this request as the content triggered safety and responsible AI restrictions.",
-            intent: nlpAnalysis.intent,
-            targetProject: nlpAnalysis.targetProject,
-            citations: [],
-            metadata: {
-              model: `gemini:${this.geminiRouter.getPrimaryModel()}`,
-              provider: 'gemini',
-              requestedModel: this.geminiRouter.getPrimaryModel(),
-              attempts: 1,
-              failoverOccurred: false,
-              providerError: 'SAFETY_BLOCKED',
-              diagnostics: [diag],
-              retrievalLatencyMs: retrievalLatency,
-              totalLatencyMs: Date.now() - startTs,
-              retrievedCount: retrievedResults.length,
-            },
-          };
-        }
-      }
+    // Invariant: Do not circumvent safety blocks by failing over to alternative LLM providers
+    if (
+      adaptiveRes.providerError === 'SAFETY_BLOCKED' ||
+      (providerDiagnostics[0] && providerDiagnostics[0].category === 'SAFETY_BLOCKED')
+    ) {
+      return {
+        answer: "I am unable to fulfill this request as the content triggered safety and responsible AI restrictions.",
+        intent: nlpAnalysis.intent,
+        targetProject: nlpAnalysis.targetProject,
+        citations: [],
+        metadata: {
+          model: usedModel,
+          provider: adaptiveRes.provider,
+          requestedModel: this.geminiRouter.getPrimaryModel(),
+          attempts: 1,
+          failoverOccurred: false,
+          providerError: 'SAFETY_BLOCKED',
+          diagnostics: providerDiagnostics,
+          retrievalLatencyMs: retrievalLatency,
+          totalLatencyMs: Date.now() - startTs,
+          retrievedCount: retrievedResults.length,
+        },
+      };
     }
 
-    // Step 7b. Secondary Fallback: Official Groq API Provider
-    // Automatically triggered when Gemini fails (HTTP 404 model not found / endpoint error, 401/403, 429, timeouts, 5xx),
-    // or when Gemini is not configured / unavailable, or when Groq is explicitly configured as the primary provider
-    if (!answer && this.groqProvider && this.groqProvider.isConfigured()) {
-      try {
-        const previousHistory = request.messages.slice(0, -1);
-        const groqAnswer = await this.groqProvider.generateResponse(
-          lastUserMessage,
-          retrievedResults,
-          nlpAnalysis,
-          previousHistory
-        );
-        if (groqAnswer && groqAnswer.trim().length > 0) {
-          answer = groqAnswer.trim();
-          usedModel = `groq:${this.groqProvider.getModelName()}`;
-          failoverOccurred = true;
-          failoverReason = failoverReason || 'GEMINI_FAILOVER_TO_GROQ';
-        }
-      } catch (groqErr: any) {
-        const groqDiag = diagnoseGroqFailure(groqErr, this.groqProvider.getModelName());
-        providerDiagnostics.push(groqDiag);
-        failoverOccurred = true;
-        failoverReason = failoverReason ? `${failoverReason} -> GROQ_FAILED: ${groqDiag.category}` : `GROQ_FAILED: ${groqDiag.category}`;
-        console.warn('[CopilotOrchestrator] Groq fallback failed:', JSON.stringify(groqDiag));
-      }
-    } else if (!answer && generationError) {
-      console.warn('[CopilotOrchestrator] Groq fallback skipped: GROQ_API_KEY is not configured.');
-    }
-
-    // Step 7c. Tertiary Fallback: Local Ollama (if configured and running)
-    if (!answer && (AI_CONFIG.aiProvider === 'ollama' || generationError)) {
-      try {
-        answer = await this.ollamaProvider.generateResponse(
-          lastUserMessage,
-          retrievedResults,
-          nlpAnalysis,
-          request.messages
-        );
-        usedModel = `ollama:${this.ollamaProvider.getModelName()}`;
-      } catch (ollamaErr) {
-        console.warn('[CopilotOrchestrator] Ollama offline or failed:', ollamaErr);
-      }
-    }
-
-    // Step 7d. Terminal State: Clear, honest error message if both providers fail
-    let isError = false;
-    if (!answer) {
+    if (!answer || isError) {
       if (resumeCard) {
         answer = "Here is Aman Mishra's verified resume card. You can view or download his official ATS-friendly PDF directly below.";
-      } else {
-        isError = true;
-        usedModel = 'unavailable';
-        answer =
-          "I am currently unable to reach my configured AI reasoning providers (Google Gemini and Groq). Please verify that GEMINI_API_KEY or GROQ_API_KEY is configured in your server environment, or try again in a few moments.";
+        isError = false;
       }
     }
 
@@ -439,7 +386,7 @@ export class CopilotOrchestrator {
         retrievalLatencyMs: retrievalLatency,
         totalLatencyMs: Date.now() - startTs,
         retrievedCount: retrievedResults.length,
-        providerError: generationError ? generationError.split(':')[0] : undefined,
+        providerError: adaptiveRes.providerError || (failoverReason ? failoverReason.split(':')[0] : undefined),
         diagnostics: providerDiagnostics.length > 0 ? providerDiagnostics : undefined,
       },
     };
@@ -464,63 +411,20 @@ export class CopilotOrchestrator {
 
     const retrievedResults = this.retriever.retrieve(nlpAnalysis, undefined, 4);
 
-    // Primary: stream from Gemini if configured
-    const activeGemini = this.geminiRouter?.getPrimaryProvider() || this.geminiProvider;
-    if (activeGemini && activeGemini.isConfigured() && AI_CONFIG.aiProvider !== 'ollama' && AI_CONFIG.aiProvider !== 'groq') {
-      try {
-        for await (const chunk of activeGemini.streamResponse(
-          lastUserMessage,
-          retrievedResults,
-          nlpAnalysis,
-          request.messages
-        )) {
-          yield chunk;
-        }
-        return;
-      } catch (err) {
-        console.warn('[CopilotOrchestrator] Gemini streaming failed, engaging Groq fallback stream:', err);
+    let streamedAny = false;
+    try {
+      for await (const chunk of this.adaptiveRouter.streamChat(
+        lastUserMessage,
+        retrievedResults,
+        nlpAnalysis,
+        request.messages
+      )) {
+        streamedAny = true;
+        yield chunk;
       }
-    }
-
-    // Secondary: stream from Groq if configured
-    if (this.groqProvider && this.groqProvider.isConfigured()) {
-      try {
-        if (this.groqProvider.streamResponse) {
-          for await (const chunk of this.groqProvider.streamResponse(
-            lastUserMessage,
-            retrievedResults,
-            nlpAnalysis,
-            request.messages
-          )) {
-            yield chunk;
-          }
-          return;
-        }
-      } catch (groqErr) {
-        console.warn('[CopilotOrchestrator] Groq streaming failed, engaging Ollama fallback stream:', groqErr);
-      }
-    }
-
-    // Secondary: stream from Ollama if configured
-    if (AI_CONFIG.aiProvider === 'ollama') {
-      try {
-        const contextBlocks = retrievedResults.map((r, idx) => {
-          return `[SOURCE ${idx + 1}: ${r.chunk.title} - ${r.chunk.section}]\n${r.chunk.content}`;
-        });
-        const promptText = `
-USER QUERY: ${lastUserMessage}
-PORTFOLIO CONTEXT:
-${contextBlocks.join('\n\n') || 'Rely only on verified foundational portfolio data.'}
-
-Provide an accurate, grounded, helpful response:
-`;
-        for await (const chunk of this.ollamaProvider.stream_generate(promptText)) {
-          yield chunk;
-        }
-        return;
-      } catch {
-        // Continue to fallback
-      }
+      if (streamedAny) return;
+    } catch (streamErr) {
+      console.warn('[CopilotOrchestrator] Adaptive streaming failed:', streamErr);
     }
 
     // Terminal error when no provider is available
