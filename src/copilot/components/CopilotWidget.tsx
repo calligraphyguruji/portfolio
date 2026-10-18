@@ -107,7 +107,7 @@ export const CopilotWidget: React.FC = () => {
     () => 'conv-' + Math.random().toString(36).slice(2, 10)
   );
   const [providerStatus, setProviderStatus] = useState<
-    'checking' | 'gemini' | 'groq' | 'unavailable'
+    'checking' | 'gemini' | 'groq' | 'knowledge-engine' | 'unavailable'
   >('checking');
   const [indexedChunks, setIndexedChunks] = useState(24);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -140,15 +140,15 @@ export const CopilotWidget: React.FC = () => {
             } else if (data.primaryProvider === 'gemini' || data.llmConfigured) {
               setProviderStatus('gemini');
             } else {
-              setProviderStatus('unavailable');
+              setProviderStatus('knowledge-engine');
             }
           }
         } else if (isMounted) {
-          setProviderStatus('unavailable');
+          setProviderStatus('knowledge-engine');
         }
       } catch {
         if (isMounted) {
-          setProviderStatus('unavailable');
+          setProviderStatus('knowledge-engine');
         }
       }
     };
@@ -237,12 +237,18 @@ export const CopilotWidget: React.FC = () => {
 
       const data = (await res.json()) as unknown as CopilotChatResponse;
 
-      if (data.isError || data.metadata?.provider === 'none' || data.metadata?.model === 'unavailable') {
-        setProviderStatus('unavailable');
+      if (data.isError || data.metadata?.model === 'unavailable') {
+        setProviderStatus('knowledge-engine');
       } else if (data.metadata?.provider === 'groq' || data.metadata?.model?.startsWith('groq:')) {
         setProviderStatus('groq');
       } else if (data.metadata?.provider === 'gemini' || data.metadata?.model?.startsWith('gemini:')) {
         setProviderStatus('gemini');
+      } else if (
+        data.metadata?.provider === 'knowledge-engine' ||
+        data.metadata?.model?.includes('knowledge-engine') ||
+        data.metadata?.model?.includes('local')
+      ) {
+        setProviderStatus('knowledge-engine');
       } else {
         setProviderStatus('gemini');
       }
@@ -376,15 +382,20 @@ export const CopilotWidget: React.FC = () => {
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                         <span>Groq • Fallback active</span>
                       </div>
+                    ) : providerStatus === 'knowledge-engine' ? (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-mono border border-blue-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span>Knowledge Engine</span>
+                      </div>
                     ) : providerStatus === 'checking' ? (
                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono border border-amber-500/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                         <span>Checking system...</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-mono border border-rose-500/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        <span>AI temporarily unavailable</span>
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono border border-amber-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span>Knowledge Engine</span>
                       </div>
                     )}
                   </div>

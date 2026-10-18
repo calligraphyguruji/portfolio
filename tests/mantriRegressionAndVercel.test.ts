@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import handler from '../api/copilot.js';
 import { AdaptiveAIRouter } from '../src/copilot/services/adaptiveAIRouter.ts';
+import { CopilotOrchestrator } from '../src/copilot/services/copilotOrchestrator.ts';
 
 // Helper to simulate Vercel serverless request
 async function callServerless(body: any, method = 'POST'): Promise<{ status: number; data: any; headers: Record<string, string> }> {
@@ -240,7 +241,7 @@ describe('Mantri Full-Pipeline Regression & Vercel Serverless Suite', () => {
     const result = await mockRouter.generateResponse('Total outage test', [], { intent: 'TECHNICAL_QUERY' } as any);
     assert.strictEqual(result.isError, true);
     assert.strictEqual(result.modelUsed, 'unavailable');
-    assert.ok(result.answer.includes('unable to reach my configured AI reasoning providers'));
+    assert.ok(result.answer.includes('unable to complete an online reasoning pass'));
   });
 
   // Scenario 15: Retry after an unsuccessful request
@@ -333,4 +334,34 @@ describe('Mantri Full-Pipeline Regression & Vercel Serverless Suite', () => {
     assert.strictEqual(result.provider, 'groq');
     assert.strictEqual(result.answer, 'Valid fallback text');
   });
+
+  // Scenario 19: Full Orchestrator fallback to Local Knowledge Engine during LLM outage
+  it('Scenario 19: Total LLM outage engages local knowledge engine gracefully without returning API key error', async () => {
+    const orchestrator = new CopilotOrchestrator();
+    // Simulate total LLM outage on both Gemini and Groq
+    orchestrator.adaptiveRouter.setProvider('gemini', 'gemini-2.0-flash', {
+      generateResponse: async () => {
+        throw new Error('Gemini network timeout');
+      },
+    });
+    orchestrator.adaptiveRouter.setProvider('groq', 'llama-3.3-70b-versatile', {
+      generateResponse: async () => {
+        throw new Error('Groq rate limited 429');
+      },
+    });
+    orchestrator.adaptiveRouter.discoverAllModels = async () => [];
+
+    const res = await orchestrator.handleChat({
+      messages: [{ role: 'user', content: 'What is CredVidhi?' }],
+    });
+
+    // Invariant: Never return API key or configuration error to user
+    assert.strictEqual(res.isError, undefined);
+    assert.ok(!res.answer.includes('GEMINI_API_KEY'));
+    assert.ok(!res.answer.includes('GROQ_API_KEY'));
+    assert.ok(!res.answer.includes('unable to reach my configured AI reasoning providers'));
+    assert.ok(res.answer.includes('CredVidhi'));
+    assert.strictEqual(res.metadata.model, 'knowledge-engine:grounded-composer');
+  });
 });
+

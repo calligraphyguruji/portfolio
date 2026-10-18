@@ -82,10 +82,11 @@ Mantri is the production-grade, context-aware AI engineering assistant integrate
      │     • Auto-triggered on Gemini 404, 401/403, 429, timeouts, │
      │       or 5xx upstream failures                              │
      │  3. Tertiary: Local Ollama Daemon (llama3.2:3b / mistral)   │
-     │  4. Honest Fallback & Truthful Provider Status              │
-     │     • Zero fabricated responses when APIs fail              │
+     │  4. Grounded Local Fallback: Deterministic Knowledge Engine │
+     │     • Zero hallucination, BM25 + lexical chunk synthesis   │
      │     • Live widget badges: Gemini • Connected, Groq •        │
-     │       Fallback active, or AI temporarily unavailable        │
+     │       Fallback active, or Knowledge Engine                  │
+     │     • Zero raw stack traces or leaked API-key error strings │
      └─────────────────────────────────────────────────────────────┘
 ```
 

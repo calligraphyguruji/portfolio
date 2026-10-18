@@ -319,6 +319,24 @@ export class CopilotOrchestrator {
       if (resumeCard) {
         answer = "Here is Aman Mishra's verified resume card. You can view or download his official ATS-friendly PDF directly below.";
         isError = false;
+        usedModel = 'local:resume-card';
+      } else {
+        // Fallback to local RAG & NLP grounded response composer
+        const fallbackAns = await this.fallbackProvider.generateResponse(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          request.messages
+        );
+        if (fallbackAns && fallbackAns.trim().length > 0) {
+          answer = fallbackAns;
+          usedModel = 'knowledge-engine:grounded-composer';
+          isError = false; // Graceful resolution via verified local knowledge base
+          failoverOccurred = true;
+          if (!failoverReason) {
+            failoverReason = 'ONLINE_LLM_UNAVAILABLE_KNOWLEDGE_ENGINE_ACTIVE';
+          }
+        }
       }
     }
 
@@ -427,8 +445,28 @@ export class CopilotOrchestrator {
       console.warn('[CopilotOrchestrator] Adaptive streaming failed:', streamErr);
     }
 
-    // Terminal error when no provider is available
-    yield "Mantri's AI reasoning services are temporarily unavailable. Neither Google Gemini nor Groq could be reached, or valid API credentials were not configured on the server.";
+    // If online streaming failed or yielded nothing, yield deterministic knowledge engine chunks
+    try {
+      const fallbackAns = await this.fallbackProvider.generateResponse(
+        lastUserMessage,
+        retrievedResults,
+        nlpAnalysis,
+        request.messages
+      );
+      if (fallbackAns && fallbackAns.trim().length > 0) {
+        // Stream out in comfortable sentence/line chunks
+        const chunks = fallbackAns.split('\n\n');
+        for (let i = 0; i < chunks.length; i++) {
+          yield chunks[i] + (i < chunks.length - 1 ? '\n\n' : '');
+        }
+        return;
+      }
+    } catch (fbErr) {
+      console.warn('[CopilotOrchestrator] Fallback stream generation failed:', fbErr);
+    }
+
+    // Terminal polite fallback when no information could be generated
+    yield "I am having difficulty retrieving that information right now. You can ask about Aman Mishra's verified projects (CredVidhi, KaushalNexus, Bodhi Sakha), modern C++ algorithms, or resume.";
   }
 }
 

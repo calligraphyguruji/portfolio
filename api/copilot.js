@@ -1598,7 +1598,7 @@ var DeterministicFallbackProvider = class {
       return vec;
     });
   }
-  async generateResponse(query, retrievedResults, analysis) {
+  async generateResponse(query, retrievedResults, analysis, _history) {
     const qLower = query.toLowerCase();
     if (analysis.requiresClarification && analysis.clarificationPrompt) {
       return analysis.clarificationPrompt;
@@ -3969,7 +3969,7 @@ var AdaptiveAIRouter = class {
     if (allModels.length === 0) {
       console.warn("[AdaptiveAIRouter] No compatible AI models discovered across configured providers.");
       return {
-        answer: "I am currently unable to reach my configured AI reasoning providers. Please verify that an API key (e.g. GEMINI_API_KEY or GROQ_API_KEY) is configured in your server environment, or try again in a few moments.",
+        answer: "I am currently unable to reach my reasoning models. You can continue asking about Aman's projects, technical architecture, and engineering background.",
         modelUsed: "unavailable",
         provider: "none",
         attempts: 0,
@@ -4057,7 +4057,7 @@ var AdaptiveAIRouter = class {
       }
     }
     return {
-      answer: "I am currently unable to reach my configured AI reasoning providers (Google Gemini and Groq). Please verify that GEMINI_API_KEY or GROQ_API_KEY is configured in your server environment, or try again in a few moments.",
+      answer: "I am temporarily unable to complete an online reasoning pass. You can continue asking about Aman's verified projects, technical stack, or background.",
       modelUsed: "unavailable",
       provider: "none",
       attempts,
@@ -4119,7 +4119,7 @@ var AdaptiveAIRouter = class {
         );
       }
     }
-    yield "I am temporarily unable to stream a response due to upstream AI provider unavailability. Please try again shortly.";
+    yield "I am currently unable to stream an online response. You can continue asking about Aman's verified projects, technical stack, or background.";
   }
   getDiscoveryService() {
     return this.discoveryService;
@@ -4375,6 +4375,23 @@ $$`;
       if (resumeCard) {
         answer = "Here is Aman Mishra's verified resume card. You can view or download his official ATS-friendly PDF directly below.";
         isError = false;
+        usedModel = "local:resume-card";
+      } else {
+        const fallbackAns = await this.fallbackProvider.generateResponse(
+          lastUserMessage,
+          retrievedResults,
+          nlpAnalysis,
+          request.messages
+        );
+        if (fallbackAns && fallbackAns.trim().length > 0) {
+          answer = fallbackAns;
+          usedModel = "knowledge-engine:grounded-composer";
+          isError = false;
+          failoverOccurred = true;
+          if (!failoverReason) {
+            failoverReason = "ONLINE_LLM_UNAVAILABLE_KNOWLEDGE_ENGINE_ACTIVE";
+          }
+        }
       }
     }
     let recruiterAlignment = void 0;
@@ -4465,7 +4482,24 @@ $$`;
     } catch (streamErr) {
       console.warn("[CopilotOrchestrator] Adaptive streaming failed:", streamErr);
     }
-    yield "Mantri's AI reasoning services are temporarily unavailable. Neither Google Gemini nor Groq could be reached, or valid API credentials were not configured on the server.";
+    try {
+      const fallbackAns = await this.fallbackProvider.generateResponse(
+        lastUserMessage,
+        retrievedResults,
+        nlpAnalysis,
+        request.messages
+      );
+      if (fallbackAns && fallbackAns.trim().length > 0) {
+        const chunks = fallbackAns.split("\n\n");
+        for (let i = 0; i < chunks.length; i++) {
+          yield chunks[i] + (i < chunks.length - 1 ? "\n\n" : "");
+        }
+        return;
+      }
+    } catch (fbErr) {
+      console.warn("[CopilotOrchestrator] Fallback stream generation failed:", fbErr);
+    }
+    yield "I am having difficulty retrieving that information right now. You can ask about Aman Mishra's verified projects (CredVidhi, KaushalNexus, Bodhi Sakha), modern C++ algorithms, or resume.";
   }
 };
 var copilotOrchestrator = new CopilotOrchestrator();

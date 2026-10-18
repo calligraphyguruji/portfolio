@@ -245,7 +245,7 @@ describe('Mantri Intelligent Dynamic AI Model Switching & Failover Test Suite', 
     const res = await router.generateResponse('test query', mockRetrievalResults, mockAnalysis);
     assert.strictEqual(res.isError, true);
     assert.strictEqual(res.modelUsed, 'unavailable');
-    assert.ok(res.answer.includes('unable to reach my configured AI reasoning providers'));
+    assert.ok(res.answer.includes('unable to reach my reasoning models'));
   });
 
   // Scenario 8: No compatible models -> honest error

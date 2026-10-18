@@ -371,7 +371,7 @@ export class AdaptiveAIRouter {
     if (allModels.length === 0) {
       console.warn('[AdaptiveAIRouter] No compatible AI models discovered across configured providers.');
       return {
-        answer: "I am currently unable to reach my configured AI reasoning providers. Please verify that an API key (e.g. GEMINI_API_KEY or GROQ_API_KEY) is configured in your server environment, or try again in a few moments.",
+        answer: "I am currently unable to reach my reasoning models. You can continue asking about Aman's projects, technical architecture, and engineering background.",
         modelUsed: 'unavailable',
         provider: 'none',
         attempts: 0,
@@ -483,7 +483,7 @@ export class AdaptiveAIRouter {
 
     // 3. All configured candidates failed or retry budget exhausted
     return {
-      answer: "I am currently unable to reach my configured AI reasoning providers (Google Gemini and Groq). Please verify that GEMINI_API_KEY or GROQ_API_KEY is configured in your server environment, or try again in a few moments.",
+      answer: "I am temporarily unable to complete an online reasoning pass. You can continue asking about Aman's verified projects, technical stack, or background.",
       modelUsed: 'unavailable',
       provider: 'none',
       attempts,
@@ -559,7 +559,7 @@ export class AdaptiveAIRouter {
     }
 
     // Fallback if all streams fail: yield clear error message
-    yield "I am temporarily unable to stream a response due to upstream AI provider unavailability. Please try again shortly.";
+    yield "I am currently unable to stream an online response. You can continue asking about Aman's verified projects, technical stack, or background.";
   }
 
   public getDiscoveryService(): ModelDiscoveryService {

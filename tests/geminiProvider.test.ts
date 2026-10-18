@@ -117,7 +117,7 @@ describe('Official Gemini Provider & Hybrid Pipeline Test Suite', () => {
   });
 
   // 7. Provider Failure Fallback
-  it('7. CopilotOrchestrator reports truthful unavailable error when Gemini throws and fallback is unconfigured', async () => {
+  it('7. CopilotOrchestrator engages local knowledge engine seamlessly when Gemini throws and fallback is unconfigured', async () => {
     const orchestrator = new CopilotOrchestrator();
     // Simulate configured Gemini that fails with network error
     const mockGemini = new GeminiProvider('mock-test-key-gemini-valid-12345', 'gemini-2.0-flash');
@@ -140,10 +140,10 @@ describe('Official Gemini Provider & Hybrid Pipeline Test Suite', () => {
       messages: [{ role: 'user', content: 'Explain CredVidhi system architecture' }],
     });
 
-    assert.strictEqual(res.isError, true);
-    assert.strictEqual(res.metadata.model, 'unavailable');
-    assert.strictEqual(res.metadata.provider, 'none');
-    assert.ok(res.answer.includes('temporarily unavailable') || res.answer.includes('configured'));
+    assert.strictEqual(res.isError, undefined);
+    assert.strictEqual(res.metadata.model, 'knowledge-engine:grounded-composer');
+    assert.strictEqual(res.metadata.provider, 'knowledge-engine');
+    assert.ok(res.answer.includes('CredVidhi'));
   });
 
   // 8. NLP Intent Detection

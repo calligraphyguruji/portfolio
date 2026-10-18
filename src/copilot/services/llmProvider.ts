@@ -297,7 +297,8 @@ export class DeterministicFallbackProvider implements AIProvider {
   public async generateResponse(
     query: string,
     retrievedResults: RetrievalResult[],
-    analysis: NLPAnalysis
+    analysis: NLPAnalysis,
+    _history?: Array<{ role: string; content: string }>
   ): Promise<string> {
     const qLower = query.toLowerCase();
 
