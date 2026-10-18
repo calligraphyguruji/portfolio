@@ -16,11 +16,18 @@ interface ResumeCardProps {
 export const ResumeCard: React.FC<ResumeCardProps> = ({ data }) => {
   const [copied, setCopied] = useState(false);
 
+  if (!data || !data.downloadUrl) {
+    return null;
+  }
+
   const handleCopyLink = () => {
-    const fullUrl = window.location.origin + data.downloadUrl;
-    navigator.clipboard.writeText(fullUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const fullUrl = origin + (data.downloadUrl.startsWith('http') ? data.downloadUrl : data.downloadUrl);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(fullUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (

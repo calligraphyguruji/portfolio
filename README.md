@@ -263,7 +263,7 @@ npm install
 cp .env.example .env
 # Set VITE_TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, and EMAILJS_* credentials
 
-# 4. Run automated test suite (82 tests across security, RAG, Ollama, identity routing, and architecture)
+# 4. Run automated test suite (196 tests across 25 suites covering dynamic switching, serverless pipeline, RAG, and security)
 npm test
 
 # 5. Start Mantri self-hosted AI engine backend

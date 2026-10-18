@@ -166,19 +166,36 @@ export const CopilotWidget: React.FC = () => {
     }
   };
 
-  const handleSend = async (queryToSend?: string) => {
+  const handleSend = async (queryToSend?: string, isRetry = false) => {
+    if (isLoading) return;
     const text = (queryToSend || input).trim();
-    if (!text || isLoading) return;
+    if (!text && !isRetry) return;
 
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: text,
-      timestamp: Date.now(),
-    };
+    let updatedMessages = [...messages];
+    let queryText = text;
 
-    setMessages((prev) => [...prev, userMsg]);
-    setInput('');
+    if (isRetry) {
+      const lastUserIdx = [...updatedMessages]
+        .map((m, i) => ({ m, i }))
+        .reverse()
+        .find(({ m }) => m.role === 'user')?.i;
+      if (lastUserIdx === undefined) return;
+      queryText = updatedMessages[lastUserIdx].content;
+      // Slice up to and including the last user message, removing any failed assistant message
+      updatedMessages = updatedMessages.slice(0, lastUserIdx + 1);
+      setMessages(updatedMessages);
+    } else {
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: queryText,
+        timestamp: Date.now(),
+      };
+      updatedMessages = [...updatedMessages, userMsg];
+      setMessages(updatedMessages);
+      setInput('');
+    }
+
     setIsLoading(true);
 
     const controller = new AbortController();
@@ -195,7 +212,7 @@ export const CopilotWidget: React.FC = () => {
         signal: controller.signal,
         body: JSON.stringify({
           conversationId,
-          messages: [...messages, userMsg].map((m) => ({
+          messages: updatedMessages.map((m) => ({
             role: m.role === 'user' ? 'user' : 'assistant',
             content: m.content,
           })),
@@ -225,6 +242,8 @@ export const CopilotWidget: React.FC = () => {
       } else if (data.metadata?.provider === 'groq' || data.metadata?.model?.startsWith('groq:')) {
         setProviderStatus('groq');
       } else if (data.metadata?.provider === 'gemini' || data.metadata?.model?.startsWith('gemini:')) {
+        setProviderStatus('gemini');
+      } else {
         setProviderStatus('gemini');
       }
 
@@ -554,16 +573,12 @@ export const CopilotWidget: React.FC = () => {
                       <div className="mt-2 pt-2 border-t border-rose-500/20">
                         <button
                           type="button"
-                          onClick={() => {
-                            const lastUser = [...messages]
-                              .reverse()
-                              .find((m) => m.role === 'user');
-                            if (lastUser) handleSend(lastUser.content);
-                          }}
-                          className="flex items-center gap-1 text-[11px] font-mono text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 underline underline-offset-2"
+                          disabled={isLoading}
+                          onClick={() => handleSend(undefined, true)}
+                          className="flex items-center gap-1 text-[11px] font-mono text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 underline underline-offset-2 disabled:opacity-50"
                         >
-                          <RefreshCw className="w-3 h-3" />
-                          <span>Retry question</span>
+                          <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                          <span>{isLoading ? 'Retrying...' : 'Retry question'}</span>
                         </button>
                       </div>
                     )}

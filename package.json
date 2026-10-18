@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:api": "esbuild server/copilotVercel.ts --bundle --platform=node --format=esm --packages=external --outfile=api/copilot.js",
+    "build": "npm run build:api && tsc -b && vite build",
     "preview": "vite preview",
     "server": "node --experimental-strip-types server/index.ts",
-    "test": "node --experimental-strip-types --test tests/contactApi.test.ts tests/architectureExperience.test.ts tests/seoRouting.test.ts tests/copilotRag.test.ts tests/mantriEngine.test.ts tests/geminiProvider.test.ts tests/geminiModelRouter.test.ts tests/intentAndRagFix.test.ts tests/conversationalFollowUp.test.ts tests/groqFallback.test.ts tests/dynamicModelSwitching.test.ts"
+    "test": "node --experimental-strip-types --test tests/contactApi.test.ts tests/architectureExperience.test.ts tests/seoRouting.test.ts tests/copilotRag.test.ts tests/mantriEngine.test.ts tests/geminiProvider.test.ts tests/geminiModelRouter.test.ts tests/intentAndRagFix.test.ts tests/conversationalFollowUp.test.ts tests/groqFallback.test.ts tests/dynamicModelSwitching.test.ts tests/mantriRegressionAndVercel.test.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

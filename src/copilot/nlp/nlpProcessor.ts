@@ -276,14 +276,14 @@ export function analyzeQuery(
   const isExplicitResumeRequest =
     !isResumeNegative &&
     (
-      /^(resume|cv|curriculum\s+vitae|my\s+resume|your\s+resume|aman('?s)?\s+(resume|cv))$/i.test(lowerQuery) ||
-      /\b(gimme|give\s*me|send|share|show|provide|get|fetch|have|see|view|access|download|grab|need)\s+(me\s+)?(a\s+|the\s+|your\s+|his\s+|aman('?s)?\s+|my\s+)?(latest\s+|updated\s+|official\s+)?(copy\s+of\s+)?(resume|cv|curriculum\s+vitae)\b/i.test(lowerQuery) ||
-      /\bcan\s+i\s+(see|have|get|download|view|take)\s+(your|the|aman('?s)?)\s+(resume|cv)\b/i.test(lowerQuery) ||
-      /\b(where\s+(can|to)\s+(i\s+)?(download|find|get)\s+(your|the|aman('?s)?)\s+(resume|cv))\b/i.test(lowerQuery) ||
+      /^(resume|cv|curriculum\s+vitae|my\s+resume|your\s+resume|aman('?s)?\s+(resume|cv)|aman\s+mishra('?s)?\s+(resume|cv))$/i.test(lowerQuery) ||
+      /\b(gimme|give\s*me|send|share|show|provide|get|fetch|have|see|view|access|download|grab|need)\s+(me\s+)?(a\s+|the\s+|your\s+|his\s+|aman('?s)?\s+|aman\s+mishra('?s)?\s+|my\s+)?(latest\s+|updated\s+|official\s+)?(copy\s+of\s+)?(resume|cv|curriculum\s+vitae)\b/i.test(lowerQuery) ||
+      /\bcan\s+i\s+(see|have|get|download|view|take|access)\s+(your|the|his|aman('?s)?|aman\s+mishra('?s)?)\s+(resume|cv|curriculum\s+vitae)\b/i.test(lowerQuery) ||
+      /\b(where\s+(can|to)\s+(i\s+)?(download|find|get|see|view)\s+(your|the|his|aman('?s)?|aman\s+mishra('?s)?)\s+(resume|cv))\b/i.test(lowerQuery) ||
       /\b(resume|cv)\s*(pdf|download|link|file|document)\b/i.test(lowerQuery) ||
-      /\b(download|get|view)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) ||
-      /\b(download\s+aman\s+mishra\s+resume)\b/i.test(lowerQuery) ||
-      /\b(copy\s+of\s+(your|his|aman('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) ||
+      /\b(download|get|view|see)\s+(the\s+)?(pdf\s+version|pdf|resume|cv)\b/i.test(lowerQuery) ||
+      /\b(download|view|see|get|fetch|share)\s+aman(\s+mishra)?('?s)?\s+(resume|cv)\b/i.test(lowerQuery) ||
+      /\b(copy\s+of\s+(your|his|aman('?s)?|aman\s+mishra('?s)?)\s+(resume|cv|curriculum\s+vitae))\b/i.test(lowerQuery) ||
       /\b(resume|cv)\s+for\s+(recruitment|recruiter|interview|hiring)\b/i.test(lowerQuery)
     );
 
