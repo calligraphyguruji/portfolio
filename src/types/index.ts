@@ -75,6 +75,8 @@ export interface ContactFormData {
 }
 
 export interface ContactResponse {
+  code?: string;
+  cooldownSeconds?: number;
   success: boolean;
   message: string;
 }

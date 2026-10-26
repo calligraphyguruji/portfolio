@@ -1,27 +1,6 @@
 import { ContactFormData, ContactResponse } from '../types';
 
-/**
- * Validates email address format on the client side.
- * 
- * ============================================================================
- * IMPORTANT SECURITY PRINCIPLE & LIMITATION DISCLAIMER:
- * ============================================================================
- * 1. Syntax validation only proves lexical conformance to the email format.
- * 2. It DOES NOT prove that the email address actually exists.
- * 3. It DOES NOT prove that the target domain has active Mail Exchange (MX) records.
- * 4. It DOES NOT prove that the person submitting the form owns or controls the address;
- *    any visitor can enter a valid third-party email address.
- * 
- * Syntax validation is purely a client-side convenience to catch typos and
- * reject obviously malformed entries early. Real anti-abuse defense relies on
- * the multi-layer pipeline:
- *   - Invisible honeypot traps
- *   - Cloudflare Turnstile cryptographic bot verification
- *   - Server-side sliding-window rate limiting per IP and per email
- *   - Duplicate message fingerprinting
- *   - Serverless endpoint isolation (EmailJS credentials never reach the browser)
- * ============================================================================
- */
+// Syntax checks are a convenience; ownership is verified by the server magic link.
 export const isValidEmail = (email: string): boolean => {
   const trimmed = email.trim();
   if (!trimmed || trimmed.length < 5 || trimmed.length > 100) {
@@ -95,81 +74,25 @@ export const validateContactInput = (
   return { valid: true };
 };
 
-/**
- * Dispatches contact form payload through the secure serverless anti-spam pipeline (/api/contact).
- *
- * Security Pipeline:
- *   1. Honeypot check (silently drop bot submissions without hitting server or EmailJS)
- *   2. Client input validation
- *   3. POST /api/contact
- *   4. Server-side Rate Limiting (IP & Email)
- *   5. Server-side Cloudflare Turnstile token validation
- *   6. Spam content heuristics & duplicate detection
- *   7. Protected EmailJS REST API dispatch
- */
+/** Request a verification email. This never delivers the contact message directly. */
 export const sendEmail = async (data: ContactFormData): Promise<ContactResponse> => {
-  // 1. HONEYPOT TRAP (Client side early drop)
-  // If the hidden honeypot field was filled, a bot filled it.
-  // Silently simulate success to deceive the bot while consuming 0 network & 0 quota.
-  if (data.company_hp && data.company_hp.trim() !== '') {
-    console.warn('[Anti-Spam] Honeypot field triggered. Silently dropping submission.');
-    return {
-      success: true,
-      message: 'Thank you! Your message has been sent successfully.',
-    };
-  }
-
-  // 2. Client-side input validation
   const validation = validateContactInput(data);
-  if (!validation.valid) {
-    return {
-      success: false,
-      message: validation.error || 'Please check the form fields and try again.',
-    };
-  }
-
-  // 3. Dispatch to secure serverless endpoint
-  try {
-    const response = await fetch('/api/contact', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: data.name.trim(),
-        email: data.email.trim(),
-        subject: data.subject?.trim() || '',
-        message: data.message.trim(),
-        company_hp: data.company_hp || '',
-        turnstileToken: data.turnstileToken || '',
-      }),
-    });
-
-    const responseData = await response.json().catch(() => null);
-
-    if (response.ok && responseData?.success) {
-      return {
-        success: true,
-        message: responseData.message || 'Thank you! Your message has been sent successfully.',
-      };
-    }
-
-    // Handle rate-limiting (429) or validation / bot error (400)
-    const errorMessage =
-      responseData?.message ||
-      (response.status === 429
-        ? 'Please wait before sending another message.'
-        : 'Unable to deliver message right now. Please try again later.');
-
-    return {
-      success: false,
-      message: errorMessage,
-    };
-  } catch (error) {
-    console.error('Network error during contact submission:', error);
-    return {
-      success: false,
-      message: 'Network error. Please check your connection or email directly at amanmishra7774@gmail.com.',
-    };
-  }
+  if (!validation.valid) return { success: false, message: validation.error! };
+  return contactRequest('request-verification', data);
 };
+
+export const resendVerificationEmail = () => contactRequest('resend-verification', {});
+
+export async function contactRequest(action: string, body: unknown): Promise<ContactResponse> {
+  try {
+    const response = await fetch(`/api/contact/${action}`, {
+      method: 'POST', credentials: 'same-origin', signal: AbortSignal.timeout(30000),
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => null);
+    if (data && typeof data.message === 'string') return { ...data, success: response.ok && data.success === true };
+    return { success: false, code: 'unavailable', message: 'The email service is temporarily unavailable. Please try again shortly.' };
+  } catch {
+    return { success: false, code: 'network_error', message: 'Network error. Please check your connection and try again.' };
+  }
+}

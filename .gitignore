@@ -43,3 +43,7 @@ src/**/*.d.ts
 data/
 *.sqlite
 *.sqlite-journal
+
+# Emitted contact server build artifacts
+server/contact/*.js
+server/contact/*.d.ts

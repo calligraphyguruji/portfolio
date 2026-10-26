@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { personalInfo } from '../../data/portfolioData';
-import { sendEmail, isValidEmail } from '../../services/emailService';
+import { sendEmail, isValidEmail, resendVerificationEmail } from '../../services/emailService';
 import { Turnstile } from '../ui/Turnstile';
 import { ContactFormData } from '../../types';
 import {
@@ -22,6 +22,8 @@ const STORAGE_KEY = 'portfolio_contact_last_submission';
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 export const Contact: React.FC = () => {
+  const [resending, setResending] = useState(false);
+  const [cooldownDuration, setCooldownDuration] = useState(COOLDOWN_SECONDS);
   const [showForm, setShowForm] = useState(true);
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -44,7 +46,7 @@ export const Contact: React.FC = () => {
       const lastSubmission = localStorage.getItem(STORAGE_KEY);
       if (!lastSubmission) return 0;
       const elapsedSeconds = Math.floor((Date.now() - parseInt(lastSubmission, 10)) / 1000);
-      const remaining = COOLDOWN_SECONDS - elapsedSeconds;
+      const remaining = cooldownDuration - elapsedSeconds;
       return remaining > 0 ? remaining : 0;
     };
 
@@ -59,7 +61,7 @@ export const Contact: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [status]);
+  }, [status, cooldownDuration, resending]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -80,6 +82,8 @@ export const Contact: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (status === 'loading') return;
 
     // 1. Client-side cooldown guard
     if (cooldownRemaining > 0) {
@@ -134,7 +138,8 @@ export const Contact: React.FC = () => {
         setTurnstileToken('');
         // Record timestamp for client-side cooldown (UX guard)
         localStorage.setItem(STORAGE_KEY, Date.now().toString());
-        setCooldownRemaining(COOLDOWN_SECONDS);
+        setCooldownDuration(response.cooldownSeconds || COOLDOWN_SECONDS);
+        setCooldownRemaining(response.cooldownSeconds || COOLDOWN_SECONDS);
       } else {
         setStatus('error');
         setStatusMessage(response.message || 'Unable to deliver message right now. Please try again.');
@@ -202,16 +207,33 @@ export const Contact: React.FC = () => {
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                     <h4 className="text-lg font-medium text-[#171717] dark:text-white">
-                      Message Dispatched!
+                      Check your inbox!
                     </h4>
-                    <p className="text-xs sm:text-sm text-[#5E5E5E] dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+                    <p role="status" aria-live="polite" className="text-xs sm:text-sm text-[#5E5E5E] dark:text-slate-300 max-w-md mx-auto leading-relaxed">
                       {statusMessage}
                     </p>
+                    <button
+                      type="button"
+                      disabled={resending || cooldownRemaining > 0}
+                      onClick={async () => {
+                        if (resending || cooldownRemaining > 0) return;
+                        setResending(true);
+                        const result = await resendVerificationEmail();
+                        setStatusMessage(result.message);
+                        localStorage.setItem(STORAGE_KEY, Date.now().toString());
+                        setCooldownDuration(result.cooldownSeconds || COOLDOWN_SECONDS);
+                        setCooldownRemaining(result.cooldownSeconds || COOLDOWN_SECONDS);
+                        setResending(false);
+                      }}
+                      className="block mx-auto px-5 py-2 rounded-full border border-black/10 dark:border-white/20 text-xs font-medium uppercase tracking-wider disabled:opacity-60"
+                    >
+                      {resending ? 'Sending verification link...' : cooldownRemaining > 0 ? `Resend verification email in ${cooldownRemaining}s` : 'Resend verification email'}
+                    </button>
                     <button
                       onClick={() => setStatus('idle')}
                       className="px-5 py-2 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] text-xs font-medium uppercase tracking-wider transition-all cursor-pointer"
                     >
-                      Send Another
+                      Write Another Message
                     </button>
                   </div>
                 ) : (
@@ -237,7 +259,7 @@ export const Contact: React.FC = () => {
                     </div>
 
                     {status === 'error' && (
-                      <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                      <div role="alert" className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>{statusMessage}</span>
                       </div>
@@ -342,7 +364,7 @@ export const Contact: React.FC = () => {
                       {status === 'loading' ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Sending...</span>
+                          <span>Sending verification link...</span>
                         </>
                       ) : cooldownRemaining > 0 ? (
                         <>

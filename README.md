@@ -141,41 +141,13 @@ Mantri features an intelligent, provider-independent model discovery and dynamic
 
 ## 🛡️ Contact Form Hardening & Anti-Spam Architecture
 
-To safeguard the free EmailJS sending quota (200 emails/month) against automated bot spam and malicious submission floods, the contact flow is decoupled from client-side direct EmailJS calls and routed through a hardened serverless pipeline:
+Contact messages require mailbox ownership verification before they can reach Aman’s inbox. The existing form and Cloudflare Turnstile widget are preserved.
 
-```
-[ Visitor / Client Form ]
-         ↓
-1. Client Honeypot Check (Silently drops bots if hidden trap field is populated)
-         ↓
-2. Client Cooldown (60s timer in localStorage to prevent rapid accidental clicks)
-         ↓
-3. Client Syntax Validation (Catches typos & malformed emails before network dispatch)
-         ↓
-[ POST /api/contact ] (Vercel Serverless Function)
-         ↓
-4. Server Honeypot Verification (Silently returns HTTP 200 without calling EmailJS)
-         ↓
-5. Server Input & Syntax Validation (Length limits & RFC compliance)
-         ↓
-6. Cloudflare Turnstile Cryptographic Bot Verification (Server-side siteverify)
-         ↓
-7. Multi-Factor Rate Limiting (Max 3/hour per IP, Max 3/hour per Email, 30s burst check)
-         ↓
-8. Duplicate Fingerprint Check (Detects identical resubmissions within 15 minutes)
-         ↓
-9. Professional Message Quality Filter (Blocks casual chat/slang spam, keyboard smash, repetitive words)
-         ↓
-10. ONLY THEN: EmailJS REST API Dispatch (Isolated server credentials)
-         ↓
-[ Aman's Inbox ]
-```
+`Contact form → server-side Turnstile → private PostgreSQL pending submission → 15-minute verification email → atomic token consumption → idempotent Resend delivery`
 
-### Security & Quality Guarantees:
-- **Zero Exposed EmailJS Credentials:** `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY` remain strictly server-side in Vercel environment variables.
-- **Quota Shielding:** A request NEVER reaches EmailJS until honeypot, syntax, Turnstile bot verification, rate limits, duplicate checks, and message quality filters have ALL succeeded.
-- **Stealth Honeypot:** Bots filling invisible fields receive a simulated HTTP 200, believing they succeeded, while 0 emails and 0 quota are consumed.
-- **Professional Message Quality Scoring:** Rejects low-effort WhatsApp-style chat spam ("hi bro", "work hai bhai", "urgent work pls dm", "send me ur number"), keyboard smash ("asdfghjkl"), character floods ("aaaaaa"), excessive emojis ("🔥🔥🔥🔥🔥"), and all-caps shouting, while warmly accepting genuine Indian English and international inquiries ("Hello Aman, I came across your portfolio and wanted to discuss an internship opportunity").
+The legacy `/api/contact` route also requests verification and cannot send directly. Persistent IP/email limits, resend cooldowns, hashed single-use tokens, safe HTML escaping, strict origins, and a durable delivery outbox protect the flow across Vercel instances. Provider acceptance is distinguished from pending delivery.
+
+See [contact verification setup and architecture](docs/contact-verification.md) for the migration, required environment variables, sender DNS, retention, scheduler requirements, tests and deployment steps. Production requires the database, authenticated Resend sender, existing Turnstile secrets and maintenance scheduling before rollout.
 
 ---
 
@@ -262,7 +234,7 @@ npm install
 
 # 3. Configure environment variables (.env)
 cp .env.example .env
-# Set VITE_TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, and EMAILJS_* credentials
+# Configure contact verification per docs/contact-verification.md; preserve existing Turnstile values
 
 # 4. Run automated test suite (196 tests across 25 suites covering dynamic switching, serverless pipeline, RAG, and security)
 npm test

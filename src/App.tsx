@@ -10,6 +10,7 @@ import { ProblemSolving } from './components/sections/ProblemSolving';
 import { Experience } from './components/sections/Experience';
 import { About } from './components/sections/About';
 import { Resume } from './components/sections/Resume';
+import { ContactVerification } from './components/sections/ContactVerification';
 import { Contact } from './components/sections/Contact';
 import { ProjectDetail } from './components/sections/ProjectDetail';
 import { Blog } from './components/sections/Blog';
@@ -209,7 +210,9 @@ export default function App() {
     <div className="atmospheric-bg min-h-screen text-[#171717] dark:text-[#F8FAFC] flex flex-col font-sans transition-colors duration-300 selection:bg-[#171717] selection:text-white dark:selection:bg-white dark:selection:text-[#171717]">
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <main className="flex-grow space-y-4 sm:space-y-8">
-        {isProjectRoute ? (
+        {cleanPath === '/contact/verify' ? (
+          <ContactVerification />
+        ) : isProjectRoute ? (
           matchedProject ? (
             <ProjectDetail
               project={matchedProject}

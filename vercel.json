@@ -21,6 +21,23 @@
   ],
   "headers": [
     {
+      "source": "/contact/verify",
+      "headers": [
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {
@@ -84,6 +101,12 @@
           "value": "public, max-age=3600, must-revalidate"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/contact/maintenance",
+      "schedule": "0 0 * * *"
     }
   ]
 }

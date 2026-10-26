@@ -1,4 +1,4 @@
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
@@ -7,45 +7,25 @@ function contactApiDevPlugin(): Plugin {
     name: 'contact-api-dev-server',
     configureServer(server) {
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        if (req.url === '/api/contact' && req.method === 'POST') {
+        if (req.url?.split('?')[0] === '/api/contact' || req.url?.startsWith('/api/contact/')) {
           let rawData = '';
+          let tooLarge = false;
           req.on('data', (chunk: Buffer) => {
+            if (Buffer.byteLength(rawData) + chunk.length > 16384) { tooLarge = true; return; }
             rawData += chunk.toString();
           });
           req.on('end', async () => {
+            const reply: any = res;
+            reply.status = (code: number) => { res.statusCode = code; return reply; };
+            reply.json = (data: unknown) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); };
+            if (tooLarge) return reply.status(413).json({ success: false, message: 'Your message is too large.' });
             try {
-              const body = rawData ? JSON.parse(rawData) : {};
-              const { handleContactSubmission } = await import('./api/contact');
-
-              const forwardedFor = req.headers['x-forwarded-for'];
-              const clientIp =
-                (typeof forwardedFor === 'string'
-                  ? forwardedFor.split(',')[0].trim()
-                  : '') ||
-                req.headers['x-real-ip'] ||
-                req.socket?.remoteAddress ||
-                '127.0.0.1';
-
-              const result = await handleContactSubmission(body, String(clientIp));
-
-              res.statusCode = result.status;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(result.data));
-            } catch (err) {
-              console.error('Local dev API contact error:', err);
-              res.statusCode = 500;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(
-                JSON.stringify({
-                  success: false,
-                  message: 'Local server error processing contact form.',
-                })
-              );
-            }
+              (req as any).body = rawData ? JSON.parse(rawData) : {};
+            } catch { return reply.status(400).json({ success: false, message: 'Please submit a valid form.' }); }
+            const { default: handler } = await import('./api/contact');
+            await handler(req, reply);
           });
-        } else {
-          next();
-        }
+        } else { next(); }
       });
     },
   };
@@ -106,11 +86,14 @@ function copilotApiDevPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), contactApiDevPlugin(), copilotApiDevPlugin()],
-  server: {
-    port: 3000,
-    open: false,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  for (const [key, value] of Object.entries(env)) if (process.env[key] === undefined) process.env[key] = value;
+  return {
+    plugins: [react(), contactApiDevPlugin(), copilotApiDevPlugin()],
+    server: {
+      port: 3000,
+      open: false,
+    },
+  };
 });
-
