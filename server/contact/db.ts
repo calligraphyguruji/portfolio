@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { attachDatabasePool } from '@vercel/functions/db-connections';
 import type { PoolClient } from 'pg';
 
 let pool: pg.Pool | undefined;
@@ -10,6 +11,8 @@ export function database() {
     max: 3, connectionTimeoutMillis: 5000, idleTimeoutMillis: 10000,
     statement_timeout: 10000,
   });
+  // Keep connections alive until their idle timeout when Vercel suspends an invocation.
+  attachDatabasePool(pool);
   pool.on('error', () => { console.error('Contact database connection unavailable.'); });
   return pool;
 }

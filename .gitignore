@@ -33,6 +33,8 @@ src/**/*.d.ts
 *.sw?
 .agents/
 .planning/
+.claude/
+skills-lock.json
 
 # Environment files
 .env
