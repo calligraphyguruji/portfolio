@@ -91,7 +91,8 @@ export async function contactRequest(action: string, body: unknown): Promise<Con
     });
     const data = await response.json().catch(() => null);
     if (data && typeof data.message === 'string') return { ...data, success: response.ok && data.success === true };
-    return { success: false, code: 'unavailable', message: 'The email service is temporarily unavailable. Please try again shortly.' };
+    if (response.status === 429) return { success: false, code: 'rate_limited', message: 'Too many requests. Please try again later.' };
+    return { success: false, code: 'unavailable', message: 'We couldn’t submit your message right now. Please try again shortly.' };
   } catch {
     return { success: false, code: 'network_error', message: 'Network error. Please check your connection and try again.' };
   }

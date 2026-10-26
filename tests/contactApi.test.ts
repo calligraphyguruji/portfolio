@@ -110,6 +110,9 @@ describe('Persistent contact verification integration', { skip: !testUrl, concur
   let challenge = true;
   let hostname = 'calligraphyguruji.dev';
   let providerFails = false;
+  let providerStatus = 503;
+  let challengeOutage = false;
+  let challengeCodes: string[] = [];
   let acceptedButResponseLost = false;
   const accepted = new Map<string, string>();
 
@@ -136,9 +139,12 @@ describe('Persistent contact verification integration', { skip: !testUrl, concur
     Object.assign(process.env, { DATABASE_URL: url.toString(), NODE_ENV: 'test', RESEND_API_KEY: 'test-only', EMAIL_FROM: 'Portfolio <contact@example.com>', TURNSTILE_SECRET_KEY: 'test-only', CONTACT_RATE_LIMIT_SECRET: 'test-only-private-rate-limit-secret-32-bytes', CONTACT_SITE_URL: 'https://calligraphyguruji.dev', CRON_SECRET: 'test-only-cron-secret' });
     await database().query(readFileSync(new URL('../migrations/001_contact_verification.sql', import.meta.url), 'utf8'));
     globalThis.fetch = async (url, options) => {
-      if (String(url).includes('siteverify')) return new Response(JSON.stringify({ success: challenge, hostname }), { status: 200 });
+      if (String(url).includes('siteverify')) {
+        if (challengeOutage) throw new Error('Simulated Cloudflare outage');
+        return new Response(JSON.stringify({ success: challenge, hostname, 'error-codes': challengeCodes }), { status: 200 });
+      }
       assert.equal(String(url), 'https://api.resend.com/emails');
-      if (providerFails) return new Response('{}', { status: 503 });
+      if (providerFails) return new Response(JSON.stringify({ message: 'Private provider details: API key and visitor data must never be logged.' }), { status: providerStatus });
       const key = (options!.headers as Record<string, string>)['Idempotency-Key'];
       if (!accepted.has(key)) {
         accepted.set(key, randomUUID());
@@ -149,7 +155,7 @@ describe('Persistent contact verification integration', { skip: !testUrl, concur
     };
   });
   beforeEach(async () => {
-    sent = []; challenge = true; hostname = 'calligraphyguruji.dev'; providerFails = false; acceptedButResponseLost = false; accepted.clear();
+    sent = []; providerStatus = 503; challengeOutage = false; challengeCodes = []; challenge = true; hostname = 'calligraphyguruji.dev'; providerFails = false; acceptedButResponseLost = false; accepted.clear();
     await database().query('TRUNCATE contact_submissions, contact_rate_events');
   });
   after(async () => {
@@ -269,10 +275,84 @@ describe('Persistent contact verification integration', { skip: !testUrl, concur
   test('provider failure during verification email never delivers the contact', async () => {
     providerFails = true;
     const result = await call();
-    assert.equal(result.status, 503);
+    assert.equal(result.status, 502);
     assert.match(result.headers['Set-Cookie'], /HttpOnly; SameSite=Strict/);
     assert.equal(sent.length, 0);
     assert.equal((await database().query('SELECT status FROM contact_submissions')).rows[0].status, 'unverified');
+  });
+  for (const status of [401, 403, 422, 429, 500, 503]) {
+    test(`provider HTTP ${status} is diagnosed privately and never reports success`, async () => {
+      providerFails = true; providerStatus = status;
+      const original = console.error;
+      const logs: string[] = [];
+      console.error = (...args) => { logs.push(args.join(' ')); };
+      try {
+        const result = await call();
+        assert.equal(result.status, 502);
+        assert.equal(result.data.success, false);
+        assert.equal(result.data.code, 'email_unavailable');
+        assert.ok(logs.some(line => line.includes(`"upstreamStatus":${status}`)));
+        assert.ok(!logs.join('').includes('Private provider details'));
+        assert.ok(!logs.join('').includes(input.email));
+        assert.ok(!JSON.stringify(result.data).includes('upstreamStatus'));
+      } finally { console.error = original; }
+    });
+  }
+  test('missing email API key produces private configuration diagnostics', async () => {
+    const key = process.env.RESEND_API_KEY;
+    const original = console.error;
+    const logs: string[] = [];
+    console.error = (...args) => { logs.push(args.join(' ')); };
+    try {
+      delete process.env.RESEND_API_KEY;
+      const result = await call();
+      assert.equal(result.status, 503);
+      assert.equal(result.data.code, 'configuration_error');
+      assert.ok(logs.join('').includes('RESEND_API_KEY'));
+      assert.ok(!JSON.stringify(result.data).includes('RESEND_API_KEY'));
+      assert.equal(sent.length, 0);
+    } finally { process.env.RESEND_API_KEY = key; console.error = original; }
+  });
+  test('malformed sender or site configuration fails safely before an email request', async () => {
+    const sender = process.env.EMAIL_FROM, site = process.env.CONTACT_SITE_URL;
+    try {
+      process.env.EMAIL_FROM = 'invalid-sender';
+      assert.equal((await call()).data.code, 'configuration_error');
+      process.env.EMAIL_FROM = sender;
+      process.env.CONTACT_SITE_URL = 'invalid-url';
+      assert.equal((await call()).data.code, 'configuration_error');
+      assert.equal(sent.length, 0);
+    } finally { process.env.EMAIL_FROM = sender; process.env.CONTACT_SITE_URL = site; }
+  });
+  test('expired or reused Cloudflare tokens are rejected without sending email', async () => {
+    challenge = false; challengeCodes = ['timeout-or-duplicate'];
+    const result = await call();
+    assert.equal(result.status, 400);
+    assert.equal(result.data.code, 'turnstile');
+    assert.equal(sent.length, 0);
+  });
+  test('Cloudflare network failures are distinguished from email failures', async () => {
+    challengeOutage = true;
+    const result = await call();
+    assert.equal(result.status, 502);
+    assert.equal(result.data.code, 'turnstile_unavailable');
+    assert.equal(sent.length, 0);
+  });
+  test('missing schema is logged without exposing SQL, credentials or message content', async () => {
+    const original = console.error;
+    const logs: string[] = [];
+    console.error = (...args) => { logs.push(args.join(' ')); };
+    await database().query('ALTER TABLE contact_rate_events RENAME TO contact_rate_events_missing');
+    try {
+      const result = await call();
+      assert.equal(result.status, 503);
+      assert.ok(logs.join('').includes('schema_missing'));
+      for (const secret of [input.email, input.message, 'postgresql://', 'SELECT', 'test-challenge']) assert.ok(!logs.join('').includes(secret));
+      assert.ok(result.data.requestId);
+    } finally {
+      await database().query('ALTER TABLE contact_rate_events_missing RENAME TO contact_rate_events');
+      console.error = original;
+    }
   });
   test('delivery failure stays pending; lost response retries use the identical idempotency key', async () => {
     const { token } = await request();

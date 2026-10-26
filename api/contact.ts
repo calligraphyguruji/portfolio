@@ -1,11 +1,15 @@
-import { timingSafeEqual } from 'node:crypto';
-import { assertConfigured, ContactError, maintenance, requestVerification, resendVerification, siteUrl, verifySubmission } from '../server/contact/service.ts';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { assertConfigured, ContactError, maintenance, requestVerification, resendVerification, siteUrl, verifySubmission, validateInput, requireTurnstileToken } from '../server/contact/service.ts';
+
+import { reportContactError } from '../server/contact/errors.ts';
 
 export const maxDuration = 60;
 export const config = { api: { bodyParser: { sizeLimit: '16kb' } } };
 
 // The legacy /api/contact route now requests verification; it cannot deliver mail directly.
 export default async function handler(req: any, res: any) {
+  const requestId = randomUUID();
+  res.setHeader('X-Request-Id', requestId);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Referrer-Policy', 'no-referrer');
   const pathname = new URL(req.url || '/api/contact', 'http://localhost').pathname;
@@ -41,6 +45,10 @@ export default async function handler(req: any, res: any) {
     if (Buffer.byteLength(JSON.stringify(body ?? {})) > 16384) {
       return res.status(413).json({ success: false, message: 'Your message is too large.' });
     }
+    if (action === 'request-verification') {
+      const input = validateInput(body);
+      if (!input.company_hp) requireTurnstileToken(input.turnstileToken);
+    }
     assertConfigured();
     // On Vercel this header is overwritten by the platform. Local dev uses the socket address.
     const ip = process.env.VERCEL === '1'
@@ -61,11 +69,12 @@ export default async function handler(req: any, res: any) {
     }
     return res.status(result.code === 'pending' ? 202 : result.code === 'delivery_failed' ? 503 : 200).json(result);
   } catch (error) {
+    if (!(error instanceof ContactError) || error.status >= 500) reportContactError(error, action, requestId);
     if (error instanceof ContactError) {
       if (error.status === 429) res.setHeader('Retry-After', '60');
-      return res.status(error.status).json({ success: false, code: error.code, message: error.message });
+      return res.status(error.status).json({ success: false, code: error.code, message: error.message, requestId });
     }
     // Do not log raw requests, database exceptions, email responses or verification tokens.
-    return res.status(503).json({ success: false, code: 'unavailable', message: 'The email service is temporarily unavailable. Please try again shortly.' });
+    return res.status(503).json({ success: false, code: 'unavailable', message: 'We couldn’t submit your message right now. Please try again shortly.', requestId });
   }
 }

@@ -5,13 +5,9 @@ import { contactEmail, sendTransactionalEmail, verificationEmail } from './email
 import type { EmailPayload } from './email.ts';
 import { isValidEmailFormat, validateMessageQuality } from './validation.ts';
 
-export class ContactError extends Error {
-  status: number;
-  code: string;
-  constructor(status: number, code: string, message: string) {
-    super(message); this.status = status; this.code = code;
-  }
-}
+import { ContactError, reportContactError } from './errors.ts';
+export { ContactError } from './errors.ts';
+
 export const hashToken = (value: string) => createHash('sha256').update(value).digest('hex');
 const secretToken = () => randomBytes(32).toString('base64url');
 const privateKey = (value: string) => createHmac('sha256', process.env.CONTACT_RATE_LIMIT_SECRET!).update(value).digest('hex');
@@ -26,17 +22,32 @@ const configuredLimit = (key: string, fallback: number) => {
 export const cooldownSeconds = () => Math.max(60, configuredLimit('CONTACT_RESEND_COOLDOWN_SECONDS', 60));
 
 export function siteUrl() {
-  const url = new URL(process.env.CONTACT_SITE_URL || 'https://calligraphyguruji.dev');
-  if (url.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(url.hostname))) {
-    throw new Error('HTTPS required');
+  try {
+    const url = new URL(process.env.CONTACT_SITE_URL || 'https://calligraphyguruji.dev');
+    if (url.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(url.hostname))) {
+      throw new Error('HTTPS required');
+    }
+    return url.origin;
+  } catch {
+    throw new ContactError(503, 'configuration_error', 'The contact form is temporarily unavailable. Please try again shortly.', {
+      stage: 'configuration', reason: 'invalid_environment', fields: ['CONTACT_SITE_URL'],
+    });
   }
-  return url.origin;
 }
 export function assertConfigured() {
-  for (const key of ['DATABASE_URL', 'RESEND_API_KEY', 'EMAIL_FROM', 'TURNSTILE_SECRET_KEY', 'CONTACT_RATE_LIMIT_SECRET']) {
-    if (!process.env[key]?.trim()) throw new Error('Contact service unavailable');
-  }
-  if (process.env.CONTACT_RATE_LIMIT_SECRET!.length < 32) throw new Error('Contact service unavailable');
+  const required = ['DATABASE_URL', 'RESEND_API_KEY', 'EMAIL_FROM', 'TURNSTILE_SECRET_KEY', 'CONTACT_RATE_LIMIT_SECRET'];
+  const missing = required.filter(key => !process.env[key]?.trim());
+  if (missing.length) throw new ContactError(503, 'configuration_error', 'The contact form is temporarily unavailable. Please try again shortly.', {
+    stage: 'configuration', reason: 'missing_environment', fields: missing,
+  });
+  if (process.env.CONTACT_RATE_LIMIT_SECRET!.length < 32) throw new ContactError(503, 'configuration_error', 'The contact form is temporarily unavailable. Please try again shortly.', {
+    stage: 'configuration', reason: 'invalid_environment', fields: ['CONTACT_RATE_LIMIT_SECRET'],
+  });
+  const from = process.env.EMAIL_FROM!.trim();
+  const sender = from.match(/<([^<>]+)>$/)?.[1] || from;
+  if (/[\r\n]/.test(from) || !isValidEmailFormat(sender)) throw new ContactError(503, 'configuration_error', 'The contact form is temporarily unavailable. Please try again shortly.', {
+    stage: 'configuration', reason: 'invalid_environment', fields: ['EMAIL_FROM'],
+  });
   siteUrl();
 }
 
@@ -82,22 +93,42 @@ export function validateInput(body: unknown) {
   return { name, email, subject, message, company_hp: input.company_hp, turnstileToken: input.turnstileToken };
 }
 
+export function requireTurnstileToken(token: unknown): asserts token is string {
+  if (typeof token !== 'string' || !token || token.length > 2048) {
+    throw new ContactError(400, 'turnstile', 'Verification failed. Please complete the security check again.');
+  }
+}
+
 async function verifyTurnstile(token: unknown, ip: string) {
-  if (typeof token !== 'string' || !token || token.length > 2048) throw new ContactError(400, 'turnstile', 'Please complete the security verification.');
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST', signal: AbortSignal.timeout(10000), headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: process.env.TURNSTILE_SECRET_KEY, response: token, remoteip: ip }),
-  });
-  const data = await response.json() as { success?: boolean; hostname?: string };
+  requireTurnstileToken(token);
+  let response: Response;
+  let data: { success?: boolean; hostname?: string; 'error-codes'?: string[] };
+  try {
+    response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST', signal: AbortSignal.timeout(10000), headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: process.env.TURNSTILE_SECRET_KEY, response: token, remoteip: ip }),
+    });
+    data = await response.json();
+  } catch {
+    throw new ContactError(502, 'turnstile_unavailable', 'The security check is temporarily unavailable. Please try again shortly.', {
+      stage: 'turnstile', reason: 'request_failed',
+    });
+  }
+  if (!response.ok || data['error-codes']?.some(code => ['invalid-input-secret', 'missing-input-secret', 'internal-error'].includes(code))) {
+    throw new ContactError(502, 'turnstile_unavailable', 'The security check is temporarily unavailable. Please try again shortly.', {
+      stage: 'turnstile', reason: 'service_or_configuration_failure', upstreamStatus: response.status,
+    });
+  }
   const hostnames = (process.env.TURNSTILE_ALLOWED_HOSTNAMES || `${new URL(siteUrl()).hostname},www.calligraphyguruji.dev`).split(',').map(x => x.trim());
-  if (!response.ok || !data.success || !data.hostname || !hostnames.includes(data.hostname)) {
-    throw new ContactError(400, 'turnstile', 'Security check failed. Please refresh and try again.');
+  if (!data.success || !data.hostname || !hostnames.includes(data.hostname)) {
+    throw new ContactError(400, 'turnstile', 'Verification failed. Please complete the security check again.');
   }
 }
 
 export async function requestVerification(body: unknown, ip: string, setReceipt: (receipt: string) => void) {
   const input = validateInput(body);
   if (input.company_hp) return { success: true, code: 'verification_sent', message: sentMessage, cooldownSeconds: cooldownSeconds() };
+  requireTurnstileToken(input.turnstileToken);
   await ipRate(ip);
   await verifyTurnstile(input.turnstileToken, ip);
   await cleanup();
@@ -155,7 +186,8 @@ export async function deliver(id: string): Promise<boolean> {
     await database().query(`UPDATE contact_submissions SET status='accepted', provider_id=$2, accepted_at=now(),
       name=NULL,email=NULL,subject=NULL,message=NULL,delivery_payload=NULL,lease_until=NULL WHERE id=$1`, [id, providerId]);
     return true;
-  } catch {
+  } catch (error) {
+    reportContactError(error, 'delivery', id);
     // Leave the durable outbox pending. The lease prevents immediate repeated provider calls.
     return false;
   }

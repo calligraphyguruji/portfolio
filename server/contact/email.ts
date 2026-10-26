@@ -1,3 +1,5 @@
+import { ContactError } from './errors.ts';
+
 export interface EmailPayload {
   from: string; to: string[]; subject: string; html: string; text: string; reply_to?: string;
 }
@@ -6,15 +8,27 @@ export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, c => ({
 }[c]!));
 
 export async function sendTransactionalEmail(payload: EmailPayload, key: string): Promise<string> {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST', signal: AbortSignal.timeout(10000),
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': key },
-    body: JSON.stringify(payload),
+  let response: Response;
+  try {
+    response = await fetch('https://api.resend.com/emails', {
+      method: 'POST', signal: AbortSignal.timeout(10000),
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': key },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new ContactError(502, 'email_unavailable', 'We couldn’t send your verification email right now. Please try again shortly.', {
+      stage: 'email', reason: 'request_failed',
+    });
+  }
+  // Status codes identify configuration/availability failures without logging a provider body.
+  if (!response.ok) throw new ContactError(502, 'email_unavailable', 'We couldn’t send your verification email right now. Please try again shortly.', {
+    stage: 'email', reason: response.status === 401 ? 'authentication_failed' : response.status === 403 ? 'sender_or_permission_rejected' : response.status === 429 ? 'provider_rate_limited' : response.status >= 500 ? 'provider_unavailable' : 'payload_rejected',
+    upstreamStatus: response.status,
   });
-  // Never log provider responses: they can contain personal data.
-  if (!response.ok) throw new Error('Email provider unavailable');
-  const result = await response.json() as { id?: string };
-  if (!result.id) throw new Error('Email provider did not acknowledge acceptance');
+  const result = await response.json().catch(() => null) as { id?: string } | null;
+  if (!result || typeof result.id !== 'string' || !result.id) throw new ContactError(502, 'email_unavailable', 'We couldn’t confirm email acceptance. Please try again shortly.', {
+    stage: 'email', reason: 'invalid_acknowledgement', upstreamStatus: response.status,
+  });
   return result.id;
 }
 

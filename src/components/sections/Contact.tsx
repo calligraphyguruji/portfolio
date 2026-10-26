@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { personalInfo } from '../../data/portfolioData';
 import { sendEmail, isValidEmail, resendVerificationEmail } from '../../services/emailService';
 import { Turnstile } from '../ui/Turnstile';
@@ -22,6 +22,7 @@ const STORAGE_KEY = 'portfolio_contact_last_submission';
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 export const Contact: React.FC = () => {
+  const lastSubmissionAt = useRef(0);
   const [resending, setResending] = useState(false);
   const [cooldownDuration, setCooldownDuration] = useState(COOLDOWN_SECONDS);
   const [showForm, setShowForm] = useState(true);
@@ -43,9 +44,10 @@ export const Contact: React.FC = () => {
   // Initialize and tick down client-side submission cooldown
   useEffect(() => {
     const calculateRemaining = () => {
-      const lastSubmission = localStorage.getItem(STORAGE_KEY);
-      if (!lastSubmission) return 0;
-      const elapsedSeconds = Math.floor((Date.now() - parseInt(lastSubmission, 10)) / 1000);
+      let timestamp = lastSubmissionAt.current;
+      try { timestamp = Math.max(timestamp, Number(localStorage.getItem(STORAGE_KEY)) || 0); } catch { /* Storage can be disabled. */ }
+      if (!timestamp) return 0;
+      const elapsedSeconds = Math.floor((Date.now() - timestamp) / 1000);
       const remaining = cooldownDuration - elapsedSeconds;
       return remaining > 0 ? remaining : 0;
     };
@@ -62,6 +64,13 @@ export const Contact: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [status, cooldownDuration, resending]);
+
+  const startCooldown = (duration: number) => {
+    lastSubmissionAt.current = Date.now();
+    try { localStorage.setItem(STORAGE_KEY, String(lastSubmissionAt.current)); } catch { /* The server still enforces cooldowns. */ }
+    setCooldownDuration(duration);
+    setCooldownRemaining(duration);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -137,21 +146,19 @@ export const Contact: React.FC = () => {
         });
         setTurnstileToken('');
         // Record timestamp for client-side cooldown (UX guard)
-        localStorage.setItem(STORAGE_KEY, Date.now().toString());
-        setCooldownDuration(response.cooldownSeconds || COOLDOWN_SECONDS);
-        setCooldownRemaining(response.cooldownSeconds || COOLDOWN_SECONDS);
+        startCooldown(response.cooldownSeconds || COOLDOWN_SECONDS);
       } else {
         setStatus('error');
         setStatusMessage(response.message || 'Unable to deliver message right now. Please try again.');
         // Reset turnstile widget on failure
         setTurnstileResetCount((prev) => prev + 1);
-        setTurnstileToken('');
+        handleTurnstileExpire();
       }
     } catch {
       setStatus('error');
       setStatusMessage('An unexpected error occurred. Please contact directly via amanmishra7774@gmail.com.');
       setTurnstileResetCount((prev) => prev + 1);
-      setTurnstileToken('');
+      handleTurnstileExpire();
     }
   };
 
@@ -220,9 +227,7 @@ export const Contact: React.FC = () => {
                         setResending(true);
                         const result = await resendVerificationEmail();
                         setStatusMessage(result.message);
-                        localStorage.setItem(STORAGE_KEY, Date.now().toString());
-                        setCooldownDuration(result.cooldownSeconds || COOLDOWN_SECONDS);
-                        setCooldownRemaining(result.cooldownSeconds || COOLDOWN_SECONDS);
+                        startCooldown(result.cooldownSeconds || COOLDOWN_SECONDS);
                         setResending(false);
                       }}
                       className="block mx-auto px-5 py-2 rounded-full border border-black/10 dark:border-white/20 text-xs font-medium uppercase tracking-wider disabled:opacity-60"
@@ -352,6 +357,7 @@ export const Contact: React.FC = () => {
                         siteKey={TURNSTILE_SITE_KEY}
                         onVerify={handleTurnstileVerify}
                         onExpire={handleTurnstileExpire}
+                        onError={handleTurnstileExpire}
                         resetTrigger={turnstileResetCount}
                       />
                     )}
