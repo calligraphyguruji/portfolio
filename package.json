@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:contact:simulation": "node --experimental-strip-types scripts/testContactSimulation.ts",
     "contact:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/check-contact-config.mjs",
     "build:api": "esbuild server/copilotVercel.ts --bundle --platform=node --format=esm --packages=external --outfile=api/copilot.js",
     "build": "npm run build:api && tsc -b && vite build",

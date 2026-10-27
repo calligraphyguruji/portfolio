@@ -152,6 +152,43 @@ export function recordDirectRateLimit(
   emailRateStore.set(normEmail, { timestamps: activeEmail });
 }
 
+// Reserve before dispatch so concurrent requests cannot both pass the checks.
+// With PostgreSQL, reservations survive cold starts and are shared by instances.
+async function reserveSubmission(ip: string, email: string, subject: string, message: string) {
+  const fingerprint = hashToken(`${email.toLowerCase()}:${subject.trim()}:${message.trim()}`);
+  if (!process.env.DATABASE_URL) {
+    checkDirectRateLimit(ip, email, subject, message);
+    recordDirectRateLimit(ip, email, subject, message);
+    return async () => { duplicateHashes.delete(fingerprint); };
+  }
+
+  const duplicateKey = `direct:duplicate:${fingerprint}`;
+  const ipKey = `direct:ip:${hashToken(ip)}`;
+  const emailKey = `direct:email:${hashToken(email.toLowerCase().trim())}`;
+  const id = await transaction(async client => {
+    for (const key of [duplicateKey, ipKey, emailKey].sort()) {
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [key]);
+    }
+    const { rows } = await client.query(
+      `SELECT key, count(*)::int AS count, max(created_at) > now() - interval '30 seconds' AS burst
+       FROM contact_rate_events WHERE key = ANY($1::text[])
+       AND created_at > now() - interval '1 hour'
+       AND (key <> $2 OR created_at > now() - interval '15 minutes') GROUP BY key`,
+      [[duplicateKey, ipKey, emailKey], duplicateKey]
+    );
+    if (rows.some(row => row.key === duplicateKey)) throw duplicateError();
+    if (rows.some(row =>
+      (row.key === ipKey && (row.burst || row.count >= configuredLimit('CONTACT_MAX_IP_PER_HOUR', 5))) ||
+      (row.key === emailKey && row.count >= configuredLimit('CONTACT_MAX_EMAIL_PER_HOUR', 3))
+    )) throw limitError();
+    await client.query('INSERT INTO contact_rate_events (key) VALUES ($1), ($2)', [ipKey, emailKey]);
+    const inserted = await client.query('INSERT INTO contact_rate_events (key) VALUES ($1) RETURNING id', [duplicateKey]);
+    return inserted.rows[0].id;
+  });
+  // Keep rate attempts on failure, but allow a new CAPTCHA and retry after cooldown.
+  return async () => { await database().query('DELETE FROM contact_rate_events WHERE id = $1', [id]); };
+}
+
 export function siteUrl(): string {
   try {
     const url = new URL(process.env.CONTACT_SITE_URL || 'https://calligraphyguruji.dev');
@@ -279,12 +316,8 @@ export async function verifyTurnstile(token: unknown, ip: string): Promise<void>
     );
   }
 
-  const secretKey = process.env.TURNSTILE_SECRET_KEY;
+  const secretKey = process.env.TURNSTILE_SECRET_KEY?.trim();
   if (!secretKey) {
-    if (process.env.NODE_ENV !== 'production' || token === 'test-challenge') {
-      verifiedTurnstileTokens.set(tokenHash, Date.now() + TOKEN_EXPIRY_MS);
-      return;
-    }
     throw new ContactError(
       503,
       'configuration_error',
@@ -307,6 +340,11 @@ export async function verifyTurnstile(token: unknown, ip: string): Promise<void>
       body: JSON.stringify({ secret: secretKey, response: token, remoteip: ip }),
     });
     data = await response.json();
+    if (!data || typeof data.success !== 'boolean' ||
+      (data['error-codes'] !== undefined && (!Array.isArray(data['error-codes']) ||
+        !data['error-codes']!.every(code => typeof code === 'string')))) {
+      throw new Error('Invalid Siteverify response');
+    }
   } catch {
     throw new ContactError(
       502,
@@ -340,8 +378,7 @@ export async function verifyTurnstile(token: unknown, ip: string): Promise<void>
   const defaultHostnames = [
     'calligraphyguruji.dev',
     'www.calligraphyguruji.dev',
-    'localhost',
-    '127.0.0.1',
+    ...(process.env.NODE_ENV !== 'production' ? ['localhost', '127.0.0.1'] : []),
   ];
   const configuredHostnames = (process.env.TURNSTILE_ALLOWED_HOSTNAMES || '')
     .split(',')
@@ -350,9 +387,9 @@ export async function verifyTurnstile(token: unknown, ip: string): Promise<void>
   const hostnames = configuredHostnames.length > 0 ? configuredHostnames : defaultHostnames;
 
   if (
-    !data.success ||
+    data.success !== true ||
     !data.hostname ||
-    (!hostnames.includes(data.hostname) && !data.hostname.endsWith('vercel.app'))
+    !hostnames.includes(data.hostname)
   ) {
     throw new ContactError(
       400,
@@ -380,13 +417,9 @@ export async function submitContactMessage(
   // 1. Validate form fields & quality
   const input = validateInput(body);
 
-  // 2. Honeypot check: automated bots will silently succeed without sending email
+  // 2. Reject honeypot submissions without claiming email acceptance
   if (input.company_hp) {
-    return {
-      success: true,
-      code: 'sent',
-      message: directSentMessage,
-    };
+    throw new ContactError(400, 'validation', 'Please check the form fields.');
   }
 
   // 3. CAPTCHA verification
@@ -394,22 +427,26 @@ export async function submitContactMessage(
   await verifyTurnstile(input.turnstileToken, ip);
 
   // 4. Rate limiting & duplicate detection
-  checkDirectRateLimit(ip, input.email, input.subject, input.message);
+  const releaseDuplicate = await reserveSubmission(ip, input.email, input.subject, input.message);
 
   // 5. Send email via configured provider (Resend primary, EmailJS fallback)
-  const result = await sendDirectContactEmail(
-    {
-      name: input.name,
-      email: input.email,
-      subject: input.subject,
-      message: input.message,
-      origin,
-    },
-    `contact/${hashToken(`${input.email}:${Date.now()}`)}`
-  );
-
-  // 6. Record submission in rate limiter
-  recordDirectRateLimit(ip, input.email, input.subject, input.message);
+  let result;
+  try {
+    result = await sendDirectContactEmail(
+      {
+        name: input.name,
+        email: input.email,
+        subject: input.subject,
+        message: input.message,
+        origin,
+      },
+      `contact/${hashToken(JSON.stringify([input.name, input.email, input.subject, input.message]))}`
+    );
+  } catch (error) {
+    await releaseDuplicate().catch(() => { /* Preserve the original dispatch error. */ });
+    throw error;
+  }
+  // Reservations already counted this attempt, including concurrent requests.
 
   // 7. Optional persistence in Neon PostgreSQL if configured
   if (process.env.DATABASE_URL) {
@@ -456,24 +493,14 @@ export async function requestVerification(
 }
 
 export async function resendVerification(receipt: string, ip: string) {
-  return {
-    success: true,
-    code: 'verification_sent',
-    message: sentMessage,
-    cooldownSeconds: cooldownSeconds(),
-  };
+  throw new ContactError(410, 'expired', 'Please submit your message again using the contact form.');
 }
 
 export async function verifySubmission(token: unknown, ip: string) {
   if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
     throw invalidLink();
   }
-  return {
-    success: true,
-    code: 'accepted',
-    message:
-      '✅ Email Verified Successfully! Your message has been sent to Aman. Thank you for reaching out! I’ll get back to you as soon as possible.',
-  };
+  throw new ContactError(410, 'expired', 'Please submit your message again using the contact form.');
 }
 
 export async function maintenance() {

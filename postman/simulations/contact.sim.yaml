@@ -1,0 +1,9 @@
+simulation: contact
+routing: path
+mocks:
+  - name: resend
+    routeKey: resend
+    path: postman/mocks/contact-resend/config.yaml
+  - name: turnstile
+    routeKey: turnstile
+    path: postman/mocks/contact-turnstile/config.yaml

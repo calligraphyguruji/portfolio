@@ -1,71 +1,105 @@
-# Contact API startup and delivery investigation — 2026-10-27
+# Contact email investigation — 2026-10-27
 
-## Root cause and evidence
+## Current production evidence and root-cause limit
 
-The deployed contact routes returned HTTP 500 `FUNCTION_INVOCATION_FAILED` for GET requests, an empty POST body, and even a disallowed origin. These probes cannot send email. `/api/copilot` remained healthy. This establishes a contact function startup failure before the handler's validation, Turnstile request, database queries or Resend request. The frontend tried to parse Vercel's plain-text error as JSON, then displayed its generic email-service fallback.
+The current live deployment starts its contact function correctly. At 06:28 UTC:
 
-The startup bug was reproduced using the actual `@vercel/node` builder in a temporary directory. It emitted `api/contact/[action].js` containing `export { default } from '../contact.ts'` and `api/contact.js` importing `../server/contact/service.ts`, while shipping those dependencies as `.js` files. Importing the built handler failed:
+- `https://calligraphyguruji.dev/api/contact` redirects with HTTP 308 to the www host.
+- GET `https://www.calligraphyguruji.dev/api/contact` returns HTTP 200 and reports Resend, Turnstile, database and recipient configuration present. Request ID: `d8bc0793-bd5c-4649-bd0d-aa49cd4d03bd`.
+- An empty JSON POST from the allowed www origin returns HTTP 400 `validation`. Request ID: `72414f46-93f1-4ff6-9c6e-181270ae51be`.
 
-```text
-Built handler: api/contact/[action].js runtime: nodejs files: 71
-IMPORT FAILED: ERR_MODULE_NOT_FOUND Cannot find module '.../api/contact.ts'
-```
+These checks cannot send mail. They establish routing and handler startup, not validity of provider credentials, sender domain verification or delivery. The previous version of this report described an earlier function startup failure; that explanation does not match the current live probes.
 
-`rewriteRelativeImportExtensions` was only enabled in `tsconfig.node.json`. Vercel resolves the root `tsconfig.json` for these routes and does not use the application's project reference the same way as `tsc -b`. Adding `rewriteRelativeImportExtensions: true` to the root compiler options corrected the runtime artifact:
+**The exact cause of the reported production send failure remains unconfirmed.** No failed real submission's private runtime log or provider response is accessible. Local Vercel credentials return HTTP 403 from `/v2/user`; no Vercel connector is available. There are no local email/Turnstile credentials. A sanitized failing request log was requested from the operator. Do not assume the provider, missing keys, or database caused the reported failure.
 
-```text
-Built handler: api/contact/[action].js runtime: nodejs files: 73
-IMPORT OK, handler type: function
-```
+The connected Neon account lists a project named `portfolio-mail` and a production branch. The read-only schema query was rejected: `MCP tool call requires approval, but approval policy is never`. Its tables and the website's actual database binding remain unverified; no production SQL or migration ran. Codebase graph tools were unavailable, so discovery used repository source.
 
-A regression test emits only JavaScript artifacts using the root compiler options, imports both entry points and invokes the handlers. It would fail with the previous root configuration. Local native TypeScript tests alone had missed this deployment-only failure.
+## Audited flow and confirmed code defects
 
-A separate read-only Neon inspection found no tables in `neondb` on project `nameless-river-99669120`, branch `production` (`br-small-king-a1xxyknw`). The contact service also requires `contact_submissions` and `contact_rate_events`, so its existing migration must be applied before production can send verification emails.
+`src/components/sections/Contact.tsx` → `src/services/emailService.ts` → same-origin POST `/api/contact` → `api/contact.ts` → `server/contact/service.ts` → Cloudflare Siteverify → rate reservation → `server/contact/email.ts` → Resend REST API (optional existing EmailJS fallback).
 
-## Fixes
+`api/contact/[action].ts` delegates to the same handler. Vercel's SPA rewrite excludes `/api/`; the root TypeScript config already rewrites relative `.ts` imports for emitted functions. `vite.config.ts` provides local API middleware. `server/index.ts` is the separate AI backend, not this contact route.
 
-- Corrected the root TypeScript setting without changing routes or replacing Resend.
-- Added structured, server-only configuration/database/Turnstile/email diagnostics, correlated by a generated request ID. Logs contain only known stage/reason/status fields and missing variable names, never raw exceptions, provider bodies, form data, email addresses, IPs, database URLs, tokens or API key values.
-- Added separate CAPTCHA-service and email-service error codes. Resend 401/403/422/429/5xx failures are diagnosed privately and never reported as successful acceptance.
-- Validated required fields and missing CAPTCHA tokens before infrastructure-dependent work. Missing/invalid configuration fails closed with safe public text.
-- Preserved failed form inputs and reset both CAPTCHA token states. Turnstile error callbacks clear stale tokens. Browser storage failure cannot convert a successful verification-email response into an apparent send error.
-- Preserved the existing 15-minute, single-use mailbox ownership flow, persistent rate limits, atomic consumption, and idempotent outbox delivery. A verification-email success means “check your inbox”, not that the contact message has already reached Aman.
-- Added `npm run contact:check` for operator checks of variable presence, minimum HMAC-secret length, site URL, database connectivity, required tables, RLS and the backend owner role. It sends no email and prints no secret values.
+Confirmed defects fixed directly in the repository:
 
-## Files changed in this fix
+- Missing Turnstile secret allowed a literal `test-challenge` token even in production, and arbitrary tokens in development. All environments now require server-side Siteverify; use Cloudflare's test keys locally. Unlisted preview hostnames are no longer trusted by suffix.
+- The direct Resend path accepted any HTTP 2xx response, even invalid JSON or missing message ID. It now reuses the existing transactional sender and requires a nonempty string acceptance ID.
+- Duplicate/rate checks ran before sending but recorded only after sending, allowing concurrent duplicates and unlimited simultaneous attempts. Reservations now happen before dispatch. With `DATABASE_URL`, PostgreSQL transaction advisory locks and the existing `contact_rate_events` table share limits across instances/cold starts. A configured database failure fails closed and is logged safely. Without a database, limits remain per-process and cannot guarantee distributed enforcement.
+- Provider retry keys included the current time, defeating safe retry. The key now hashes normalized contact content and name. Resend retains idempotency keys for 24 hours, so identical payloads during that window reuse acceptance rather than send another copy. Changing sender/recipient configuration during a retry can cause a safe provider idempotency conflict.
+- Ambiguous Resend failures could switch providers after an email might already have been accepted. EmailJS fallback is retained only for definite Resend 400/401/403/422 rejections and complete server-side fallback configuration. EmailJS now has a timeout and requires a successful status plus `OK`. EmailJS has no equivalent provider idempotency guarantee; its ambiguous network failures cannot establish whether a message was accepted.
+- Honeypot and obsolete verification endpoints falsely claimed successful sending without dispatching mail. Honeypot requests now fail validation; obsolete verification/resend requests return an expired-link response directing visitors to submit again.
+- Frontend submission now has a synchronous in-flight guard and resets CAPTCHA after success as well as failure. Its request timeout accommodates the API's 60-second execution budget. Existing behavior preserves entered fields on failure and clears them only after backend acceptance.
 
-`tsconfig.json`; `api/contact.ts`; `server/contact/service.ts`; `server/contact/email.ts`; new `server/contact/errors.ts`; `src/services/emailService.ts`; `src/components/sections/Contact.tsx`; `tests/contactApi.test.ts`; new `tests/contactRuntime.test.ts`; new `scripts/check-contact-config.mjs`; `package.json`; this report.
+Reply-To remains the visitor's validated email; the sender stays on the configured domain. HTML escaping, plain-text content, validation, body-size limits and sanitized diagnostics remain in place. No new dependencies, styles, layout, typography, animations or other portfolio sections changed.
 
-## Verification
+## API contract
 
-- Real Vercel Node builder: corrected artifact imports successfully.
-- HTTP smoke check against that emitted artifact: GET 405, disallowed-origin POST 403, missing fields 400, missing infrastructure configuration 503 with a safe `configuration_error` response.
-- Full suite with isolated local PostgreSQL schema: 218 passing tests, no failures/skips. Cloudflare and Resend are mocked; no real emails are sent.
-- `npm run build`: passes TypeScript checks, API bundling and Vite compilation. Existing bundle-size warning remains.
-- `git diff --check`: passes. No lint script is configured in this repository.
-- One-off server-rendered comparison: initial contact HTML exactly matches the previous committed component, including the Turnstile container. Navbar, stylesheet, typography, spacing, animations and responsive classes are unchanged. This is not a desktop/mobile pixel comparison.
-- `npm run contact:check` correctly fails locally: there is no `.env` or `.env.local` in this workspace and required values are absent. This is not evidence that those values are absent from Vercel.
+POST `/api/contact`, `Content-Type: application/json`, same-origin `Origin` header. Body: `name`, `email`, optional `subject`, `message`, `turnstileToken`, optional empty `company_hp`.
 
-## Production status and remaining actions
+- 200: `{ success: true, code: 'sent', message, requestId }` only after provider acceptance.
+- 400: invalid fields or CAPTCHA (`validation` / `turnstile`).
+- 403: origin rejected; 404: unknown action; 413: body too large; 415: wrong content type.
+- 429: `rate_limited` or `duplicate`, with `Retry-After: 60` (a retry may still be blocked by an hourly or duplicate window).
+- 502: `email_unavailable` or `turnstile_unavailable`.
+- 503: missing configuration or unexpected infrastructure failure.
 
-No production code, secrets, DNS records or database tables were changed in this investigation. Existing local Vercel credentials return HTTP 403 `Not authorized`, preventing production-log, secret-configuration and deployment inspection. Runtime logs were requested from the owner; the startup mechanism above was independently reproduced from the source and builder rather than asserted from inaccessible production logs.
+Default limits: 30-second IP burst, 5 attempts/IP/hour, 3 attempts/email/hour, 15-minute content duplicate window. Failed email attempts count against limits; their duplicate reservation is released to permit a later retry with fresh CAPTCHA. No raw provider bodies, credentials, visitor messages or stack traces are returned/logged. CAPTCHA tokens are also rejected by Cloudflare when expired or reused.
 
-The Neon migration tool blocked the attempted additive migration: `MCP tool call requires approval, but approval policy is never`. The migration did not run. Run the existing [001_contact_verification.sql](../migrations/001_contact_verification.sql) once through Neon's SQL Editor as the backend table-owner role, or using a direct database connection. Do not bypass the tool's approval restriction.
+## Environment and deployment requirements
 
-Required Vercel Production variables:
+Configure in **Vercel → project → Settings → Environment Variables → Production**, preserving existing correct values, then redeploy:
 
-- `DATABASE_URL` — the backend owner's private PostgreSQL TLS connection string (pooled for application traffic).
-- `RESEND_API_KEY` — an active Resend sending key.
-- `EMAIL_FROM` — a valid address on the domain verified in Resend, optionally with a display name.
-- `TURNSTILE_SECRET_KEY` — existing Cloudflare secret.
-- `VITE_TURNSTILE_SITE_KEY` — existing public widget key.
-- `CONTACT_RATE_LIMIT_SECRET` — at least 32 random characters.
-- `CRON_SECRET` — maintenance bearer credential.
+| Variable | Requirement |
+| --- | --- |
+| `RESEND_API_KEY` | Server-only active sending key, authorized for the sender domain. Presence is reported by live health; validity remains unverified. |
+| `EMAIL_FROM` | Address on a domain verified in Resend; optional display name. Defaults to `Aman Mishra Portfolio <contact@calligraphyguruji.dev>`. Verify that domain's DNS in Resend; no sender verification was performed here. |
+| `CONTACT_RECEIVER_EMAIL` | Intended recipient inbox; existing default is `amanmishra7774@gmail.com`. |
+| `TURNSTILE_SECRET_KEY` | Server-only secret matching the public widget key. |
+| `VITE_TURNSTILE_SITE_KEY` | Public widget key, required at frontend build time. |
+| `TURNSTILE_ALLOWED_HOSTNAMES` | `calligraphyguruji.dev,www.calligraphyguruji.dev`; add only specifically trusted preview hostnames if needed. |
+| `CONTACT_SITE_URL` | `https://calligraphyguruji.dev`; explicit trusted site origin. |
+| `DATABASE_URL` | Server-only PostgreSQL connection string for shared production limits. The existing migration must be applied by the backend table owner before release. |
+| `CRON_SECRET` | Server-only credential for existing authenticated maintenance cron. |
 
-Keep `CONTACT_SITE_URL=https://calligraphyguruji.dev`, `TURNSTILE_ALLOWED_HOSTNAMES=calligraphyguruji.dev,www.calligraphyguruji.dev`, and the existing `CONTACT_RECEIVER_EMAIL` (or the unchanged default inbox). Confirm sender SPF/DKIM/DMARC and disable verification-link click tracking in Resend. Existing optional contact limits remain unchanged.
+Optional existing fallback: `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY` if required by account settings. Its existing template must target the intended recipient and map `reply_to`; account/template settings could not be verified. Primary Resend configuration remains preferred. Do not put any private value in a `VITE_` variable. Optional `CONTACT_MAX_IP_PER_HOUR` and `CONTACT_MAX_EMAIL_PER_HOUR` adjust limits. `CONTACT_RATE_LIMIT_SECRET` from older documentation is not referenced by the current implementation.
 
-After configuration, push this fix and redeploy Vercel so the changed root compiler options apply to the functions. Inspect the private `[contact]` event if any request still fails; its request ID and sanitized reason distinguish missing configuration, missing schema, CAPTCHA availability, and provider rejection. Confirm GET `/api/contact/request-verification` returns 405 instead of a platform 500. Then submit using your own mailbox, receive the verification email, click its link, and confirm the final message in the recipient inbox. Actual production email receipt and delivery have not been verified.
+**Migration prerequisite:** inspect the target database as the backend role. If the contact tables do not exist, apply `migrations/001_contact_verification.sql` once. If they already exist, verify schema/permissions; do not blindly rerun its CREATE TABLE statements. Reservations now require the rate-events table when a database URL is configured. Run `npm run contact:check` with the target deployment variables available securely; it prints configuration status without private values. This checks presence/database readability, not provider authentication or delivery.
 
-## Final self-check
+No production code, configuration, DNS, tables or deployment were changed. Release still requires authorized Vercel access and database readiness. After deploying, inspect a real failed submission's `[contact]` diagnostic by `requestId`: `authentication_failed`, `sender_or_permission_rejected`, `provider_rate_limited`, `provider_unavailable`, or database/Turnstile stages distinguish the failure. Confirm the corresponding private provider event and sender verification before changing credentials/DNS.
 
-Accuracy 4/5: startup failure and fix reproduced with the Vercel builder; production runtime logs are unavailable. Completeness 3/5: repository fix, diagnostics and tests are complete, but migration/deployment and live mailbox receipt remain blocked. Clarity 4/5: separate evidence for startup, schema and provider states. Actionability 4/5: exact migration, variables, diagnostic command and release checks are provided; operator access is still necessary. Conciseness 4/5: detailed evidence is kept here so the handoff can remain short. Overall 3.8/5. The remaining completeness gap requires the authorized operator to apply the migration and redeploy, then test their mailbox.
+Then submit from the deployed form using a real solved CAPTCHA and an owner-controlled mailbox, confirm a provider acceptance ID, and verify the message arrives in the configured recipient inbox (including spam). Provider acceptance alone is not inbox delivery. **Real production delivery remains unverified.**
+
+## Changed files
+
+- `api/contact.ts`
+- `server/contact/email.ts`
+- `server/contact/service.ts`
+- `src/components/sections/Contact.tsx`
+- `src/services/emailService.ts`
+- `tests/contactApi.test.ts`
+- `scripts/check-contact-config.mjs`
+- `scripts/testContactSimulation.ts`
+- `.env.example`
+- `package.json`
+- `postman/mocks/contact-resend/config.yaml`, `default.js`
+- `postman/mocks/contact-turnstile/config.yaml`, `default.js`
+- `postman/simulations/contact.sim.yaml`, `contact.context.md`
+- `docs/contact-email-debugging.md`
+
+## Validation
+
+- Contact tests: 53 passing, including all 12 requested scenarios and additional concurrent duplicates, hourly/burst limits, malformed acceptance, fallback behavior, stable idempotency keys, HTML escaping, origin restrictions and retired-endpoint failures.
+- Full `npm test`: 219 passing, no failures/skips.
+- `npm run test:contact:simulation`: 16 checks passed against local Postman HTTP stand-ins and a real isolated local PostgreSQL schema, removed afterward. Both upstream members received traffic. No real email sent. See `postman/simulations/contact.context.md` for reproduction.
+- `npm run build`: TypeScript checks, API bundling and production Vite build passed. Existing bundle-size warning remains.
+- `git diff --check`: passed. No lint script/config is provided by this repository, so no lint pass is claimed.
+- `npm run contact:check`: correctly fails locally because `.env`/`.env.local` and required credentials are absent. This does not establish missing production variables.
+- No browser pixel comparison or real solved-CAPTCHA production submission was performed. Contact JSX/layout/classes are unchanged.
+
+## Provider references
+
+[Cloudflare server validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [Resend send API](https://resend.com/docs/api-reference/emails/send-email), [Resend idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys), [EmailJS REST API](https://www.emailjs.com/docs/rest-api/send/).
+
+## Self-evaluation
+
+Accuracy 4/5: local defects reproduced and checked, but current production failure has no private log evidence. Completeness 3/5: implementation and tests are complete locally; actual production diagnosis, deployment, target schema and inbox receipt remain unverified. Clarity 4/5: separates observed production behavior from local fixes, with a necessarily detailed release guide. Actionability 4/5: exact variables, migration prerequisite and commands supplied; an authorized operator is still needed. Conciseness 4/5: the report is detailed to preserve reproducibility. Overall 3.8/5. Highest-impact next step: obtain the failed production request log, validate the target schema/provider configuration, deploy, and confirm recipient inbox receipt. The incomplete production evidence is explicitly disclosed so the assessment matches the user's outstanding objective.

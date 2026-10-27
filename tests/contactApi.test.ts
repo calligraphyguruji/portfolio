@@ -3,7 +3,7 @@ import { beforeEach, afterEach, describe, test } from 'node:test';
 import handler from '../api/contact.ts';
 import { isValidEmailFormat, validateMessageQuality } from '../server/contact/validation.ts';
 import { validateInput, resetMemoryStoresForTesting } from '../server/contact/service.ts';
-import { escapeHtml } from '../server/contact/email.ts';
+import { escapeHtml, sendDirectContactEmail } from '../server/contact/email.ts';
 
 const validPayload = {
   name: 'Test Visitor',
@@ -129,6 +129,7 @@ describe('Contact API & Email Sending Scenarios (All 12 Required Tests)', () => 
   let resendStatus = 200;
   let resendNetworkCrash = false;
   let sentEmails: any[] = [];
+  let resendAcknowledgement: unknown = { id: 'mock-email-id' };
 
   async function makeRequest(
     body: unknown = validPayload,
@@ -179,7 +180,10 @@ describe('Contact API & Email Sending Scenarios (All 12 Required Tests)', () => 
     resendStatus = 200;
     resendNetworkCrash = false;
     sentEmails = [];
+    resendAcknowledgement = { id: 'mock-email-id' };
 
+    delete process.env.DATABASE_URL;
+    for (const key of Object.keys(process.env).filter(key => /^(VITE_)?EMAILJS_/.test(key))) delete process.env[key];
     process.env.NODE_ENV = 'test';
     process.env.RESEND_API_KEY = 're_test_mock_resend_key';
     process.env.EMAIL_FROM = 'Aman Mishra Portfolio <contact@calligraphyguruji.dev>';
@@ -222,12 +226,12 @@ describe('Contact API & Email Sending Scenarios (All 12 Required Tests)', () => 
         const parsedBody = JSON.parse(String(init?.body || '{}'));
         sentEmails.push(parsedBody);
         return new Response(
-          JSON.stringify({ id: 'resend_mock_id_12345' }),
+          JSON.stringify(resendAcknowledgement),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }
 
-      return originalFetch(url, init);
+      throw new Error('Unexpected external request in contact unit test');
     };
   });
 
@@ -443,4 +447,176 @@ describe('Contact API & Email Sending Scenarios (All 12 Required Tests)', () => 
     );
     assert.ok(res.data.requestId);
   });
+
+  test('missing production Turnstile secret rejects even the old bypass token', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.TURNSTILE_SECRET_KEY;
+    const result = await makeRequest({ ...validPayload, turnstileToken: 'test-challenge' });
+    assert.equal(result.status, 503);
+    assert.equal(result.data.code, 'configuration_error');
+    assert.equal(sentEmails.length, 0);
+  });
+
+  test('Cloudflare expiry is rejected before email dispatch', async () => {
+    turnstileSuccess = false;
+    turnstileErrorCodes = ['timeout-or-duplicate'];
+    const result = await makeRequest();
+    assert.equal(result.status, 400);
+    assert.equal(result.data.code, 'turnstile');
+    assert.equal(sentEmails.length, 0);
+  });
+
+  test('unlisted Turnstile hostnames cannot pass suffix checks', async () => {
+    for (const hostname of ['evilvercel.app', 'attacker.vercel.app']) {
+      turnstileHostname = hostname;
+      const result = await makeRequest({ ...validPayload, turnstileToken: hostname });
+      assert.equal(result.status, 400);
+      assert.equal(sentEmails.length, 0);
+    }
+  });
+
+  test('Cloudflare configuration errors and outages remain distinct from email errors', async () => {
+    turnstileErrorCodes = ['invalid-input-secret'];
+    let result = await makeRequest();
+    assert.equal(result.data.code, 'turnstile_unavailable');
+    turnstileNetworkCrash = true;
+    result = await makeRequest();
+    assert.equal(result.data.code, 'turnstile_unavailable');
+    assert.equal(sentEmails.length, 0);
+  });
+
+  test('all provider HTTP failures remain failures with safe responses', async () => {
+    for (const status of [400, 401, 403, 404, 422, 429, 500, 503]) {
+      resetMemoryStoresForTesting();
+      resendStatus = status;
+      const result = await makeRequest();
+      assert.equal(result.status, 502);
+      assert.equal(result.data.success, false);
+      assert.equal(result.data.code, 'email_unavailable');
+      assert.ok(!JSON.stringify(result.data).includes('Resend mock failure'));
+    }
+  });
+
+  test('missing or malformed provider acceptance cannot report success', async () => {
+    for (const body of [null, {}, { id: '' }, { id: 123 }]) {
+      resetMemoryStoresForTesting();
+      resendAcknowledgement = body;
+      const result = await makeRequest();
+      assert.equal(result.status, 502);
+      assert.equal(result.data.success, false);
+    }
+  });
+
+  test('simultaneous duplicate submissions dispatch only once', async () => {
+    const results = await Promise.all(['concurrent-1', 'concurrent-2'].map(turnstileToken =>
+      makeRequest({ ...validPayload, turnstileToken })
+    ));
+    assert.deepEqual(results.map(result => result.status).sort(), [200, 429]);
+    assert.equal(sentEmails.length, 1);
+  });
+
+  test('simultaneous different messages from one IP hit burst protection', async () => {
+    const results = await Promise.all(['first', 'second'].map(label => makeRequest({
+      ...validPayload, subject: label, turnstileToken: label,
+    })));
+    assert.deepEqual(results.map(result => result.status).sort(), [200, 429]);
+    assert.equal(sentEmails.length, 1);
+  });
+
+  test('untrusted origins and unknown actions cannot dispatch email', async () => {
+    for (const origin of ['https://attacker.vercel.app', 'https://localhost.attacker.example']) {
+      assert.equal((await makeRequest(validPayload, { origin })).status, 403);
+    }
+    assert.equal((await makeRequest(validPayload, { url: '/api/contact/typo' })).status, 404);
+    assert.equal(sentEmails.length, 0);
+  });
+
+  test('legacy verification endpoints cannot claim an unsent message was delivered', async () => {
+    for (const action of ['verify', 'resend-verification']) {
+      const result = await makeRequest({ token: 'a'.repeat(43) }, { url: `/api/contact/${action}` });
+      assert.equal(result.status, 410);
+      assert.equal(result.data.success, false);
+    }
+    assert.equal(sentEmails.length, 0);
+  });
+
+  test('honeypot submissions cannot falsely claim provider acceptance', async () => {
+    const result = await makeRequest({ ...validPayload, company_hp: 'bot' });
+    assert.equal(result.status, 400);
+    assert.equal(result.data.success, false);
+    assert.equal(sentEmails.length, 0);
+  });
+
+
+  test('EmailJS requires both a successful HTTP status and its OK acknowledgement', async () => {
+    delete process.env.RESEND_API_KEY;
+    process.env.EMAILJS_SERVICE_ID = 'mock-service';
+    process.env.EMAILJS_TEMPLATE_ID = 'mock-template';
+    process.env.EMAILJS_PUBLIC_KEY = 'mock-public';
+    for (const [status, body] of [[403, 'OK'], [200, 'Unexpected'], [200, 'OK']] as const) {
+      globalThis.fetch = async (url, init) => {
+        assert.equal(String(url), 'https://api.emailjs.com/api/v1.0/email/send');
+        assert.ok(init?.signal);
+        assert.equal(JSON.parse(String(init?.body)).template_params.reply_to, validPayload.email);
+        return new Response(body, { status });
+      };
+      if (status === 200 && body === 'OK') {
+        assert.equal((await sendDirectContactEmail(validPayload)).success, true);
+      } else {
+        await assert.rejects(sendDirectContactEmail(validPayload), { code: 'email_unavailable' });
+      }
+    }
+  });
+
+  test('EmailJS fallback only runs after a definite Resend rejection', async () => {
+    process.env.EMAILJS_SERVICE_ID = 'mock-service';
+    process.env.EMAILJS_TEMPLATE_ID = 'mock-template';
+    process.env.EMAILJS_PUBLIC_KEY = 'mock-public';
+    let fallbackCalls = 0;
+    for (const status of [401, 500, 200]) {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('emailjs')) { fallbackCalls++; return new Response('OK'); }
+        return new Response('{}', { status });
+      };
+      if (status === 401) assert.equal((await sendDirectContactEmail(validPayload)).provider, 'emailjs');
+      else await assert.rejects(sendDirectContactEmail(validPayload), { code: 'email_unavailable' });
+    }
+    assert.equal(fallbackCalls, 1);
+  });
+
+  test('identical retries use the same Resend idempotency key', async () => {
+    const mockFetch = globalThis.fetch;
+    const keys: string[] = [];
+    globalThis.fetch = async (url, init) => {
+      if (String(url).includes('api.resend.com')) keys.push(new Headers(init?.headers).get('Idempotency-Key')!);
+      return mockFetch(url, init);
+    };
+    assert.equal((await makeRequest()).status, 200);
+    resetMemoryStoresForTesting();
+    assert.equal((await makeRequest({ ...validPayload, turnstileToken: 'fresh-retry' })).status, 200);
+    assert.equal(keys.length, 2); assert.ok(keys[0]); assert.equal(keys[0], keys[1]);
+  });
+
+  test('message special characters are escaped in HTML and preserved in plain text', async () => {
+    const message = validPayload.message + ' <script>alert("hello")</script> & café';
+    const result = await makeRequest({ ...validPayload, message });
+    assert.equal(result.status, 200);
+    assert.ok(sentEmails[0].html.includes('&lt;script&gt;'));
+    assert.ok(!sentEmails[0].html.includes('<script>'));
+    assert.ok(sentEmails[0].text.includes(message));
+  });
+
+  test('hourly email limit remains effective across different IPs', async () => {
+    const clock = Date.now;
+    let now = clock();
+    Date.now = () => now;
+    try {
+      for (let count = 0; count < 4; count++) {
+        now += 31000;
+        const result = await makeRequest({ ...validPayload, subject: `Project ${count}`, turnstileToken: `hourly-${count}` }, { ip: `192.0.2.${count}` });
+        assert.equal(result.status, count < 3 ? 200 : 429);
+      }
+    } finally { Date.now = clock; }
+  });
+
 });

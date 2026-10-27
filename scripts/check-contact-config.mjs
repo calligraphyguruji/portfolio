@@ -23,7 +23,7 @@ const hasTurnstileSiteKey = Boolean(process.env.VITE_TURNSTILE_SITE_KEY?.trim())
 console.log(`TURNSTILE_SECRET_KEY: ${hasTurnstileSecret ? 'present' : 'MISSING'}`);
 console.log(`VITE_TURNSTILE_SITE_KEY: ${hasTurnstileSiteKey ? 'present' : 'MISSING'}`);
 
-let valid = hasProvider && hasTurnstileSecret;
+let valid = hasProvider && hasTurnstileSecret && hasTurnstileSiteKey;
 
 try {
   const site = new URL(process.env.CONTACT_SITE_URL || 'https://calligraphyguruji.dev');
@@ -35,7 +35,7 @@ try {
 }
 
 if (process.env.DATABASE_URL) {
-  console.log('DATABASE_URL: present (optional persistence)');
+  console.log('DATABASE_URL: present (shared rate limits and optional message persistence)');
   const client = new pg.Client({
     connectionString: process.env.DATABASE_URL,
     connectionTimeoutMillis: 10000,
@@ -48,16 +48,19 @@ if (process.env.DATABASE_URL) {
       WHERE n.nspname='public' AND c.relname IN ('contact_submissions','contact_rate_events') AND c.relkind='r'`);
     for (const table of ['contact_submissions', 'contact_rate_events']) {
       const row = result.rows.find(item => item.relname === table);
-      console.log(`${table}: ${row ? 'ready' : 'not found in database'}`);
+      if (!row) valid = false;
+      if (row) await client.query(`SELECT 1 FROM ${table} LIMIT 0`);
+      console.log(`${table}: ${row ? 'readable' : 'not found in database'}`);
     }
   } catch {
-    console.log('PostgreSQL: connection check failed (in-memory rate limiter active as fallback)');
+    valid = false;
+    console.log('PostgreSQL: connection check failed; configured database must be reachable for shared rate limits.');
   } finally {
     await client.end();
   }
 } else {
-  console.log('DATABASE_URL: unset (using robust in-memory sliding-window rate limiting & deduplication)');
+  console.log('DATABASE_URL: unset (using per-process rate limits only; configure DATABASE_URL for shared production limits)');
 }
 
-console.log(`\nOverall Status: ${valid ? 'READY FOR PRODUCTION' : 'CONFIGURATION INCOMPLETE'}`);
+console.log(`\nLocal configuration checks: ${valid ? 'PASS' : 'INCOMPLETE'}. Provider credentials, sender verification and live delivery still require validation.`);
 process.exitCode = valid ? 0 : 1;

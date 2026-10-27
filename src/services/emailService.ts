@@ -89,7 +89,7 @@ export async function contactRequest(action: string, body: unknown): Promise<Con
     const response = await fetch(endpoint, {
       method: 'POST',
       credentials: 'same-origin',
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(65000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });

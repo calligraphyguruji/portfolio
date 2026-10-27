@@ -23,6 +23,7 @@ const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 export const Contact: React.FC = () => {
   const lastSubmissionAt = useRef(0);
+  const submitting = useRef(false);
   const [cooldownDuration, setCooldownDuration] = useState(COOLDOWN_SECONDS);
   const [showForm, setShowForm] = useState(true);
   const [formData, setFormData] = useState<ContactFormData>({
@@ -91,7 +92,7 @@ export const Contact: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (status === 'loading') return;
+    if (submitting.current || status === 'loading') return;
 
     // 1. Client-side cooldown guard
     if (cooldownRemaining > 0) {
@@ -121,6 +122,7 @@ export const Contact: React.FC = () => {
       return;
     }
 
+    submitting.current = true;
     setStatus('loading');
     setStatusMessage('');
 
@@ -147,6 +149,7 @@ export const Contact: React.FC = () => {
           turnstileToken: '',
         });
         setTurnstileToken('');
+        setTurnstileResetCount((prev) => prev + 1);
         // Record timestamp for client-side cooldown (UX guard)
         startCooldown(response.cooldownSeconds || COOLDOWN_SECONDS);
       } else {
@@ -163,6 +166,8 @@ export const Contact: React.FC = () => {
       setStatusMessage('We couldn’t send your message right now. Please try again shortly.');
       setTurnstileResetCount((prev) => prev + 1);
       handleTurnstileExpire();
+    } finally {
+      submitting.current = false;
     }
   };
 

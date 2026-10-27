@@ -1,0 +1,9 @@
+version: 1
+name: contact-turnstile
+slug: contact-turnstile
+protocol: http
+interceptRequests: true
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true

@@ -18,6 +18,7 @@ export default async function handler(req: any, res: any) {
   res.setHeader('X-Request-Id', requestId);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Vary', 'Origin');
 
   const incomingOrigin = req.headers?.origin || '';
   const origins = new Set([
@@ -36,14 +37,8 @@ export default async function handler(req: any, res: any) {
     try {
       const url = new URL(origin);
       if (
-        url.hostname === 'calligraphyguruji.dev' ||
-        url.hostname === 'www.calligraphyguruji.dev' ||
-        url.hostname.endsWith('.vercel.app')
-      ) {
-        return true;
-      }
-      if (
         process.env.NODE_ENV !== 'production' &&
+        url.origin === origin &&
         (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
       ) {
         return true;
@@ -105,12 +100,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const origin = req.headers?.origin;
-    const isOriginAllowed =
-      typeof origin === 'string' &&
-      (origins.has(origin) ||
-        origin.endsWith('.vercel.app') ||
-        (process.env.NODE_ENV !== 'production' &&
-          (origin.includes('localhost') || origin.includes('127.0.0.1'))));
+    const isOriginAllowed = typeof origin === 'string' && isAllowedOrigin(origin);
 
     if (!isOriginAllowed) {
       return res.status(403).json({
@@ -156,9 +146,11 @@ export default async function handler(req: any, res: any) {
           /(?:^|;\s*)contact_receipt=([A-Za-z0-9_-]{43})(?:;|$)/
         )?.[1] || '';
       result = await resendVerification(receipt, ip);
-    } else {
+    } else if (['send', 'request-verification'].includes(action)) {
       // Direct send & backward-compatible 'request-verification' / 'send'
       result = await submitContactMessage(body, ip, incomingOrigin);
+    } else {
+      return res.status(404).json({ success: false, message: 'Endpoint not found.', requestId });
     }
 
     return res.status(200).json({ ...result, requestId });

@@ -1,4 +1,5 @@
-import { ContactError } from './errors.ts';
+import { randomUUID } from 'node:crypto';
+import { ContactError, reportContactError } from './errors.ts';
 
 export interface EmailPayload {
   from: string;
@@ -41,7 +42,7 @@ export function getActiveEmailProvider(): 'resend' | 'emailjs' | 'none' {
 
 export async function sendTransactionalEmail(payload: EmailPayload, key: string): Promise<string> {
   if (!process.env.RESEND_API_KEY?.trim()) {
-    throw new ContactError(503, 'configuration_error', 'Email service is not configured. Missing RESEND_API_KEY.', {
+    throw new ContactError(503, 'configuration_error', 'We couldn’t send your message right now. Please try again shortly.', {
       stage: 'configuration',
       reason: 'missing_environment',
       fields: ['RESEND_API_KEY'],
@@ -97,7 +98,7 @@ export async function sendTransactionalEmail(payload: EmailPayload, key: string)
 
 export async function sendDirectContactEmail(
   input: DirectContactInput,
-  idempotencyKey?: string
+  idempotencyKey: string = randomUUID()
 ): Promise<{ success: boolean; provider: string; id?: string }> {
   const provider = getActiveEmailProvider();
 
@@ -173,64 +174,20 @@ export async function sendDirectContactEmail(
 </html>
     `.trim();
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY!.trim()}`,
-      'Content-Type': 'application/json',
-    };
-    if (idempotencyKey) {
-      headers['Idempotency-Key'] = idempotencyKey;
-    }
-
     try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        signal: AbortSignal.timeout(10000),
-        headers,
-        body: JSON.stringify({
-          from,
-          to,
-          reply_to: email,
-          subject: emailSubject,
-          text: textContent,
-          html: htmlContent,
-        }),
-      });
-
-      if (response.ok) {
-        const data = (await response.json().catch(() => null)) as { id?: string } | null;
-        return { success: true, provider: 'resend', id: data?.id };
-      }
-
-      // If Resend failed and EmailJS is available, attempt fallback
-      const serviceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
-      const templateId = process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
-      const publicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
-      if (!serviceId || !templateId || !publicKey) {
-        throw new ContactError(502, 'email_unavailable', 'We couldn’t send your message right now. Please try again shortly.', {
-          stage: 'email',
-          reason:
-            response.status === 401
-              ? 'authentication_failed'
-              : response.status === 403
-                ? 'sender_or_permission_rejected'
-                : response.status === 429
-                  ? 'provider_rate_limited'
-                  : response.status >= 500
-                    ? 'provider_unavailable'
-                    : 'payload_rejected',
-          upstreamStatus: response.status,
-        });
-      }
-    } catch (err) {
-      if (err instanceof ContactError) throw err;
-      // If network failure on Resend and no EmailJS fallback, throw
-      const serviceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
-      if (!serviceId) {
-        throw new ContactError(502, 'email_unavailable', 'We couldn’t send your message right now. Please try again shortly.', {
-          stage: 'email',
-          reason: 'request_failed',
-        });
-      }
+      const id = await sendTransactionalEmail({
+        from, to, reply_to: email, subject: emailSubject, text: textContent, html: htmlContent,
+      }, idempotencyKey);
+      return { success: true, provider: 'resend', id };
+    } catch (error) {
+      // Fall back only on a definite rejection. A timeout or ambiguous response
+      // may already have sent mail; retry through Resend with the same key.
+      const rejected = error instanceof ContactError &&
+        [400, 401, 403, 422].includes(error.diagnostic?.upstreamStatus || 0);
+      const fallback = process.env.EMAILJS_SERVICE_ID?.trim() &&
+        process.env.EMAILJS_TEMPLATE_ID?.trim() && process.env.EMAILJS_PUBLIC_KEY?.trim();
+      if (!rejected || !fallback) throw error;
+      reportContactError(error, 'delivery', 'resend-fallback');
     }
   }
 
@@ -260,6 +217,7 @@ export async function sendDirectContactEmail(
     try {
       const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
+        signal: AbortSignal.timeout(10000),
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'AmanMishra-Portfolio/1.0',
@@ -269,7 +227,7 @@ export async function sendDirectContactEmail(
       });
 
       const responseText = await response.text();
-      if (response.ok || responseText === 'OK') {
+      if (response.ok && responseText.trim() === 'OK') {
         return { success: true, provider: 'emailjs' };
       }
 
