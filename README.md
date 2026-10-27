@@ -141,13 +141,16 @@ Mantri features an intelligent, provider-independent model discovery and dynamic
 
 ## 🛡️ Contact Form Hardening & Anti-Spam Architecture
 
-Contact messages require mailbox ownership verification before they can reach Aman’s inbox. The existing form and Cloudflare Turnstile widget are preserved.
+The contact form is architected for secure, direct email delivery with multi-provider resilience (Resend primary, EmailJS fallback), Cloudflare Turnstile bot verification, honeypot traps, and sliding-window rate limiting.
 
-`Contact form → server-side Turnstile → private PostgreSQL pending submission → 15-minute verification email → atomic token consumption → idempotent Resend delivery`
+`Visitor submission → Honeypot trap check → Cloudflare Turnstile siteverify → Content quality filter → Sliding-window rate limit & deduplication → Resend API (EmailJS fallback) → Direct delivery to Aman's inbox with visitor Reply-To`
 
-The legacy `/api/contact` route also requests verification and cannot send directly. Persistent IP/email limits, resend cooldowns, hashed single-use tokens, safe HTML escaping, strict origins, and a durable delivery outbox protect the flow across Vercel instances. Provider acceptance is distinguished from pending delivery.
-
-See [contact verification setup and architecture](docs/contact-verification.md) for the migration, required environment variables, sender DNS, retention, scheduler requirements, tests and deployment steps. Production requires the database, authenticated Resend sender, existing Turnstile secrets and maintenance scheduling before rollout.
+Key security and resilience features:
+- **Cloudflare Turnstile Server Verification:** Every submission validates the CAPTCHA token against Cloudflare's Siteverify API (`/turnstile/v0/siteverify`), rejecting invalid, expired, or replayed tokens.
+- **Multi-Provider Failover:** Dispatches through Resend REST API with verified sender and visitor `reply_to`. Automatically falls back to EmailJS if configured.
+- **Professional Quality Evaluator:** Rejects chat spam, keyboard smash, repetitive floods, and promotional text using semantic heuristics while accepting legitimate inquiries.
+- **Rate Limiting & Deduplication:** Sliding-window rate limits (max 5 per IP/hr, max 3 per email/hr, 30s burst guard) and 15-minute SHA-256 duplicate message suppression.
+- **Optional Database Persistence:** Neon PostgreSQL integration records accepted submissions and rate events if `DATABASE_URL` is configured, while gracefully falling back to in-memory protection if the database is offline.
 
 ---
 

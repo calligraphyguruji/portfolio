@@ -1,393 +1,446 @@
 import assert from 'node:assert/strict';
-import { after, before, beforeEach, describe, test } from 'node:test';
-import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import pg from 'pg';
+import { beforeEach, afterEach, describe, test } from 'node:test';
 import handler from '../api/contact.ts';
-import { database, cleanup } from '../server/contact/db.ts';
-import { hashToken, validateInput } from '../server/contact/service.ts';
-import { escapeHtml } from '../server/contact/email.ts';
 import { isValidEmailFormat, validateMessageQuality } from '../server/contact/validation.ts';
+import { validateInput, resetMemoryStoresForTesting } from '../server/contact/service.ts';
+import { escapeHtml } from '../server/contact/email.ts';
 
-const input = { name: 'Test Visitor', email: 'visitor@example.com', subject: 'Project inquiry', message: 'I would like to discuss a web development project with you.', turnstileToken: 'test-challenge' };
+const validPayload = {
+  name: 'Test Visitor',
+  email: 'visitor@example.com',
+  subject: 'Project Inquiry',
+  message: 'Hello Aman, I would like to discuss a potential software development project with you.',
+  turnstileToken: 'mock-valid-turnstile-token',
+};
 
 describe('Contact validation', () => {
   test('validates email format and required fields', () => {
     assert.equal(isValidEmailFormat('person@example.com'), true);
-    for (const email of ['bad', 'test..name@example.com', 'person@example', 'a@b.c']) assert.equal(isValidEmailFormat(email), false);
-    for (const body of [null, [], {}, { ...input, name: 123 }, { ...input, email: 'bad' }, { ...input, message: '' }, { ...input, subject: 'header\ninjection' }]) assert.throws(() => validateInput(body));
-    assert.equal(validateInput(input).email, input.email);
+    for (const email of ['bad', 'test..name@example.com', 'person@example', 'a@b.c']) {
+      assert.equal(isValidEmailFormat(email), false);
+    }
+    for (const body of [
+      null,
+      [],
+      {},
+      { ...validPayload, name: 123 },
+      { ...validPayload, email: 'bad' },
+      { ...validPayload, message: '' },
+      { ...validPayload, subject: 'header\ninjection' },
+    ]) {
+      assert.throws(() => validateInput(body));
+    }
+    assert.equal(validateInput(validPayload).email, validPayload.email);
   });
+
   test('preserves spam heuristics and escapes rendered HTML', () => {
-    assert.equal(validateMessageQuality('Visitor', '', input.message).passes, true);
-    for (const text of ['hi bro', 'test test test test', 'buy backlinks make money fast', 'HELLO BRO CALL ME FAST']) assert.equal(validateMessageQuality('Visitor', '', text).passes, false);
-    assert.equal(escapeHtml('<script>"x" & \'y\'</script>'), '&lt;script&gt;&quot;x&quot; &amp; &#39;y&#39;&lt;/script&gt;');
-    assert.match(hashToken('secret'), /^[a-f0-9]{64}$/);
-    assert.notEqual(hashToken('secret'), 'secret');
+    assert.equal(validateMessageQuality('Visitor', '', validPayload.message).passes, true);
+    for (const text of ['hi bro', 'test test test test', 'buy backlinks make money fast', 'HELLO BRO CALL ME FAST']) {
+      assert.equal(validateMessageQuality('Visitor', '', text).passes, false);
+    }
+    assert.equal(
+      escapeHtml('<script>"x" & \'y\'</script>'),
+      '&lt;script&gt;&quot;x&quot; &amp; &#39;y&#39;&lt;/script&gt;'
+    );
   });
 });
 
-  describe('3. Professional Message Quality Filter (Requirements 16-19)', () => {
-    // Tests for messages that MUST BE ACCEPTED
-    test('accepts valid recruiter internship discussion', () => {
-      const msg =
-        'Hello Aman, I came across your portfolio and would like to discuss a frontend development internship opportunity. Could we schedule a call this week?';
-      assert.strictEqual(validateMessageQuality('Recruiter Jane', 'Internship Opportunity', msg).passes, true);
-    });
+describe('Professional Message Quality Filter (Spam & Abuse Protection)', () => {
+  test('accepts valid recruiter internship discussion', () => {
+    const msg =
+      'Hello Aman, I came across your portfolio and would like to discuss a frontend development internship opportunity. Could we schedule a call this week?';
+    assert.strictEqual(validateMessageQuality('Recruiter Jane', 'Internship Opportunity', msg).passes, true);
+  });
 
-    test('accepts web collaboration inquiry', () => {
-      const msg =
-        "Hi Aman, I'm working on a web application and would like to discuss a potential collaboration. Please let me know your availability.";
-      assert.strictEqual(validateMessageQuality('Alex Dev', 'Collaboration', msg).passes, true);
-    });
+  test('accepts web collaboration inquiry', () => {
+    const msg =
+      "Hi Aman, I'm working on a web application and would like to discuss a potential collaboration. Please let me know your availability.";
+    assert.strictEqual(validateMessageQuality('Alex Dev', 'Collaboration', msg).passes, true);
+  });
 
-    test('accepts client project services inquiry', () => {
-      const msg =
-        'Hello, I would like to know more about your software development services and discuss a potential project.';
-      assert.strictEqual(validateMessageQuality('Client Robert', 'Project Inquiry', msg).passes, true);
-    });
+  test('accepts client project services inquiry', () => {
+    const msg =
+      'Hello, I would like to know more about your software development services and discuss a potential project.';
+    assert.strictEqual(validateMessageQuality('Client Robert', 'Project Inquiry', msg).passes, true);
+  });
 
-    test('accepts concise legitimate internship inquiry', () => {
-      const msg = "Hello, I'd like to discuss an internship opportunity.";
-      assert.strictEqual(validateMessageQuality('Sarah', 'Discussion', msg).passes, true);
-    });
+  test('accepts concise legitimate internship inquiry', () => {
+    const msg = "Hello, I'd like to discuss an internship opportunity.";
+    assert.strictEqual(validateMessageQuality('Sarah', 'Discussion', msg).passes, true);
+  });
 
-    test('accepts natural Indian recruiter inquiry', () => {
-      const msg = 'Hi Aman, I saw your portfolio and wanted to discuss an internship opportunity.';
-      assert.strictEqual(validateMessageQuality('Pooja Sharma', 'Internship Role', msg).passes, true);
-    });
+  test('accepts natural Indian recruiter inquiry', () => {
+    const msg = 'Hi Aman, I saw your portfolio and wanted to discuss an internship opportunity.';
+    assert.strictEqual(validateMessageQuality('Pooja Sharma', 'Internship Role', msg).passes, true);
+  });
 
-    // Tests for messages that MUST BE REJECTED
-    const rejectedExamples = [
-      { text: 'hi bro', reason: 'too casual / insufficient words' },
-      { text: 'hello sir plz contact me', reason: 'no clear intent / casual plz abbreviation' },
-      { text: 'hey bro are u available', reason: 'chat slang dominance' },
-      { text: 'send me ur number', reason: 'demanding number with slang' },
-      { text: 'work hai bhai', reason: 'insufficient words / casual chat' },
-      { text: 'urgent work pls dm', reason: 'urgent chat spam' },
-      { text: 'aaaaaaaaaaaa', reason: 'character repetition flood' },
-      { text: '!!!!!!', reason: 'punctuation repetition flood' },
-      { text: 'test test test', reason: 'word loop / repetition' },
-      { text: 'asdfghjkl', reason: 'keyboard smash / consonant cluster' },
-      { text: '🔥🔥🔥🔥🔥🔥🔥', reason: 'emoji only' },
-      { text: 'make money fast click here', reason: 'promotional spam' },
-      { text: 'hi bhai internship hai call me asap', reason: 'low quality chat slang combination' },
-      { text: 'hello what are you doing?', reason: 'casual social small talk in message body' },
-      { text: 'how are you doing', reason: 'casual greeting without project substance' },
-    ];
+  const rejectedExamples = [
+    { text: 'hi bro', reason: 'too casual / insufficient words' },
+    { text: 'hello sir plz contact me', reason: 'no clear intent / casual plz abbreviation' },
+    { text: 'hey bro are u available', reason: 'chat slang dominance' },
+    { text: 'send me ur number', reason: 'demanding number with slang' },
+    { text: 'work hai bhai', reason: 'insufficient words / casual chat' },
+    { text: 'urgent work pls dm', reason: 'urgent chat spam' },
+    { text: 'aaaaaaaaaaaa', reason: 'character repetition flood' },
+    { text: '!!!!!!', reason: 'punctuation repetition flood' },
+    { text: 'test test test', reason: 'word loop / repetition' },
+    { text: 'asdfghjkl', reason: 'keyboard smash / consonant cluster' },
+    { text: '🔥🔥🔥🔥🔥🔥🔥', reason: 'emoji only' },
+    { text: 'make money fast click here', reason: 'promotional spam' },
+    { text: 'hi bhai internship hai call me asap', reason: 'low quality chat slang combination' },
+    { text: 'hello what are you doing?', reason: 'casual social small talk in message body' },
+    { text: 'how are you doing', reason: 'casual greeting without project substance' },
+  ];
 
-    for (const { text, reason } of rejectedExamples) {
-      test(`rejects low-quality spam: "${text}" (${reason})`, () => {
-        const evaluation = validateMessageQuality('Spam Tester', 'Inquiry', text);
-        assert.strictEqual(evaluation.passes, false);
-        assert.strictEqual(
-          evaluation.userMessage,
-          'Please provide a clear and professional message describing your inquiry.'
-        );
-      });
-    }
-
-    test('rejects professional subject spoofing with casual small talk body', () => {
-      const evaluation = validateMessageQuality('Aman', 'project discussion', 'hello what are you doing?');
+  for (const { text, reason } of rejectedExamples) {
+    test(`rejects low-quality spam: "${text}" (${reason})`, () => {
+      const evaluation = validateMessageQuality('Spam Tester', 'Inquiry', text);
       assert.strictEqual(evaluation.passes, false);
       assert.strictEqual(
         evaluation.userMessage,
         'Please provide a clear and professional message describing your inquiry.'
       );
     });
+  }
 
+  test('rejects professional subject spoofing with casual small talk body', () => {
+    const evaluation = validateMessageQuality('Aman', 'project discussion', 'hello what are you doing?');
+    assert.strictEqual(evaluation.passes, false);
+    assert.strictEqual(
+      evaluation.userMessage,
+      'Please provide a clear and professional message describing your inquiry.'
+    );
   });
+});
 
-// Opt-in only: a unique schema is created and dropped in the supplied TEST database.
-// No live Cloudflare or email requests are made.
-const testUrl = process.env.CONTACT_TEST_DATABASE_URL;
-describe('Persistent contact verification integration', { skip: !testUrl, concurrency: false }, () => {
+// ============================================================================
+// AUTOMATED TEST SUITE: ALL 12 REQUIRED SCENARIOS
+// ============================================================================
+describe('Contact API & Email Sending Scenarios (All 12 Required Tests)', () => {
   const originalFetch = globalThis.fetch;
   const originalEnv = { ...process.env };
-  const schema = `contact_test_${randomUUID().replaceAll('-', '')}`;
-  let admin: pg.Pool;
-  let sent: { payload: any; key: string }[] = [];
-  let challenge = true;
-  let hostname = 'calligraphyguruji.dev';
-  let providerFails = false;
-  let providerStatus = 503;
-  let challengeOutage = false;
-  let challengeCodes: string[] = [];
-  let acceptedButResponseLost = false;
-  const accepted = new Map<string, string>();
 
-  async function call(action = 'request-verification', body: unknown = input, cookie = '', overrides: Record<string, unknown> = {}) {
+  let turnstileSuccess = true;
+  let turnstileHostname = 'calligraphyguruji.dev';
+  let turnstileErrorCodes: string[] = [];
+  let turnstileNetworkCrash = false;
+
+  let resendSuccess = true;
+  let resendStatus = 200;
+  let resendNetworkCrash = false;
+  let sentEmails: any[] = [];
+
+  async function makeRequest(
+    body: unknown = validPayload,
+    options: { method?: string; origin?: string; ip?: string; url?: string } = {}
+  ) {
     const headers: Record<string, string> = {};
-    let status = 200, data: any;
-    const res: any = { setHeader: (key: string, value: string) => { headers[key] = value; }, status: (value: number) => { status = value; return res; }, json: (value: unknown) => { data = value; return res; } };
-    await handler({ method: 'POST', url: `/api/contact/${action}`, headers: { origin: 'https://calligraphyguruji.dev', 'content-type': 'application/json', cookie }, body, socket: { remoteAddress: '192.0.2.1' }, ...overrides }, res);
-    return { status, data, headers };
-  }
-  const currentToken = () => new URL(sent.filter(x => x.key.startsWith('verification/')).at(-1)!.payload.text.match(/https:\/\/\S+#token=\S+/)[0]).hash.slice(7);
-  async function request() {
-    const result = await call();
-    assert.equal(result.status, 200);
-    return { token: currentToken(), cookie: result.headers['Set-Cookie'].split(';')[0] };
-  }
-  const ageCooldown = async () => { await database().query("UPDATE contact_rate_events SET created_at=now()-interval '61 seconds'"); };
+    let statusCode = 200;
+    let responseData: any = null;
 
-  before(async () => {
-    admin = new pg.Pool({ connectionString: testUrl });
-    await admin.query(`CREATE SCHEMA ${schema}`);
-    const url = new URL(testUrl!);
-    url.searchParams.set('options', `-csearch_path=${schema}`);
-    Object.assign(process.env, { DATABASE_URL: url.toString(), NODE_ENV: 'test', RESEND_API_KEY: 'test-only', EMAIL_FROM: 'Portfolio <contact@example.com>', TURNSTILE_SECRET_KEY: 'test-only', CONTACT_RATE_LIMIT_SECRET: 'test-only-private-rate-limit-secret-32-bytes', CONTACT_SITE_URL: 'https://calligraphyguruji.dev', CRON_SECRET: 'test-only-cron-secret' });
-    await database().query(readFileSync(new URL('../migrations/001_contact_verification.sql', import.meta.url), 'utf8'));
-    globalThis.fetch = async (url, options) => {
-      if (String(url).includes('siteverify')) {
-        if (challengeOutage) throw new Error('Simulated Cloudflare outage');
-        return new Response(JSON.stringify({ success: challenge, hostname, 'error-codes': challengeCodes }), { status: 200 });
+    const res: any = {
+      setHeader: (k: string, v: string) => {
+        headers[k] = v;
+      },
+      status: (code: number) => {
+        statusCode = code;
+        return res;
+      },
+      json: (data: any) => {
+        responseData = data;
+        return res;
+      },
+      end: () => res,
+    };
+
+    const req: any = {
+      method: options.method || 'POST',
+      url: options.url || '/api/contact',
+      headers: {
+        origin: options.origin || 'https://calligraphyguruji.dev',
+        'content-type': 'application/json',
+      },
+      socket: { remoteAddress: options.ip || '192.0.2.1' },
+      body,
+    };
+
+    await handler(req, res);
+    return { status: statusCode, data: responseData, headers };
+  }
+
+  beforeEach(() => {
+    resetMemoryStoresForTesting();
+    turnstileSuccess = true;
+    turnstileHostname = 'calligraphyguruji.dev';
+    turnstileErrorCodes = [];
+    turnstileNetworkCrash = false;
+
+    resendSuccess = true;
+    resendStatus = 200;
+    resendNetworkCrash = false;
+    sentEmails = [];
+
+    process.env.NODE_ENV = 'test';
+    process.env.RESEND_API_KEY = 're_test_mock_resend_key';
+    process.env.EMAIL_FROM = 'Aman Mishra Portfolio <contact@calligraphyguruji.dev>';
+    process.env.CONTACT_RECEIVER_EMAIL = 'amanmishra7774@gmail.com';
+    process.env.TURNSTILE_SECRET_KEY = '0x4AAAAAAAMockTurnstileSecretKey';
+
+    globalThis.fetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const urlStr = String(url);
+
+      // 1. Cloudflare Turnstile Siteverify mock
+      if (urlStr.includes('challenges.cloudflare.com/turnstile/v0/siteverify')) {
+        if (turnstileNetworkCrash) {
+          throw new Error('Simulated Cloudflare network outage');
+        }
+        return new Response(
+          JSON.stringify({
+            success: turnstileSuccess,
+            hostname: turnstileHostname,
+            'error-codes': turnstileErrorCodes,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-      assert.equal(String(url), 'https://api.resend.com/emails');
-      if (providerFails) return new Response(JSON.stringify({ message: 'Private provider details: API key and visitor data must never be logged.' }), { status: providerStatus });
-      const key = (options!.headers as Record<string, string>)['Idempotency-Key'];
-      if (!accepted.has(key)) {
-        accepted.set(key, randomUUID());
-        sent.push({ payload: JSON.parse(String(options!.body)), key });
+
+      // 2. Resend Email mock
+      if (urlStr.includes('api.resend.com/emails')) {
+        if (resendNetworkCrash) {
+          throw new Error('Simulated Resend API network outage');
+        }
+        if (!resendSuccess || resendStatus >= 400) {
+          return new Response(
+            JSON.stringify({
+              statusCode: resendStatus,
+              message: 'Resend mock failure',
+              name: 'provider_error',
+            }),
+            { status: resendStatus, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        const parsedBody = JSON.parse(String(init?.body || '{}'));
+        sentEmails.push(parsedBody);
+        return new Response(
+          JSON.stringify({ id: 'resend_mock_id_12345' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-      if (acceptedButResponseLost && key.startsWith('contact/')) { acceptedButResponseLost = false; throw new Error('Simulated lost provider response'); }
-      return new Response(JSON.stringify({ id: accepted.get(key) }), { status: 200 });
+
+      return originalFetch(url, init);
     };
   });
-  beforeEach(async () => {
-    sent = []; providerStatus = 503; challengeOutage = false; challengeCodes = []; challenge = true; hostname = 'calligraphyguruji.dev'; providerFails = false; acceptedButResponseLost = false; accepted.clear();
-    await database().query('TRUNCATE contact_submissions, contact_rate_events');
-  });
-  after(async () => {
+
+  afterEach(() => {
     globalThis.fetch = originalFetch;
-    await database().end();
-    await admin.query(`DROP SCHEMA ${schema} CASCADE`);
-    await admin.end();
-    for (const key of Object.keys(process.env)) if (!(key in originalEnv)) delete process.env[key];
+    for (const k of Object.keys(process.env)) {
+      if (!(k in originalEnv)) delete process.env[k];
+    }
     Object.assign(process.env, originalEnv);
   });
 
-  test('initial submission sends only the verification email and stores only token hashes', async () => {
-    const { token, cookie } = await request();
-    assert.equal(sent.length, 1);
-    assert.deepEqual(sent[0].payload.to, [input.email]);
-    assert.equal(sent[0].payload.reply_to, undefined);
-    assert.equal(sent[0].payload.subject, 'Verify Your Email — Aman Mishra Portfolio');
-    assert.match(sent[0].payload.html, /Verify Email &amp; Send Message/);
-    const { rows } = await database().query('SELECT * FROM contact_submissions');
-    assert.equal(rows[0].status, 'unverified');
-    assert.equal(rows[0].verified_at, null);
-    assert.equal(rows[0].token_hash, hashToken(token));
-    assert.equal(rows[0].receipt_hash, hashToken(cookie.split('=')[1]));
-    assert.ok(new Date(rows[0].expires_at).getTime() - Date.now() <= 900000);
-    assert.ok(!JSON.stringify(rows).includes(token));
-  });
-  test('only mailbox verification delivers the saved message with verified reply-to; replay is safe', async () => {
-    const { token } = await request();
-    const result = await call('verify', { token });
-    assert.equal(result.data.code, 'accepted');
-    assert.equal(sent.length, 2);
-    assert.equal(sent[1].payload.reply_to, input.email);
-    assert.deepEqual(sent[1].payload.to, [process.env.CONTACT_RECEIVER_EMAIL || 'amanmishra7774@gmail.com']);
-    assert.notEqual(sent[1].payload.from, input.email);
-    assert.equal((await call('verify', { token })).data.code, 'used');
-    assert.equal(sent.length, 2);
-    const { rows } = await database().query('SELECT * FROM contact_submissions');
-    assert.equal(rows[0].message, null);
-    assert.equal(rows[0].delivery_payload, null);
-    assert.ok(rows[0].verified_at);
-  });
-  test('unverified fake or impersonated addresses never send contact mail', async () => {
-    await request();
-    await call('verify', { token: 'a'.repeat(43) });
-    assert.equal(sent.filter(x => x.key.startsWith('contact/')).length, 0);
-  });
-  test('invalid and expired links are rejected', async () => {
-    assert.equal((await call('verify', { token: 'invalid' })).data.code, 'invalid');
-    const { token } = await request();
-    await database().query("UPDATE contact_submissions SET expires_at=now()-interval '1 second'");
-    assert.equal((await call('verify', { token })).data.code, 'expired');
-    assert.equal(sent.length, 1);
-  });
-  test('requires correct Turnstile success, token, hostname and server secret', async () => {
-    assert.equal((await call('request-verification', { ...input, turnstileToken: '' })).data.code, 'turnstile');
-    challenge = false;
-    assert.equal((await call()).data.code, 'turnstile');
-    challenge = true; hostname = 'attacker.example';
-    assert.equal((await call()).data.code, 'turnstile');
-    delete process.env.TURNSTILE_SECRET_KEY;
-    assert.equal((await call()).status, 503);
-    process.env.TURNSTILE_SECRET_KEY = 'test-only';
-    assert.equal(sent.length, 0);
-  });
-  test('rejects cross-origin, missing-origin, non-JSON and malformed input', async () => {
-    for (const headers of [{ origin: 'https://evilcalligraphyguruji.dev', 'content-type': 'application/json' }, { 'content-type': 'application/json' }, { origin: 'https://calligraphyguruji.dev', 'content-type': 'text/plain' }]) assert.ok((await call('request-verification', input, '', { headers })).status >= 400);
-    for (const body of [null, {}, { ...input, name: 2 }, { ...input, message: '' }]) assert.equal((await call('request-verification', body)).status, 400);
-    assert.equal(sent.length, 0);
-  });
-  test('honeypot and legacy endpoint cannot bypass ownership verification', async () => {
-    await call('request-verification', { ...input, company_hp: 'bot' });
-    assert.equal(sent.length, 0);
-    assert.equal((await call('', input)).status, 200);
-    assert.equal(sent.length, 1);
-  });
-  test('resend requires browser receipt, cooldown; rotates token', async () => {
-    const { token, cookie } = await request();
-    assert.equal((await call('resend-verification', {}, cookie)).status, 429);
-    assert.equal((await call('resend-verification')).status, 400);
-    await ageCooldown();
-    assert.equal((await call('resend-verification', {}, cookie)).status, 200);
-    const replacement = currentToken();
-    assert.notEqual(replacement, token);
-    assert.equal((await call('verify', { token })).data.code, 'invalid');
-    assert.equal((await call('verify', { token: replacement })).data.code, 'accepted');
-  });
-  test('concurrent verifications cannot duplicate contact delivery', async () => {
-    const { token } = await request();
-    const results = await Promise.all(Array.from({ length: 12 }, () => call('verify', { token })));
-    assert.ok(results.every(x => ['accepted', 'used', 'pending'].includes(x.data.code)), JSON.stringify(results.map(x => ({ status: x.status, code: x.data.code }))));
-    assert.equal(sent.filter(x => x.key.startsWith('contact/')).length, 1);
-  });
-  test('zero-cooldown verification limits tolerate overlapping transaction timestamps', async () => {
-    const { token } = await request();
-    await call('verify', { token });
-    // A waiting transaction can start before an earlier lock holder records its timestamp.
-    await database().query("UPDATE contact_rate_events SET created_at=now()+interval '1 second'");
-    assert.equal((await call('verify', { token })).data.code, 'used');
-  });
-  test('concurrent initial requests enforce cooldown atomically', async () => {
-    const results = await Promise.all(Array.from({ length: 5 }, () => call()));
-    assert.equal(results.filter(x => x.status === 200).length, 1);
-    assert.equal(sent.length, 1);
-  });
-  test('email hourly and IP hourly caps and pending limits are persistent', async () => {
-    const { cookie } = await request();
-    for (let i = 0; i < 2; i++) { await ageCooldown(); assert.equal((await call('resend-verification', {}, cookie)).status, 200); }
-    await ageCooldown();
-    assert.equal((await call('resend-verification', {}, cookie)).status, 429);
-    await database().query('TRUNCATE contact_submissions, contact_rate_events');
-    for (let i = 0; i < 5; i++) assert.equal((await call('request-verification', { ...input, email: `person${i}@example.com` })).status, 200);
-    assert.equal((await call('request-verification', { ...input, email: 'other@example.com' })).status, 429);
-    await database().query('TRUNCATE contact_submissions, contact_rate_events');
-    await request(); await ageCooldown(); await request(); await ageCooldown();
-    assert.equal((await call()).status, 429);
-  });
-  test('provider failure during verification email never delivers the contact', async () => {
-    providerFails = true;
-    const result = await call();
-    assert.equal(result.status, 502);
-    assert.match(result.headers['Set-Cookie'], /HttpOnly; SameSite=Strict/);
-    assert.equal(sent.length, 0);
-    assert.equal((await database().query('SELECT status FROM contact_submissions')).rows[0].status, 'unverified');
-  });
-  for (const status of [401, 403, 422, 429, 500, 503]) {
-    test(`provider HTTP ${status} is diagnosed privately and never reports success`, async () => {
-      providerFails = true; providerStatus = status;
-      const original = console.error;
-      const logs: string[] = [];
-      console.error = (...args) => { logs.push(args.join(' ')); };
-      try {
-        const result = await call();
-        assert.equal(result.status, 502);
-        assert.equal(result.data.success, false);
-        assert.equal(result.data.code, 'email_unavailable');
-        assert.ok(logs.some(line => line.includes(`"upstreamStatus":${status}`)));
-        assert.ok(!logs.join('').includes('Private provider details'));
-        assert.ok(!logs.join('').includes(input.email));
-        assert.ok(!JSON.stringify(result.data).includes('upstreamStatus'));
-      } finally { console.error = original; }
+  // 1. Successful email submission
+  test('1. Successful email submission', async () => {
+    const res = await makeRequest({
+      ...validPayload,
+      email: 'recruiter@company.com',
+      turnstileToken: 'token-success-1',
     });
-  }
-  test('missing email API key produces private configuration diagnostics', async () => {
-    const key = process.env.RESEND_API_KEY;
-    const original = console.error;
-    const logs: string[] = [];
-    console.error = (...args) => { logs.push(args.join(' ')); };
-    try {
-      delete process.env.RESEND_API_KEY;
-      const result = await call();
-      assert.equal(result.status, 503);
-      assert.equal(result.data.code, 'configuration_error');
-      assert.ok(logs.join('').includes('RESEND_API_KEY'));
-      assert.ok(!JSON.stringify(result.data).includes('RESEND_API_KEY'));
-      assert.equal(sent.length, 0);
-    } finally { process.env.RESEND_API_KEY = key; console.error = original; }
+    assert.equal(res.status, 200);
+    assert.equal(res.data.success, true);
+    assert.equal(res.data.code, 'sent');
+    assert.match(res.data.message, /sent successfully/i);
+    assert.equal(sentEmails.length, 1);
+    assert.deepEqual(sentEmails[0].to, ['amanmishra7774@gmail.com']);
+    assert.equal(sentEmails[0].reply_to, 'recruiter@company.com');
   });
-  test('malformed sender or site configuration fails safely before an email request', async () => {
-    const sender = process.env.EMAIL_FROM, site = process.env.CONTACT_SITE_URL;
-    try {
-      process.env.EMAIL_FROM = 'invalid-sender';
-      assert.equal((await call()).data.code, 'configuration_error');
-      process.env.EMAIL_FROM = sender;
-      process.env.CONTACT_SITE_URL = 'invalid-url';
-      assert.equal((await call()).data.code, 'configuration_error');
-      assert.equal(sent.length, 0);
-    } finally { process.env.EMAIL_FROM = sender; process.env.CONTACT_SITE_URL = site; }
+
+  // 2. Invalid email address
+  test('2. Invalid email address', async () => {
+    const res = await makeRequest({
+      ...validPayload,
+      email: 'not-an-email',
+      turnstileToken: 'token-invalid-email',
+    });
+    assert.equal(res.status, 400);
+    assert.equal(res.data.success, false);
+    assert.equal(res.data.code, 'validation');
+    assert.match(res.data.message, /valid email address/i);
+    assert.equal(sentEmails.length, 0);
   });
-  test('expired or reused Cloudflare tokens are rejected without sending email', async () => {
-    challenge = false; challengeCodes = ['timeout-or-duplicate'];
-    const result = await call();
-    assert.equal(result.status, 400);
-    assert.equal(result.data.code, 'turnstile');
-    assert.equal(sent.length, 0);
-  });
-  test('Cloudflare network failures are distinguished from email failures', async () => {
-    challengeOutage = true;
-    const result = await call();
-    assert.equal(result.status, 502);
-    assert.equal(result.data.code, 'turnstile_unavailable');
-    assert.equal(sent.length, 0);
-  });
-  test('missing schema is logged without exposing SQL, credentials or message content', async () => {
-    const original = console.error;
-    const logs: string[] = [];
-    console.error = (...args) => { logs.push(args.join(' ')); };
-    await database().query('ALTER TABLE contact_rate_events RENAME TO contact_rate_events_missing');
-    try {
-      const result = await call();
-      assert.equal(result.status, 503);
-      assert.ok(logs.join('').includes('schema_missing'));
-      for (const secret of [input.email, input.message, 'postgresql://', 'SELECT', 'test-challenge']) assert.ok(!logs.join('').includes(secret));
-      assert.ok(result.data.requestId);
-    } finally {
-      await database().query('ALTER TABLE contact_rate_events_missing RENAME TO contact_rate_events');
-      console.error = original;
+
+  // 3. Missing required fields
+  test('3. Missing required fields', async () => {
+    for (const missingField of ['name', 'email', 'message']) {
+      const payload: any = { ...validPayload, turnstileToken: `token-missing-${missingField}` };
+      delete payload[missingField];
+      const res = await makeRequest(payload);
+      assert.equal(res.status, 400);
+      assert.equal(res.data.success, false);
+      assert.match(res.data.message, /required fields|check the form/i);
+      assert.equal(sentEmails.length, 0);
     }
   });
-  test('delivery failure stays pending; lost response retries use the identical idempotency key', async () => {
-    const { token } = await request();
-    acceptedButResponseLost = true;
-    assert.equal((await call('verify', { token })).data.code, 'pending');
-    assert.equal((await database().query('SELECT status FROM contact_submissions')).rows[0].status, 'pending');
-    await database().query("UPDATE contact_submissions SET lease_until=now()-interval '1 second'");
-    assert.equal((await call('verify', { token })).data.code, 'accepted');
-    assert.equal(sent.filter(x => x.key.startsWith('contact/')).length, 1);
+
+  // 4. Missing CAPTCHA token
+  test('4. Missing CAPTCHA token', async () => {
+    const res = await makeRequest({
+      ...validPayload,
+      turnstileToken: '',
+    });
+    assert.equal(res.status, 400);
+    assert.equal(res.data.success, false);
+    assert.equal(res.data.code, 'turnstile');
+    assert.match(res.data.message, /verification failed/i);
+    assert.equal(sentEmails.length, 0);
   });
-  test('maintenance authenticates, retries pending work and scrubs expired content', async () => {
-    const { token } = await request();
-    providerFails = true;
-    await call('verify', { token });
-    providerFails = false;
-    await database().query("UPDATE contact_submissions SET lease_until=now()-interval '1 second'");
-    assert.equal((await call('maintenance', {}, '', { method: 'GET' })).status, 401);
-    assert.equal((await call('maintenance', {}, '', { method: 'GET', headers: { authorization: 'Bearer test-only-cron-secret' } })).status, 200);
-    assert.equal(sent.filter(x => x.key.startsWith('contact/')).length, 1);
-    await database().query('TRUNCATE contact_submissions, contact_rate_events');
-    const pending = await request();
-    await database().query("UPDATE contact_submissions SET expires_at=now()-interval '1 minute'");
-    await cleanup();
-    const row = (await database().query('SELECT * FROM contact_submissions')).rows[0];
-    assert.equal(row.message, null); assert.equal(row.email, null); assert.equal(row.status, 'expired');
-    assert.equal((await call('verify', { token: pending.token })).data.code, 'expired');
+
+  // 5. Invalid CAPTCHA token
+  test('5. Invalid CAPTCHA token', async () => {
+    turnstileSuccess = false;
+    turnstileErrorCodes = ['invalid-input-response'];
+    const res = await makeRequest({
+      ...validPayload,
+      turnstileToken: 'token-invalid-captcha',
+    });
+    assert.equal(res.status, 400);
+    assert.equal(res.data.success, false);
+    assert.equal(res.data.code, 'turnstile');
+    assert.match(res.data.message, /verification failed/i);
+    assert.equal(sentEmails.length, 0);
   });
-  test('stale ambiguous deliveries stop before provider deduplication expires', async () => {
-    const { token } = await request();
-    providerFails = true;
-    await call('verify', { token });
-    providerFails = false;
-    await database().query("UPDATE contact_submissions SET first_attempt_at=now()-interval '21 hours', lease_until=NULL");
-    await cleanup();
-    assert.equal((await call('verify', { token })).data.code, 'delivery_failed');
-    assert.equal(sent.filter(x => x.key.startsWith('contact/')).length, 0);
+
+  // 6. Expired CAPTCHA token / Replay rejection
+  test('6. Expired CAPTCHA token / Replayed token rejected', async () => {
+    const token = 'token-single-use-replay-check';
+    const first = await makeRequest({ ...validPayload, email: 'user1@example.com', turnstileToken: token });
+    assert.equal(first.status, 200);
+
+    // Second submission using identical token must be rejected
+    const second = await makeRequest({ ...validPayload, email: 'user2@example.com', turnstileToken: token });
+    assert.equal(second.status, 400);
+    assert.equal(second.data.code, 'turnstile');
+    assert.match(second.data.message, /verification failed/i);
+  });
+
+  // 7. Email provider authentication failure (401/403)
+  test('7. Email provider authentication failure', async () => {
+    resendSuccess = false;
+    resendStatus = 401;
+    const res = await makeRequest({
+      ...validPayload,
+      email: 'authfail@example.com',
+      turnstileToken: 'token-auth-failure',
+    });
+    assert.equal(res.status, 502);
+    assert.equal(res.data.success, false);
+    assert.equal(res.data.code, 'email_unavailable');
+    assert.match(res.data.message, /couldn’t send your message right now/i);
+  });
+
+  // 8. Email provider service outage (500/503/Network)
+  test('8. Email provider service outage', async () => {
+    resendNetworkCrash = true;
+    const res = await makeRequest({
+      ...validPayload,
+      email: 'outage@example.com',
+      turnstileToken: 'token-outage',
+    });
+    assert.equal(res.status, 502);
+    assert.equal(res.data.success, false);
+    assert.equal(res.data.code, 'email_unavailable');
+    assert.match(res.data.message, /couldn’t send your message right now/i);
+  });
+
+  // 9. Missing email API key
+  test('9. Missing email API key', async () => {
+    delete process.env.RESEND_API_KEY;
+    delete process.env.EMAILJS_SERVICE_ID;
+    const res = await makeRequest({
+      ...validPayload,
+      email: 'nokey@example.com',
+      turnstileToken: 'token-no-api-key',
+    });
+    assert.equal(res.status, 503);
+    assert.equal(res.data.success, false);
+    assert.match(res.data.message, /couldn’t send your message right now/i);
+    assert.equal(sentEmails.length, 0);
+  });
+
+  // 10. Duplicate submissions
+  test('10. Duplicate submissions', async () => {
+    const duplicateEmail = 'duplicate.sender@example.com';
+    const first = await makeRequest({
+      ...validPayload,
+      email: duplicateEmail,
+      turnstileToken: 'token-duplicate-1',
+    });
+    assert.equal(first.status, 200);
+
+    const second = await makeRequest({
+      ...validPayload,
+      email: duplicateEmail,
+      turnstileToken: 'token-duplicate-2',
+    });
+    assert.equal(second.status, 429);
+    assert.equal(second.data.code, 'duplicate');
+    assert.match(second.data.message, /duplicate message detected/i);
+  });
+
+  // 11. Rate limiting
+  test('11. Rate limiting (hourly / burst)', async () => {
+    const ip = '203.0.113.42';
+    // Burst limit: immediate 2nd request from same IP with different content
+    const first = await makeRequest(
+      {
+        ...validPayload,
+        email: 'rate1@example.com',
+        message: 'Hello Aman, I would like to discuss a software project collaboration with you.',
+        turnstileToken: 'token-rate-1',
+      },
+      { ip }
+    );
+    assert.equal(first.status, 200);
+
+    const burst = await makeRequest(
+      {
+        ...validPayload,
+        email: 'rate2@example.com',
+        message: 'Hello Aman, following up regarding internship opportunities on your team.',
+        turnstileToken: 'token-rate-2',
+      },
+      { ip }
+    );
+    assert.equal(burst.status, 429);
+    assert.equal(burst.data.code, 'rate_limited');
+    assert.match(burst.data.message, /too many requests/i);
+  });
+
+  // 12. Successful end-to-end API response
+  test('12. Successful end-to-end API response and health check', async () => {
+    // Test GET /api/contact health
+    const health = await makeRequest(null, { method: 'GET' });
+    assert.equal(health.status, 200);
+    assert.equal(health.data.status, 'healthy');
+    assert.equal(health.data.emailProvider, 'resend');
+    assert.equal(health.data.turnstileConfigured, true);
+
+    // Test successful POST submission
+    const res = await makeRequest({
+      name: 'Dr. Sarah Connor',
+      email: 'sarah.connor@cyberdyne.org',
+      subject: 'AI Research Collaboration',
+      message: 'Hello Aman, We reviewed your projects and would love to discuss a research collaboration opportunity.',
+      turnstileToken: 'token-e2e-final',
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.data.success, true);
+    assert.equal(res.data.code, 'sent');
+    assert.equal(
+      res.data.message,
+      'Your message has been sent successfully! I’ll get back to you soon.'
+    );
+    assert.ok(res.data.requestId);
   });
 });

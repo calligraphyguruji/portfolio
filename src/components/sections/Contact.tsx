@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { personalInfo } from '../../data/portfolioData';
-import { sendEmail, isValidEmail, resendVerificationEmail } from '../../services/emailService';
+import { sendEmail, isValidEmail } from '../../services/emailService';
 import { Turnstile } from '../ui/Turnstile';
 import { ContactFormData } from '../../types';
 import {
@@ -23,7 +23,6 @@ const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 export const Contact: React.FC = () => {
   const lastSubmissionAt = useRef(0);
-  const [resending, setResending] = useState(false);
   const [cooldownDuration, setCooldownDuration] = useState(COOLDOWN_SECONDS);
   const [showForm, setShowForm] = useState(true);
   const [formData, setFormData] = useState<ContactFormData>({
@@ -63,7 +62,7 @@ export const Contact: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [status, cooldownDuration, resending]);
+  }, [status, cooldownDuration]);
 
   const startCooldown = (duration: number) => {
     lastSubmissionAt.current = Date.now();
@@ -111,14 +110,14 @@ export const Contact: React.FC = () => {
     // 3. Email syntax format check
     if (!isValidEmail(formData.email)) {
       setStatus('error');
-      setStatusMessage('Please enter a valid email address (e.g. name@example.com).');
+      setStatusMessage('Please enter a valid email address.');
       return;
     }
 
     // 4. Verification requirement when site key is active
     if (TURNSTILE_SITE_KEY && !turnstileToken) {
       setStatus('error');
-      setStatusMessage('Please complete the verification check before sending.');
+      setStatusMessage('Verification failed. Please complete the security check again.');
       return;
     }
 
@@ -135,7 +134,10 @@ export const Contact: React.FC = () => {
 
       if (response.success) {
         setStatus('success');
-        setStatusMessage(response.message);
+        setStatusMessage(
+          response.message ||
+            'Your message has been sent successfully! I’ll get back to you soon.'
+        );
         setFormData({
           name: '',
           email: '',
@@ -149,14 +151,16 @@ export const Contact: React.FC = () => {
         startCooldown(response.cooldownSeconds || COOLDOWN_SECONDS);
       } else {
         setStatus('error');
-        setStatusMessage(response.message || 'Unable to deliver message right now. Please try again.');
+        setStatusMessage(
+          response.message || 'We couldn’t send your message right now. Please try again shortly.'
+        );
         // Reset turnstile widget on failure
         setTurnstileResetCount((prev) => prev + 1);
         handleTurnstileExpire();
       }
     } catch {
       setStatus('error');
-      setStatusMessage('An unexpected error occurred. Please contact directly via amanmishra7774@gmail.com.');
+      setStatusMessage('We couldn’t send your message right now. Please try again shortly.');
       setTurnstileResetCount((prev) => prev + 1);
       handleTurnstileExpire();
     }
@@ -214,26 +218,11 @@ export const Contact: React.FC = () => {
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                     <h4 className="text-lg font-medium text-[#171717] dark:text-white">
-                      Check your inbox!
+                      Message Sent!
                     </h4>
                     <p role="status" aria-live="polite" className="text-xs sm:text-sm text-[#5E5E5E] dark:text-slate-300 max-w-md mx-auto leading-relaxed">
                       {statusMessage}
                     </p>
-                    <button
-                      type="button"
-                      disabled={resending || cooldownRemaining > 0}
-                      onClick={async () => {
-                        if (resending || cooldownRemaining > 0) return;
-                        setResending(true);
-                        const result = await resendVerificationEmail();
-                        setStatusMessage(result.message);
-                        startCooldown(result.cooldownSeconds || COOLDOWN_SECONDS);
-                        setResending(false);
-                      }}
-                      className="block mx-auto px-5 py-2 rounded-full border border-black/10 dark:border-white/20 text-xs font-medium uppercase tracking-wider disabled:opacity-60"
-                    >
-                      {resending ? 'Sending verification link...' : cooldownRemaining > 0 ? `Resend verification email in ${cooldownRemaining}s` : 'Resend verification email'}
-                    </button>
                     <button
                       onClick={() => setStatus('idle')}
                       className="px-5 py-2 rounded-full bg-[#171717] text-white hover:bg-[#2A2A2A] dark:bg-white dark:text-[#171717] text-xs font-medium uppercase tracking-wider transition-all cursor-pointer"
@@ -370,7 +359,7 @@ export const Contact: React.FC = () => {
                       {status === 'loading' ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Sending verification link...</span>
+                          <span>Sending message...</span>
                         </>
                       ) : cooldownRemaining > 0 ? (
                         <>

@@ -31,7 +31,7 @@ export function diagnoseContactError(error: unknown): ContactDiagnostic {
 }
 
 export function reportContactError(error: unknown, action: string, requestId: string) {
-  const knownActions = ['request-verification', 'resend-verification', 'verify', 'maintenance', 'delivery'];
+  const knownActions = ['submit', 'send', 'request-verification', 'resend-verification', 'verify', 'maintenance', 'delivery'];
   // Only our own diagnostic fields are logged. Never log raw exceptions, payloads or provider bodies.
   console.error('[contact]', JSON.stringify({
     requestId, action: knownActions.includes(action) ? action : 'unknown', ...diagnoseContactError(error),
